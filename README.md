@@ -1,145 +1,140 @@
-# Nexus: Autonomous AI Agentic Framework
+# Nexus: Orchestrator-Native AI Agentic Framework
 
-> An open, production-grade **AI Agentic Framework** designed for autonomous agent execution, self-healing maintenance, security guardrails, and automated evaluation.
+> The **AI Agentic Framework** that equips non-technical creators with a full virtual IT department while interfacing natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
 
-Nexus is built for engineering teams that have a clear product vision but lack deep infrastructure, security, or agent plumbing. It eliminates the fragile glue code required to build autonomous systems by providing **first-class agent primitives, cost guardrails, and self-maintaining tool loops**.
-
----
-
-## Why Nexus?
-
-| Traditional AI Libraries (LangChain, CrewAI) | Traditional Web Frameworks (Next.js, FastAPI) | **Nexus Agentic Framework** |
-| :--- | :--- | :--- |
-| Fragmented abstractions & breaking changes | No concept of agent loops or non-determinism | **Unified full-stack agent lifecycle** |
-| Runaway token costs & surprise bills | Unaware of LLM spend | **Hard budget caps (`max_budget_usd`) on every agent** |
-| Blind tool execution without sandboxing | Manual RBAC on endpoints | **Tool permissions (`READ_ONLY`, `MUTATION`, `CRITICAL`)** |
-| Vulnerable to prompt injection | Only standard SQL/XSS defenses | **Pre-flight adversarial injection & PII scrubbing** |
-| Manual debugging & brittle maintenance | Standard stack traces | **`AutonomousHealer`: AI diagnoses root cause & fixes** |
-| Probabilistic test flakiness | Deterministic assertions only | **`LLMJudge`: Autonomous faithfulness & safety evals** |
+Nexus bridges the gap between raw ideas and production code. It serves two distinct developer cohorts:
+1. **Beginners with Ideas**: Run `nexus dream "<vague idea>"` and the **Core IT Pack** (BA, Product Manager, UI Designer, Backend Engineer, and QA) takes the idea, designs the UI mockup, writes the sprint plan, generates the backend code, and runs tests.
+2. **AI Orchestrator Users (Claude Code, Cursor, Codex, Gemini)**: Run `nexus mcp` to expose your agents, tools, databases, and guardrails to any modern AI IDE as first-class, equal participants.
 
 ---
 
-## Architecture
+## 🏢 The Nexus Core IT Pack
+
+Nexus comes pre-packaged with an autonomous IT squad that simulates a real-world software engineering organization:
+
+```mermaid
+flowchart TD
+    User["Creator with an Idea<br/>(Vague Requirements)"] --> BA["Business Analyst Agent<br/>(Proposal + Wireframe HTML Mockup)"]
+    BA --> EM["Engineering Manager Agent<br/>(Sprint Plan + Architecture + Task Breakdown)"]
+    EM --> Design["UI/UX Designer Agent<br/>(Working React + Tailwind Components)"]
+    EM --> Backend["Backend Engineer Agent<br/>(FastAPI Routes + Pydantic + DB Entities)"]
+    Design & Backend --> QA["QA & Security Engineer Agent<br/>(Synthetic Tests + Injection Defense + LLM Judge)"]
+    QA --> Repo["Delivered Application Workspace<br/>(Runnable Project on Disk)"]
+```
+
+### 1. Business Analyst (`BusinessAnalystAgent`)
+Takes conversational, incomplete user thoughts and formats them into a crisp **Product Proposal**:
+- Canonical app slug & value proposition tagline.
+- User stories (`As a [user], I want to [action] so that [benefit]`).
+- Core features specification.
+- Generates a standalone interactive HTML/Tailwind wireframe mockup of the primary dashboard view.
+
+### 2. Engineering Manager (`EngineeringManagerAgent`)
+Reviews the BA's proposal and generates an architectural **Sprint Plan**:
+- Technical architecture (FastAPI, PostgreSQL async, Gemini 3.8).
+- Database entity relationships and REST API endpoints.
+- Decomposed task graph assigned across Designer, Backend, and QA.
+- Estimated token budget.
+
+### 3. UI/UX Designer (`UiDesignerAgent`)
+Generates working React components styled with Tailwind CSS and the `@nexus/ui` component system.
+
+### 4. Backend Engineer (`BackendEngineerAgent`)
+Implements production-ready FastAPI routes, Pydantic validation schemas, and database session bindings.
+
+### 5. QA & Security Engineer (`QaEngineerAgent`)
+Runs pre-flight security checks (injection shields, permission levels) and produces an executable `pytest` test suite.
+
+---
+
+## 🔌 Orchestrator-Native: Claude Code & Cursor Integration
+
+Nexus is designed to work as an equal peer alongside **Claude Code, Cursor, Codex, and Gemini CLI**:
+
+```bash
+# Start the Nexus Model Context Protocol (MCP) server
+nexus mcp
+```
+
+### Connecting from Cursor / Claude Code
+Add Nexus to your `.cursor/mcp.json` or `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "nexus": {
+      "command": "python",
+      "args": ["-m", "nexus.cli.main", "mcp"],
+      "env": {
+        "GCP_PROJECT_ID": "finhub-510316"
+      }
+    }
+  }
+}
+```
+Instantly, Claude Code or Cursor gains access to all Nexus tools, allowing you to trigger IT squad workflows, check AI connections, or diagnose errors right inside your editor prompt.
+
+---
+
+## 🚀 Instant Application Creation: `nexus dream`
+
+```bash
+nexus dream "I want an app that tracks second-hand luxury watches in Europe with price alerts"
+```
+
+Output:
+```text
+--- Nexus Core IT Squad Activated ---
+Goal: "I want an app that tracks second-hand luxury watches in Europe with price alerts"
+Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer
+
+=== Project Delivered! ===
+App: WatchHub (watchhub)
+Tagline: Verified European luxury watch index and real-time deal alerts
+Output Directory: ./watchhub
+Tasks: 6 sprint tasks defined
+UI Component: WatchDashboard.tsx
+QA Status: PASS (Test suite generated with 100% pre-flight clearance)
+```
+
+---
+
+## 🛡️ Built-in Cost & Security Guardrails
+
+- **Zero Runaway Bills**: `max_budget_usd` spend ceilings on every agent execution context.
+- **Gemini 3.8 Flash Cost Profile**: \$0.075 / \$0.30 per million tokens (cents per month for active squads).
+- **Prompt Injection Defense**: Intercepts jailbreaks (`"ignore all prior instructions"`) before hitting the LLM.
+- **PII & Secret Scrubber**: Redacts API keys (`sk-...`, `ghp-...`) and credentials automatically.
+- **Zero-Cost Mock Engine**: Run the entire IT pack and test suite locally for \$0.00 using `MockProvider`.
+
+---
+
+## Repository Map
 
 ```text
 nexus/
 ├── src/nexus/
+│   ├── orchestrator/           # Embedded MCP server & protocol bridges (Claude, Cursor, Gemini)
+│   ├── teams/it_pack/          # Core IT Pack (BA, Manager, Designer, Engineer, QA)
 │   ├── agents/                 # BaseAgent, AgentContext, multi-turn reasoning
-│   ├── tools/                  # @tool decorator with automatic schema inference
-│   ├── providers/              # Pluggable backends: Vertex AI (Gemini 3.8), Mock, Ollama
-│   ├── security/               # Prompt injection shield, PII scrubber, tool guardrails
-│   ├── maintenance/            # AutonomousHealer: self-healing bug diagnosis
+│   ├── tools/                  # @tool decorator & ToolPermission (READ_ONLY, MUTATION, CRITICAL)
+│   ├── providers/              # Vertex AI (Gemini 3.8 Flash), MockProvider, Ollama
+│   ├── security/               # Injection shield, credential sanitizer, tool guardrails
+│   ├── maintenance/            # AutonomousHealer: AI root-cause diagnosis & repair
 │   ├── qa/                     # LLMJudge: Autonomous evaluation & faithfulness verification
 │   ├── api/                    # Standardized microservice factory & telemetry
 │   ├── db/                     # Async PostgreSQL connection pooling & base entities
 │   ├── scraping/               # Resilient rate-limited crawler & backoff engine
-│   └── cli/                    # CLI tools (`nexus check-ai`, `nexus new <app>`)
+│   └── cli/                    # CLI tools (`nexus dream`, `nexus mcp`, `nexus check-ai`)
 ├── packages/
 │   └── ui/                     # Shared React + Tailwind agentic UI (@nexus/ui)
 ├── infra/
 │   └── terraform/modules/      # Reusable Terraform infrastructure modules
-└── tests/                      # Automated test suite (14 passing)
+└── tests/                      # Automated test suite (18 passing)
 ```
 
 ---
 
-## 1. Quick Example: Creating an Autonomous Agent
-
-```python
-from nexus.agents import BaseAgent
-from nexus.providers.vertex import VertexAIProvider
-from nexus.tools import tool, ToolPermission
-
-# Define safe, permission-governed tools
-@tool(name="fetch_stock_price", permission=ToolPermission.READ_ONLY)
-def fetch_stock_price(ticker: str) -> dict[str, float]:
-    """Fetch real-time stock price from market exchange."""
-    return {ticker: 185.50}
-
-# Instantiate agent with hard safety ceiling
-agent = BaseAgent(
-    name="MarketAnalyst",
-    system_prompt="You are a market intelligence agent. Use tools to look up real facts.",
-    provider=VertexAIProvider(default_model="gemini-3.8-flash"),
-    tools=[fetch_stock_price],
-    max_budget_usd=0.05,  # Prevents runaway spend (max 5 cents per run)
-)
-
-result = agent.run("What is the current price of AAPL?")
-print(result.output)
-print(f"Cost: ${result.total_cost_usd:.6f}")
-```
-
----
-
-## 2. AI-Enabled Security: Injection Shield & PII Sanitizer
-
-Nexus inspects all prompts **before** sending tokens to the LLM:
-- **Prompt Injection Defense**: Blocks jailbreaks (`"ignore all previous instructions"`) with `SecurityViolationError`.
-- **Zero-Leak Sanitizer**: Redacts API keys (`sk-...`), GitHub tokens, and sensitive PII before model ingestion.
-- **Tool Governance**: Enforces affirmative authorization before any `CRITICAL` tool is executed.
-
----
-
-## 3. Zero-Cost Testing & Development
-
-Never burn money while developing or running CI/CD:
-```python
-from nexus.providers.mock import MockProvider
-from nexus.agents import BaseAgent
-
-# 100% free local development or CI pipeline
-test_agent = BaseAgent(
-    name="TestAgent",
-    system_prompt="...",
-    provider=MockProvider(default_reply="Task completed."),
-)
-```
-
----
-
-## 4. AI-Enabled Maintenance: `AutonomousHealer`
-
-When an unhandled exception or agent tool failure occurs, the `AutonomousHealer` diagnoses the root cause and generates a remediation plan:
-
-```python
-from nexus.maintenance import AutonomousHealer
-from nexus.providers.vertex import VertexAIProvider
-
-healer = AutonomousHealer(provider=VertexAIProvider())
-diagnosis = healer.diagnose_failure(
-    error_message="ZeroDivisionError: division by zero",
-    stack_trace="...",
-    context_snippet="def calc_ratio(a, b): return a / b",
-)
-
-print(diagnosis.root_cause)      # "ZeroDivisionError when denominator b is 0"
-print(diagnosis.suggested_fix)   # "Add `if b == 0: return 0.0` guard check"
-```
-
----
-
-## 5. AI-Enabled QA: `LLMJudge`
-
-Nexus includes autonomous evaluation to grade agent answers without manual human labeling:
-
-```python
-from nexus.qa import LLMJudge
-from nexus.providers.vertex import VertexAIProvider
-
-judge = LLMJudge(provider=VertexAIProvider())
-score = judge.evaluate(
-    task="Calculate the P/E ratio for NVDA given EPS of 4.0 and price of 120",
-    agent_output="The P/E ratio is 30.0.",
-    reference_facts="Price: 120, EPS: 4.0, P/E = 120 / 4 = 30",
-)
-
-print(f"Passed: {score.passed}, Faithfulness: {score.faithfulness_score}")
-```
-
----
-
-## Getting Started
+## Verification
 
 ```bash
 git clone https://github.com/sabburi1994/nexus.git

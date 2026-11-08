@@ -102,6 +102,43 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
     return target
 
 
+def run_mcp_server() -> None:
+    """Run the embedded Model Context Protocol (MCP) server for Claude Code and Cursor."""
+    from nexus.orchestrator.mcp import NexusMcpServer
+    from nexus.tools.base import Tool, ToolPermission
+
+    server = NexusMcpServer(name="nexus-mcp", version=__version__)
+
+    # Register core tools
+    def check_ai_tool(model: str = "gemini-3.8-flash") -> dict[str, str]:
+        """Check Vertex AI Gemini 3.8 connectivity."""
+        client = GeminiClient(default_model=model)
+        res = client.generate("Ping")
+        return {"status": "ok", "response": res.text, "model": res.model}
+
+    server.register_tool(Tool(fn=check_ai_tool, name="nexus_check_ai", permission=ToolPermission.READ_ONLY))
+    server.run_stdio()
+
+
+def dream_cmd(idea: str, output_dir: Path) -> None:
+    """Run the Nexus Core IT Pack to convert an idea into a complete software project."""
+    from nexus.teams.it_pack.team import NexusITTeam
+    print(f"--- Nexus Core IT Squad Activated ---")
+    print(f"Goal: \"{idea}\"")
+    print(f"Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer\n")
+
+    team = NexusITTeam()
+    project = team.build_from_idea(idea, output_dir=output_dir)
+
+    print("\n=== Project Delivered! ===")
+    print(f"App: {project.proposal.title} ({project.proposal.app_name})")
+    print(f"Tagline: {project.proposal.tagline}")
+    print(f"Output Directory: {project.output_path}")
+    print(f"Tasks: {len(project.sprint_plan.tasks)} sprint tasks defined")
+    print(f"UI Component: {project.ui.component_name}.tsx")
+    print(f"QA Status: {'PASS' if project.qa.passed_preflight else 'WARN'}")
+
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -121,11 +158,23 @@ def main() -> None:
     new_parser.add_argument("name", help="Name of application to scaffold")
     new_parser.add_argument("--output-dir", default=".", help="Directory where app will be created")
 
+    # mcp
+    subparsers.add_parser("mcp", help="Start embedded Model Context Protocol (MCP) server for Claude Code & Cursor.")
+
+    # dream
+    dream_parser = subparsers.add_parser("dream", help="Transform a user idea into a complete app via the Nexus IT Squad.")
+    dream_parser.add_argument("idea", help="Raw description of the app you want to build")
+    dream_parser.add_argument("--output-dir", default=".", help="Directory where project will be saved")
+
     args = parser.parse_args()
     if args.command == "check-ai":
         sys.exit(check_ai_cmd(model=args.model, project=args.project))
     elif args.command == "new":
         scaffold_new_app(args.name, Path(args.output_dir))
+    elif args.command == "mcp":
+        run_mcp_server()
+    elif args.command == "dream":
+        dream_cmd(args.idea, Path(args.output_dir))
     else:
         parser.print_help()
 
