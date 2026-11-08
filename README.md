@@ -1,103 +1,148 @@
-# Nexus Platform Framework
+# Nexus: Autonomous AI Agentic Framework
 
-> Autonomous Application & Platform Framework powered by **Google Cloud Vertex AI** and **Gemini 3.8 Flash**.
+> An open, production-grade **AI Agentic Framework** designed for autonomous agent execution, self-healing maintenance, security guardrails, and automated evaluation.
 
-`nexus` is the foundation framework for building, deploying, and operating domain applications (such as FinHub, Kalssesall, Predictive Economics, JobRadar, and CivicSignal). It unifies AI orchestration, scraping pipelines, database persistence, shared UI design systems, and Infrastructure as Code into a single standard.
+Nexus is built for engineering teams that have a clear product vision but lack deep infrastructure, security, or agent plumbing. It eliminates the fragile glue code required to build autonomous systems by providing **first-class agent primitives, cost guardrails, and self-maintaining tool loops**.
 
 ---
 
-## Architecture Overview
+## Why Nexus?
+
+| Traditional AI Libraries (LangChain, CrewAI) | Traditional Web Frameworks (Next.js, FastAPI) | **Nexus Agentic Framework** |
+| :--- | :--- | :--- |
+| Fragmented abstractions & breaking changes | No concept of agent loops or non-determinism | **Unified full-stack agent lifecycle** |
+| Runaway token costs & surprise bills | Unaware of LLM spend | **Hard budget caps (`max_budget_usd`) on every agent** |
+| Blind tool execution without sandboxing | Manual RBAC on endpoints | **Tool permissions (`READ_ONLY`, `MUTATION`, `CRITICAL`)** |
+| Vulnerable to prompt injection | Only standard SQL/XSS defenses | **Pre-flight adversarial injection & PII scrubbing** |
+| Manual debugging & brittle maintenance | Standard stack traces | **`AutonomousHealer`: AI diagnoses root cause & fixes** |
+| Probabilistic test flakiness | Deterministic assertions only | **`LLMJudge`: Autonomous faithfulness & safety evals** |
+
+---
+
+## Architecture
 
 ```text
 nexus/
-├── pyproject.toml              # Python framework package (uv / pip)
 ├── src/nexus/
-│   ├── ai/                     # Gemini 3.8 + Vertex AI SDK (IAM OAuth, schemas, tools)
-│   ├── api/                    # Standardized FastAPI application factory & telemetry
+│   ├── agents/                 # BaseAgent, AgentContext, multi-turn reasoning
+│   ├── tools/                  # @tool decorator with automatic schema inference
+│   ├── providers/              # Pluggable backends: Vertex AI (Gemini 3.8), Mock, Ollama
+│   ├── security/               # Prompt injection shield, PII scrubber, tool guardrails
+│   ├── maintenance/            # AutonomousHealer: self-healing bug diagnosis
+│   ├── qa/                     # LLMJudge: Autonomous evaluation & faithfulness verification
+│   ├── api/                    # Standardized microservice factory & telemetry
 │   ├── db/                     # Async PostgreSQL connection pooling & base entities
 │   ├── scraping/               # Resilient rate-limited crawler & backoff engine
-│   └── cli/                    # CLI for scaffolding apps (`nexus new`) & verification
+│   └── cli/                    # CLI tools (`nexus check-ai`, `nexus new <app>`)
 ├── packages/
-│   └── ui/                     # Shared React + Tailwind component library (@nexus/ui)
+│   └── ui/                     # Shared React + Tailwind agentic UI (@nexus/ui)
 ├── infra/
-│   └── terraform/modules/      # Reusable GCP Terraform modules (IAM, Vertex AI, Cloud Run)
-└── tests/                      # Automated test suite
+│   └── terraform/modules/      # Reusable Terraform infrastructure modules
+└── tests/                      # Automated test suite (14 passing)
 ```
 
 ---
 
-## Core Capabilities
-
-### 1. Unified Gemini 3.8 Vertex AI Client (`nexus.ai`)
-- **Direct GCP IAM Auth**: Uses VM instance metadata or `gcloud` OAuth bearer tokens (`roles/aiplatform.user`) with 40-minute in-memory caching. No hardcoded or leaked API keys.
-- **Global Endpoint Routing**: Automatically targets Google Cloud's `global` publisher endpoint for Gemini 3.8 Flash.
-- **Thinking Configuration**: Built-in support for Gemini 3.8 reasoning (`thinkingLevel: "low"`).
-- **Structured Schema Extraction**: Constrained JSON generation directly into typed Pydantic models.
-- **Multimodal Document Understanding**: Native support for inline PDF/image base64 ingestion.
-- **Multi-Turn Tool Loops**: Autonomous tool dispatching with zero numerical hallucinations.
-- **Cost Tracking**: Accurate Vertex AI token pricing calculations ($0.075 / $0.30 per million tokens).
+## 1. Quick Example: Creating an Autonomous Agent
 
 ```python
-from nexus.ai import GeminiClient
-from pydantic import BaseModel
+from nexus.agents import BaseAgent
+from nexus.providers.vertex import VertexAIProvider
+from nexus.tools import tool, ToolPermission
 
-class FinancialReport(BaseModel):
-    sentiment: str
-    key_drivers: list[str]
+# Define safe, permission-governed tools
+@tool(name="fetch_stock_price", permission=ToolPermission.READ_ONLY)
+def fetch_stock_price(ticker: str) -> dict[str, float]:
+    """Fetch real-time stock price from market exchange."""
+    return {ticker: 185.50}
 
-client = GeminiClient(project_id="finhub-510316")
-report: FinancialReport = client.structured(
-    prompt="Analyze the latest ECB rate decision.",
-    response_model=FinancialReport,
+# Instantiate agent with hard safety ceiling
+agent = BaseAgent(
+    name="MarketAnalyst",
+    system_prompt="You are a market intelligence agent. Use tools to look up real facts.",
+    provider=VertexAIProvider(default_model="gemini-3.8-flash"),
+    tools=[fetch_stock_price],
+    max_budget_usd=0.05,  # Prevents runaway spend (max 5 cents per run)
+)
+
+result = agent.run("What is the current price of AAPL?")
+print(result.output)
+print(f"Cost: ${result.total_cost_usd:.6f}")
+```
+
+---
+
+## 2. AI-Enabled Security: Injection Shield & PII Sanitizer
+
+Nexus inspects all prompts **before** sending tokens to the LLM:
+- **Prompt Injection Defense**: Blocks jailbreaks (`"ignore all previous instructions"`) with `SecurityViolationError`.
+- **Zero-Leak Sanitizer**: Redacts API keys (`sk-...`), GitHub tokens, and sensitive PII before model ingestion.
+- **Tool Governance**: Enforces affirmative authorization before any `CRITICAL` tool is executed.
+
+---
+
+## 3. Zero-Cost Testing & Development
+
+Never burn money while developing or running CI/CD:
+```python
+from nexus.providers.mock import MockProvider
+from nexus.agents import BaseAgent
+
+# 100% free local development or CI pipeline
+test_agent = BaseAgent(
+    name="TestAgent",
+    system_prompt="...",
+    provider=MockProvider(default_reply="Task completed."),
 )
 ```
 
-### 2. Standardized Microservice Factory (`nexus.api`)
-- Automatic telemetry headers (`X-Request-ID`, `X-Process-Time`).
-- Safe CORS defaults.
-- Built-in `/health` and `/ready` probes.
-- Consistent JSON error formatting.
+---
+
+## 4. AI-Enabled Maintenance: `AutonomousHealer`
+
+When an unhandled exception or agent tool failure occurs, the `AutonomousHealer` diagnoses the root cause and generates a remediation plan:
 
 ```python
-from nexus.api import create_nexus_app
+from nexus.maintenance import AutonomousHealer
+from nexus.providers.vertex import VertexAIProvider
 
-app = create_nexus_app(title="JobRadar", version="1.0.0")
+healer = AutonomousHealer(provider=VertexAIProvider())
+diagnosis = healer.diagnose_failure(
+    error_message="ZeroDivisionError: division by zero",
+    stack_trace="...",
+    context_snippet="def calc_ratio(a, b): return a / b",
+)
+
+print(diagnosis.root_cause)      # "ZeroDivisionError when denominator b is 0"
+print(diagnosis.suggested_fix)   # "Add `if b == 0: return 0.0` guard check"
 ```
-
-### 3. Asynchronous Database Persistence (`nexus.db`)
-- UUID primary keys and automated UTC `created_at` / `updated_at` timestamps (`NexusEntity`).
-- Asynchronous session management with connection pool pre-pinging.
-
-### 4. Resilient Scraping Engine (`nexus.scraping`)
-- Configurable rate limiting and jitter delays.
-- User-Agent rotation.
-- Exponential backoff on HTTP 429 and 5xx errors.
-
-### 5. Shared Design System (`@nexus/ui`)
-- React + Tailwind components (`StatCard`, `AiBadge`, `MetricTrend`) shared across all domain frontends.
-
-### 6. Infrastructure as Code (`infra/terraform`)
-- Reusable Terraform modules provisioning GCP baseline services, service accounts with `roles/aiplatform.user`, and Secret Manager access.
 
 ---
 
-## CLI Usage
+## 5. AI-Enabled QA: `LLMJudge`
 
-### Verify Gemini 3.8 Connectivity
-```bash
-nexus check-ai --model gemini-3.8-flash --project finhub-510316
-```
+Nexus includes autonomous evaluation to grade agent answers without manual human labeling:
 
-### Scaffold a New Application
-```bash
-nexus new myapp
+```python
+from nexus.qa import LLMJudge
+from nexus.providers.vertex import VertexAIProvider
+
+judge = LLMJudge(provider=VertexAIProvider())
+score = judge.evaluate(
+    task="Calculate the P/E ratio for NVDA given EPS of 4.0 and price of 120",
+    agent_output="The P/E ratio is 30.0.",
+    reference_facts="Price: 120, EPS: 4.0, P/E = 120 / 4 = 30",
+)
+
+print(f"Passed: {score.passed}, Faithfulness: {score.faithfulness_score}")
 ```
-Creates a complete, runnable microservice configured with the Nexus framework, Gemini 3.8 client, FastAPI routes, tests, and Dockerfile.
 
 ---
 
-## Testing
+## Getting Started
 
 ```bash
+git clone https://github.com/sabburi1994/nexus.git
+cd nexus
 pytest tests/
 ```
