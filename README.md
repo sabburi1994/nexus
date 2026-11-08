@@ -75,6 +75,24 @@ Instantly, Claude Code or Cursor gains access to all Nexus tools, allowing you t
 
 ---
 
+## 🖥️ Localhost Visualizer & Agent Observability (`nexus ui`)
+
+Nexus provides a built-in interactive web visualizer to track your agent squad and execution telemetry in real time:
+
+```bash
+# Launch localhost progress visualizer on http://localhost:8000
+nexus ui
+```
+
+### Features:
+- **Visual Squad Pipeline**: Live status indicators for each agent (`Idle`, `Active`, `Done ✓`) as tasks move from BA to Manager, Designer, Engineer, and QA.
+- **Real-Time Telemetry Stream**: Server-Sent Events (SSE) feed displaying thoughts, tool calls, and model reasoning.
+- **Cost & Budget Meter**: Live dollar spend tracking (`total_cost_usd`) updated after every inference turn.
+- **Live Artifact Inspector**: Read generated Product Proposals, preview interactive HTML wireframes, and inspect React/FastAPI code directly in your browser.
+- **Interactive Launcher**: Trigger new squad builds (`Run IT Squad`) directly from the web interface.
+
+---
+
 ## 🚀 Instant Application Creation: `nexus dream`
 
 ```bash

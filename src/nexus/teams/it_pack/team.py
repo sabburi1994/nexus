@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 from pydantic import BaseModel
 
+from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus
 from nexus.providers.base import BaseModelProvider
 from nexus.providers.vertex import VertexAIProvider
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
@@ -47,25 +48,43 @@ class NexusITTeam:
         output_dir: Path | None = None,
     ) -> DeliveredProject:
         """Run the end-to-end squad workflow from idea to tested codebase."""
-        logger.info("1/5: Business Analyst formulating proposal...")
+        # 1. BA
+        event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "Business Analyst", f"Analyzing requirements for: '{raw_user_idea[:60]}...'"))
         proposal = self.ba.analyze_requirements(raw_user_idea)
+        event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "Business Analyst", f"Proposal compiled: {proposal.title}", {"snippet": proposal.tagline}))
+        event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "Business Analyst", f"Delivered {len(proposal.user_stories)} user stories."))
 
-        logger.info("2/5: Engineering Manager breaking down sprint plan...")
+        # 2. Manager
+        event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "Engineering Manager", f"Planning architecture and sprint tasks for {proposal.title}..."))
         plan = self.manager.plan_sprint(proposal)
+        event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "Engineering Manager", f"Architecture plan compiled ({len(plan.tasks)} tasks)", {"snippet": plan.architecture_overview}))
+        event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "Engineering Manager", f"Sprint plan finalized with {len(plan.api_endpoints)} endpoints."))
 
-        logger.info("3/5: UI/UX Designer crafting React component...")
+        # 3. Designer
+        event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "UI/UX Designer", f"Designing interactive React interface for {proposal.title}..."))
         ui = self.designer.design_ui(proposal, plan)
+        event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "UI/UX Designer", f"React component created: {ui.component_name}.tsx", {"snippet": ui.react_code[:120]}))
+        event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "UI/UX Designer", f"UI design finalized with {ui.color_palette} palette."))
 
-        logger.info("4/5: Backend Engineer implementing FastAPI service...")
+        # 4. Backend
+        event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "Backend Engineer", f"Writing FastAPI routes and Nexus models for {proposal.title}..."))
         backend = self.engineer.build_backend(proposal, plan)
+        event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "Backend Engineer", "FastAPI microservice code compiled", {"snippet": backend.entry_point_code[:120]}))
+        event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "Backend Engineer", "REST API & data models ready."))
 
-        logger.info("5/5: QA & Security Engineer generating test suite...")
+        # 5. QA
+        event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "QA & Security Engineer", f"Verifying security guardrails & generating test suite..."))
         qa = self.qa.verify_and_test(proposal, plan)
+        event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "QA & Security Engineer", "Automated pytest suite compiled", {"snippet": qa.test_suite_code[:120]}))
+        event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "QA & Security Engineer", f"Preflight clearance: {'PASSED' if qa.passed_preflight else 'WARN'}"))
 
         saved_path = None
         if output_dir:
             app_dir = output_dir / proposal.app_name
             saved_path = str(self._write_to_disk(app_dir, proposal, plan, ui, backend, qa))
+            event_bus.emit(AgentEvent(EventType.RUN_COMPLETED, "Squad Orchestrator", f"Project delivered to disk at {saved_path}"))
+        else:
+            event_bus.emit(AgentEvent(EventType.RUN_COMPLETED, "Squad Orchestrator", "Project delivery complete."))
 
         return DeliveredProject(
             proposal=proposal,

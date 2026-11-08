@@ -139,6 +139,26 @@ def dream_cmd(idea: str, output_dir: Path) -> None:
     print(f"QA Status: {'PASS' if project.qa.passed_preflight else 'WARN'}")
 
 
+def run_dashboard_cmd(host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True) -> None:
+    """Launch the Nexus Visualizer localhost dashboard."""
+    import uvicorn
+    import webbrowser
+
+    url = f"http://{host}:{port}"
+    print(f"--- Nexus Agent Visualizer Starting ---")
+    print(f"Localhost Dashboard: {url}")
+    print(f"Streaming telemetry: {url}/api/stream")
+    print(f"Press CTRL+C to stop the dashboard.\n")
+
+    if open_browser:
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+
+    uvicorn.run("nexus.dashboard.server:create_dashboard_app", host=host, port=port, factory=True, log_level="info")
+
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -166,6 +186,17 @@ def main() -> None:
     dream_parser.add_argument("idea", help="Raw description of the app you want to build")
     dream_parser.add_argument("--output-dir", default=".", help="Directory where project will be saved")
 
+    # dashboard / ui
+    dash_parser = subparsers.add_parser("dashboard", help="Launch the localhost progress visualizer & tracking dashboard.")
+    dash_parser.add_argument("--port", type=int, default=8000, help="Port to serve dashboard on")
+    dash_parser.add_argument("--host", default="127.0.0.1", help="Host address")
+    dash_parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
+
+    ui_parser = subparsers.add_parser("ui", help="Alias for 'nexus dashboard'.")
+    ui_parser.add_argument("--port", type=int, default=8000, help="Port to serve dashboard on")
+    ui_parser.add_argument("--host", default="127.0.0.1", help="Host address")
+    ui_parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
+
     args = parser.parse_args()
     if args.command == "check-ai":
         sys.exit(check_ai_cmd(model=args.model, project=args.project))
@@ -175,6 +206,8 @@ def main() -> None:
         run_mcp_server()
     elif args.command == "dream":
         dream_cmd(args.idea, Path(args.output_dir))
+    elif args.command in ("dashboard", "ui"):
+        run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)
     else:
         parser.print_help()
 
