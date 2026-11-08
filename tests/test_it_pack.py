@@ -4,10 +4,12 @@ from __future__ import annotations
 from pathlib import Path
 from nexus.providers.mock import MockProvider
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
-from nexus.teams.it_pack.designer import UiDesignerAgent, UiSpecification
-from nexus.teams.it_pack.engineer import BackendEngineerAgent, BackendSpecification
-from nexus.teams.it_pack.manager import EngineeringManagerAgent, EngineeringTask, SprintPlan
-from nexus.teams.it_pack.qa import QaEngineerAgent, QaSpecification
+from nexus.teams.it_pack.data_architect import DataArchitecture
+from nexus.teams.it_pack.designer import UiSpecification
+from nexus.teams.it_pack.devops import DevopsSpecification
+from nexus.teams.it_pack.fullstack import FullStackSpecification
+from nexus.teams.it_pack.qa import QaSpecification
+from nexus.teams.it_pack.solution_architect import SolutionBlueprint
 from nexus.teams.it_pack.team import NexusITTeam
 
 
@@ -31,7 +33,7 @@ def test_business_analyst_agent() -> None:
 
 
 def test_it_team_build_from_idea(tmp_path: Path) -> None:
-    """Verify NexusITTeam coordinates squad and writes project to disk."""
+    """Verify NexusITTeam coordinates 7 specialists and writes project with Terraform."""
     mock_proposal = ProductProposal(
         app_name="watchhub",
         title="WatchHub",
@@ -42,21 +44,37 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
         ui_concept="Dashboard",
         wireframe_preview_html="<div>Mockup</div>",
     )
-    mock_plan = SprintPlan(
-        architecture_overview="FastAPI + PostgreSQL + Gemini 3.8",
-        database_entities=["Watch", "PriceAlert"],
-        api_endpoints=["GET /api/watches - list watches"],
-        tasks=[EngineeringTask(task_id="TASK-1", title="Setup DB", assignee="Backend Engineer", description="Create models")],
-        estimated_tokens_needed=5000,
+    mock_solution = SolutionBlueprint(
+        cloud_provider="gcp",
+        compute_pattern="Cloud Run Serverless",
+        system_topology="React -> Cloud Run FastAPI -> Cloud SQL",
+        non_functional_requirements=["High availability"],
+        integration_services=["Vertex AI", "Secret Manager"],
+    )
+    mock_data = DataArchitecture(
+        database_engine="PostgreSQL 16",
+        tables=["watches", "alerts"],
+        relationships=["watches 1:N alerts"],
+        indexes=["idx_watches_brand"],
+        sql_ddl_schema="CREATE TABLE watches (id UUID PRIMARY KEY, name TEXT);",
     )
     mock_ui = UiSpecification(
         component_name="WatchDashboard",
         color_palette="dark slate",
         react_code="export default function WatchDashboard() { return <div>Watches</div>; }",
     )
-    mock_backend = BackendSpecification(
-        entry_point_code="from fastapi import FastAPI\napp = FastAPI()",
-        models_code="from pydantic import BaseModel\nclass Watch(BaseModel): name: str",
+    mock_fullstack = FullStackSpecification(
+        backend_main_py="from fastapi import FastAPI\napp = FastAPI()",
+        backend_models_py="from pydantic import BaseModel\nclass Watch(BaseModel): name: str",
+        frontend_app_tsx="export default function App() { return <div>App</div>; }",
+        frontend_api_client_ts="export async function getWatches() { return []; }",
+    )
+    mock_devops = DevopsSpecification(
+        cloud_target="gcp",
+        terraform_main_tf="resource \"google_cloud_run_service\" \"api\" {}",
+        terraform_variables_tf="variable \"project_id\" {}",
+        docker_compose_yml="version: '3.8'\nservices:\n  db:\n    image: postgres:16",
+        ci_cd_workflow_yml="name: Deploy\non: [push]",
     )
     mock_qa = QaSpecification(
         test_suite_code="def test_health(): assert True",
@@ -64,17 +82,20 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
         passed_preflight=True,
     )
 
-    # Custom mock provider that cycles mocks
     class ITMockProvider(MockProvider):
         def structured(self, prompt: str, response_model: type, **kwargs):
             if response_model == ProductProposal:
                 return mock_proposal
-            if response_model == SprintPlan:
-                return mock_plan
+            if response_model == SolutionBlueprint:
+                return mock_solution
+            if response_model == DataArchitecture:
+                return mock_data
             if response_model == UiSpecification:
                 return mock_ui
-            if response_model == BackendSpecification:
-                return mock_backend
+            if response_model == FullStackSpecification:
+                return mock_fullstack
+            if response_model == DevopsSpecification:
+                return mock_devops
             if response_model == QaSpecification:
                 return mock_qa
             return super().structured(prompt, response_model, **kwargs)
@@ -83,13 +104,18 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     out_dir = tmp_path / "delivered"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    project = team.build_from_idea("I want a watch tracking app", output_dir=out_dir)
+    project = team.build_from_idea("I want a watch tracking app", target_cloud="gcp", output_dir=out_dir)
 
     assert project.proposal.app_name == "watchhub"
+    assert project.solution.cloud_provider == "gcp"
     assert project.output_path is not None
+
     app_path = Path(project.output_path)
     assert (app_path / "docs" / "PROPOSAL.md").exists()
-    assert (app_path / "docs" / "SPRINT_PLAN.md").exists()
-    assert (app_path / "frontend" / "src" / "WatchDashboard.tsx").exists()
+    assert (app_path / "docs" / "ARCHITECTURE.md").exists()
+    assert (app_path / "docs" / "DATA_ARCHITECTURE.md").exists()
+    assert (app_path / "frontend" / "src" / "App.tsx").exists()
     assert (app_path / "backend" / "src" / "main.py").exists()
     assert (app_path / "backend" / "tests" / "test_api.py").exists()
+    assert (app_path / "infra" / "terraform" / "main.tf").exists()
+    assert (app_path / "docker-compose.yml").exists()

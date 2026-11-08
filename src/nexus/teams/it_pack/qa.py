@@ -4,7 +4,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from nexus.providers.base import BaseModelProvider
 from nexus.teams.it_pack.ba import ProductProposal
-from nexus.teams.it_pack.manager import SprintPlan
+from nexus.teams.it_pack.solution_architect import SolutionBlueprint
 
 
 class QaSpecification(BaseModel):
@@ -16,19 +16,21 @@ class QaSpecification(BaseModel):
 
 class QaEngineerAgent:
     """
-    QA & Security Engineer Agent in the Nexus Core IT Pack.
+    QA & Security Engineer Agent in the Nexus IT Pack.
     Validates specifications, runs preflight security checks, and generates an automated test suite.
     """
 
     def __init__(self, provider: BaseModelProvider) -> None:
         self.provider = provider
 
-    def verify_and_test(self, proposal: ProductProposal, plan: SprintPlan) -> QaSpecification:
+    def verify_and_test(self, proposal: ProductProposal, solution: SolutionBlueprint | None = None) -> QaSpecification:
         """Validate architecture and produce executable pytest test suite."""
+        cloud_target = solution.cloud_provider if solution else "gcp"
         prompt = f"""You are a Lead QA & Security Engineer.
 Review the application spec:
 App: {proposal.title} ({proposal.app_name})
-Endpoints: {', '.join(plan.api_endpoints)}
+Features: {', '.join(proposal.core_features)}
+Cloud Target: {cloud_target}
 
 Generate:
 1. `test_suite_code`: Executable pytest tests using FastAPI TestClient to test the health and primary API routes.

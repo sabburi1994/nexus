@@ -1,9 +1,11 @@
-"""Nexus Core IT Pack: Collaborative squad of autonomous IT agents."""
+"""Nexus Core IT Pack: Collaborative squad of 7 autonomous IT specialists."""
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
+from nexus.teams.it_pack.data_architect import DataArchitectAgent, DataArchitecture
 from nexus.teams.it_pack.designer import UiDesignerAgent, UiSpecification
-from nexus.teams.it_pack.engineer import BackendEngineerAgent, BackendSpecification
-from nexus.teams.it_pack.manager import EngineeringManagerAgent, SprintPlan
+from nexus.teams.it_pack.devops import DevopsEngineerAgent, DevopsSpecification
+from nexus.teams.it_pack.fullstack import FullStackEngineerAgent, FullStackSpecification
 from nexus.teams.it_pack.qa import QaEngineerAgent, QaSpecification
+from nexus.teams.it_pack.solution_architect import SolutionArchitectAgent, SolutionBlueprint
 from nexus.teams.it_pack.team import DeliveredProject, NexusITTeam
 
 __all__ = [
@@ -11,12 +13,16 @@ __all__ = [
     "DeliveredProject",
     "BusinessAnalystAgent",
     "ProductProposal",
-    "EngineeringManagerAgent",
-    "SprintPlan",
+    "SolutionArchitectAgent",
+    "SolutionBlueprint",
+    "DataArchitectAgent",
+    "DataArchitecture",
     "UiDesignerAgent",
     "UiSpecification",
-    "BackendEngineerAgent",
-    "BackendSpecification",
+    "FullStackEngineerAgent",
+    "FullStackSpecification",
+    "DevopsEngineerAgent",
+    "DevopsSpecification",
     "QaEngineerAgent",
     "QaSpecification",
 ]

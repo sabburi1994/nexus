@@ -34,7 +34,7 @@ def test_dashboard_api_endpoints() -> None:
     # Status
     status_resp = client.get("/api/status")
     assert status_resp.status_code == 200
-    assert status_resp.json()["status"] == "online"
+    assert status_resp.json()["status"] in ("online", "listening")
 
     # Events
     events_resp = client.get("/api/events")
@@ -44,5 +44,5 @@ def test_dashboard_api_endpoints() -> None:
     # HTML UI
     ui_resp = client.get("/")
     assert ui_resp.status_code == 200
-    assert "Nexus Agent Visualizer" in ui_resp.text
+    assert "Nexus Squad Visualizer" in ui_resp.text
     assert "EventSource" in ui_resp.text

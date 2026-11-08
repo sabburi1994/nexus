@@ -4,7 +4,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from nexus.providers.base import BaseModelProvider
 from nexus.teams.it_pack.ba import ProductProposal
-from nexus.teams.it_pack.manager import SprintPlan
+from nexus.teams.it_pack.solution_architect import SolutionBlueprint
 
 
 class UiSpecification(BaseModel):
@@ -23,7 +23,7 @@ class UiDesignerAgent:
     def __init__(self, provider: BaseModelProvider) -> None:
         self.provider = provider
 
-    def design_ui(self, proposal: ProductProposal, plan: SprintPlan) -> UiSpecification:
+    def design_ui(self, proposal: ProductProposal, solution: SolutionBlueprint | None = None) -> UiSpecification:
         """Generate working React component code for the application's primary view."""
         prompt = f"""You are a Lead UI/UX Product Designer.
 Design the primary interface for:
@@ -32,8 +32,7 @@ Concept: {proposal.ui_concept}
 Features: {', '.join(proposal.core_features)}
 
 Requirements:
-- Use React with Tailwind CSS.
-- Keep it sleek, modern, dark-themed (slate-900 background, crisp typography).
+- Use React with Tailwind CSS and modern dark slate aesthetic.
 - Include realistic sample data so it can be previewed immediately.
 - Return full valid React component code.
 """

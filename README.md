@@ -14,35 +14,49 @@ Nexus comes pre-packaged with an autonomous IT squad that simulates a real-world
 
 ```mermaid
 flowchart TD
-    User["Creator with an Idea<br/>(Vague Requirements)"] --> BA["Business Analyst Agent<br/>(Proposal + Wireframe HTML Mockup)"]
-    BA --> EM["Engineering Manager Agent<br/>(Sprint Plan + Architecture + Task Breakdown)"]
-    EM --> Design["UI/UX Designer Agent<br/>(Working React + Tailwind Components)"]
-    EM --> Backend["Backend Engineer Agent<br/>(FastAPI Routes + Pydantic + DB Entities)"]
-    Design & Backend --> QA["QA & Security Engineer Agent<br/>(Synthetic Tests + Injection Defense + LLM Judge)"]
-    QA --> Repo["Delivered Application Workspace<br/>(Runnable Project on Disk)"]
+    User["Creator with an Idea<br/>(Vague Requirements)"] --> BA["1. Business Analyst<br/>(User Stories & Scope)"]
+    BA --> SA["2. Solution Architect<br/>(System Topology & Cloud Choice)"]
+    SA --> DA["3. Data Architect<br/>(ERD & SQL Schema)"]
+    DA --> Design["4. UI/UX Designer<br/>(Design Tokens & Wireframe)"]
+    Design & DA --> FS["5. Full-Stack Engineer<br/>(React UI + FastAPI Backend)"]
+    SA & DA --> DevOps["6. DevOps Engineer<br/>(Terraform IaC for target cloud)"]
+    FS & DevOps --> QA["7. QA & Security Engineer<br/>(Preflight Guardrails & Test Suite)"]
+    QA --> Repo["Delivered Application Workspace<br/>(Runnable Full-Stack Project on Disk)"]
 ```
 
 ### 1. Business Analyst (`BusinessAnalystAgent`)
 Takes conversational, incomplete user thoughts and formats them into a crisp **Product Proposal**:
 - Canonical app slug & value proposition tagline.
 - User stories (`As a [user], I want to [action] so that [benefit]`).
-- Core features specification.
-- Generates a standalone interactive HTML/Tailwind wireframe mockup of the primary dashboard view.
+- Core features specification & HTML wireframe preview.
 
-### 2. Engineering Manager (`EngineeringManagerAgent`)
-Reviews the BA's proposal and generates an architectural **Sprint Plan**:
-- Technical architecture (FastAPI, PostgreSQL async, Gemini 3.8).
-- Database entity relationships and REST API endpoints.
-- Decomposed task graph assigned across Designer, Backend, and QA.
-- Estimated token budget.
+### 2. Solution Architect (`SolutionArchitectAgent`)
+Evaluates holistic system design, integration boundaries, and non-functional requirements:
+- Selects the cloud runtime strategy (GCP, AWS, or Local).
+- Defines compute model (Cloud Run serverless container vs VM).
+- Details service communication topology.
 
-### 3. UI/UX Designer (`UiDesignerAgent`)
-Generates working React components styled with Tailwind CSS and the `@nexus/ui` component system.
+### 3. Data Architect (`DataArchitectAgent`)
+Designs the relational and persistence architecture:
+- Normalizes tables, foreign keys, and indexes.
+- Emits clean, production-ready PostgreSQL SQL DDL schemas.
 
-### 4. Backend Engineer (`BackendEngineerAgent`)
-Implements production-ready FastAPI routes, Pydantic validation schemas, and database session bindings.
+### 4. UI/UX Designer (`UiDesignerAgent`)
+Focuses on user journey, design tokens, and interactive mockups styled with Tailwind CSS and `@nexus/ui`.
 
-### 5. QA & Security Engineer (`QaEngineerAgent`)
+### 5. Full-Stack Engineer (`FullStackEngineerAgent`)
+Implements the unified end-to-end codebase:
+- Production-grade FastAPI microservice with Gemini 3.8 client.
+- Pydantic models & SQLAlchemy entity definitions.
+- React frontend consuming the API endpoints.
+
+### 6. DevOps Engineer (`DevopsEngineerAgent`)
+Generates real Infrastructure as Code (IaC) tailored to the architectural need and selected cloud:
+- Complete Terraform `main.tf` and `variables.tf` (e.g. Cloud Run, IAM `roles/aiplatform.user`, Secret Manager).
+- Multi-container `docker-compose.yml` for local development.
+- GitHub Actions CI/CD deployment pipeline.
+
+### 7. QA & Security Engineer (`QaEngineerAgent`)
 Runs pre-flight security checks (injection shields, permission levels) and produces an executable `pytest` test suite.
 
 ---

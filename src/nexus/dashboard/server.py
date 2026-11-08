@@ -1,26 +1,21 @@
-"""Nexus Dashboard: Localhost Visualizer and Agent Observability Server."""
+"""Nexus Dashboard: Pure Observability & Agent Squad Visualizer for External Orchestrators."""
 from __future__ import annotations
 
 import asyncio
 from typing import Any
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
-from pydantic import BaseModel
 
 from nexus import __version__
 from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus
 
 
-class DreamRequest(BaseModel):
-    idea: str
-
-
 def create_dashboard_app() -> FastAPI:
-    """Build the FastAPI localhost visualizer application."""
+    """Build the FastAPI localhost observability visualizer."""
     app = FastAPI(
-        title="Nexus Visualizer",
-        description="Localhost Agent Observability & Tracking Dashboard",
+        title="Nexus Telemetry Visualizer",
+        description="Real-time Observability & Progress Visualizer for External AI Orchestrators",
         version=__version__,
     )
 
@@ -34,13 +29,13 @@ def create_dashboard_app() -> FastAPI:
     @app.get("/api/status")
     async def get_status() -> dict[str, Any]:
         return {
-            "status": "online",
+            "status": "listening",
             "framework_version": __version__,
             "history_count": len(event_bus.get_history(1000)),
         }
 
     @app.get("/api/events")
-    async def get_events(limit: int = 50) -> list[dict[str, Any]]:
+    async def get_events(limit: int = 100) -> list[dict[str, Any]]:
         return event_bus.get_history(limit)
 
     @app.get("/api/stream")
@@ -56,21 +51,9 @@ def create_dashboard_app() -> FastAPI:
             },
         )
 
-    @app.post("/api/dream")
-    async def trigger_dream(req: DreamRequest, background_tasks: BackgroundTasks) -> dict[str, str]:
-        """Trigger an IT squad run in the background while streaming progress."""
-        from nexus.teams.it_pack.team import NexusITTeam
-
-        def run_squad() -> None:
-            team = NexusITTeam()
-            team.build_from_idea(req.idea)
-
-        background_tasks.add_task(run_squad)
-        return {"status": "started", "idea": req.idea}
-
     @app.get("/", response_class=HTMLResponse)
     async def serve_dashboard() -> str:
-        """Serve the standalone dark-mode single-page visualizer."""
+        """Serve the pure observability HUD."""
         return DASHBOARD_HTML
 
     return app
@@ -81,7 +64,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus Agent Visualizer</title>
+  <title>Nexus Agent Squad Visualizer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -98,132 +81,155 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   <style>
     @keyframes pulse-fast {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.05); }
+      50% { opacity: 0.5; transform: scale(1.03); }
     }
     .pulsing { animation: pulse-fast 1.5s infinite; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
-  <!-- Top Navigation -->
-  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500/30">
+  <!-- Top Navigation & Live Telemetry Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
         N
       </div>
       <div>
         <h1 class="text-sm font-semibold tracking-wide text-slate-100 flex items-center gap-2">
-          Nexus Agent Visualizer
-          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Live Observability</span>
+          Nexus Squad Visualizer
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Telemetry HUD</span>
         </h1>
-        <p class="text-xs text-slate-400">Localhost Orchestrator & Progress Tracking</p>
+        <p class="text-xs text-slate-400">Observing Orchestrator: <span class="text-slate-200 font-medium">Claude Code / Cursor / Codex / Gemini</span></p>
       </div>
     </div>
-    <div class="flex items-center gap-4 text-xs">
+    <div class="flex items-center gap-3 text-xs">
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900 border border-slate-800">
         <span id="conn-dot" class="h-2 w-2 rounded-full bg-emerald-400"></span>
-        <span id="conn-text" class="text-slate-300 font-medium">Connected to Stream</span>
+        <span id="conn-text" class="text-slate-300 font-medium">Listening on Localhost</span>
       </div>
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900 border border-slate-800">
-        <span class="text-slate-400">Total Spend:</span>
-        <span id="total-spend" class="font-bold text-emerald-400">$0.000000</span>
+        <span class="text-slate-400">Tokens:</span>
+        <span id="total-tokens" class="font-mono text-slate-200">0</span>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900 border border-slate-800">
+        <span class="text-slate-400">Spend:</span>
+        <span id="total-spend" class="font-bold text-emerald-400 font-mono">$0.000000</span>
       </div>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto p-6 space-y-6">
-    <!-- Action Prompt Header -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Deploy Virtual IT Squad</h2>
-      <div class="flex gap-3">
-        <input id="prompt-input" type="text" placeholder="Enter an app idea... (e.g. 'I want a Tinder for luxury watches with instant price comparison')" 
-          class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-        <button id="btn-deploy" onclick="deploySquad()" 
-          class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
-          <span>🚀 Run IT Squad</span>
-        </button>
+    <!-- Active Session Banner -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-4.5 backdrop-blur flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="h-3 w-3 rounded-full bg-indigo-500 pulsing"></span>
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Current Task Under Orchestration</span>
+          <p id="current-task" class="text-sm text-slate-200 font-medium mt-0.5 italic">Awaiting task delegation from orchestrator...</p>
+        </div>
+      </div>
+      <div id="squad-status-pill" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">
+        Squad Standby
       </div>
     </section>
 
-    <!-- Visual Agent Topology Pipeline -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Agent Squad Topology & Real-Time Progress</h2>
-        <span id="active-agent-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400">Squad Idle</span>
+    <!-- 7-Stage Specialist IT Squad Topology -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur">
+      <div class="flex items-center justify-between mb-3.5">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Squad Execution Topology</h2>
+        <span id="active-agent-label" class="text-xs font-mono text-indigo-400">Ready</span>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
         <!-- 1. BA -->
-        <div id="card-ba" class="p-4 rounded-lg border border-slate-800 bg-slate-950/60 transition">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="font-bold text-indigo-400">1. Business Analyst</span>
-            <span id="status-ba" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+        <div id="card-ba" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-indigo-400">1. BA</span>
+            <span id="status-ba" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
           </div>
-          <p class="text-xs text-slate-400">Extracts user stories, features & HTML wireframe.</p>
+          <p class="text-[11px] text-slate-400">User Stories & Scope</p>
         </div>
 
-        <!-- 2. Manager -->
-        <div id="card-manager" class="p-4 rounded-lg border border-slate-800 bg-slate-950/60 transition">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="font-bold text-blue-400">2. Engineering Mgr</span>
-            <span id="status-manager" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+        <!-- 2. Solution Architect -->
+        <div id="card-solution_architect" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-sky-400">2. Solution Arch</span>
+            <span id="status-solution_architect" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
           </div>
-          <p class="text-xs text-slate-400">Architecture, DB schema & task breakdown.</p>
+          <p class="text-[11px] text-slate-400">System Topology & Cloud</p>
         </div>
 
-        <!-- 3. Designer -->
-        <div id="card-designer" class="p-4 rounded-lg border border-slate-800 bg-slate-950/60 transition">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="font-bold text-teal-400">3. UI/UX Designer</span>
-            <span id="status-designer" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+        <!-- 3. Data Architect -->
+        <div id="card-data_architect" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-cyan-400">3. Data Arch</span>
+            <span id="status-data_architect" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
           </div>
-          <p class="text-xs text-slate-400">React + Tailwind component code.</p>
+          <p class="text-[11px] text-slate-400">ERD & SQL Schema</p>
         </div>
 
-        <!-- 4. Engineer -->
-        <div id="card-engineer" class="p-4 rounded-lg border border-slate-800 bg-slate-950/60 transition">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="font-bold text-emerald-400">4. Backend Eng</span>
-            <span id="status-engineer" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+        <!-- 4. UI/UX Designer -->
+        <div id="card-ui_designer" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-teal-400">4. UI/UX</span>
+            <span id="status-ui_designer" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
           </div>
-          <p class="text-xs text-slate-400">FastAPI microservice & Pydantic models.</p>
+          <p class="text-[11px] text-slate-400">Tokens & Wireframe</p>
         </div>
 
-        <!-- 5. QA -->
-        <div id="card-qa" class="p-4 rounded-lg border border-slate-800 bg-slate-950/60 transition">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="font-bold text-amber-400">5. QA & Security</span>
-            <span id="status-qa" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+        <!-- 5. Full-Stack Engineer -->
+        <div id="card-fullstack" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-emerald-400">5. Full-Stack</span>
+            <span id="status-fullstack" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
           </div>
-          <p class="text-xs text-slate-400">Preflight check & automated pytest suite.</p>
+          <p class="text-[11px] text-slate-400">React + FastAPI Code</p>
+        </div>
+
+        <!-- 6. DevOps Engineer -->
+        <div id="card-devops" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-purple-400">6. DevOps</span>
+            <span id="status-devops" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Terraform IaC & CI/CD</p>
+        </div>
+
+        <!-- 7. QA & Security -->
+        <div id="card-qa" class="p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-bold text-amber-400">7. QA & Sec</span>
+            <span id="status-qa" class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Preflight & Tests</p>
         </div>
       </div>
     </section>
 
-    <!-- Split Screen: Event Telemetry Stream & Artifacts Preview -->
+    <!-- Split Screen: Live Execution Trace & Delivered Artifacts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Live Terminal Event Stream -->
-      <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur flex flex-col h-[460px]">
+      <!-- Live Orchestrator Telemetry Feed -->
+      <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur flex flex-col h-[500px]">
         <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
           <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <span class="h-2 w-2 rounded-full bg-emerald-400 pulsing"></span> Live Telemetry Feed
+            <span class="h-2 w-2 rounded-full bg-emerald-400 pulsing"></span> Real-Time Orchestrator Stream
           </h2>
           <button onclick="clearLogs()" class="text-xs text-slate-500 hover:text-slate-300">Clear</button>
         </div>
         <div id="log-container" class="flex-1 overflow-y-auto font-mono text-xs space-y-2 pr-2 text-slate-300">
-          <div class="text-slate-500">[System] Visualizer connected. Ready to stream agent execution.</div>
+          <div class="text-slate-500">[System] Visualizer HUD connected. Listening to orchestrator events...</div>
         </div>
       </section>
 
       <!-- Live Generated Artifacts Inspector -->
-      <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur flex flex-col h-[460px]">
+      <section class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 backdrop-blur flex flex-col h-[500px]">
         <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Artifacts & Specifications</h2>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Artifacts & Code Output</h2>
           <span id="artifact-count" class="text-xs font-mono text-slate-400">0 artifacts</span>
         </div>
         <div id="artifact-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
-          <div class="text-center py-16 text-slate-500 text-xs">
-            Run an IT Squad task to inspect generated Proposals, Wireframes, and Code live.
+          <div class="text-center py-20 text-slate-500 text-xs">
+            Awaiting artifacts from the active orchestrator workflow...
           </div>
         </div>
       </section>
@@ -232,6 +238,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
   <script>
     let accumulatedSpend = 0.0;
+    let accumulatedTokens = 0;
     let artifactCounter = 0;
 
     function appendLog(event) {
@@ -245,13 +252,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       logContainer.appendChild(row);
       logContainer.scrollTop = logContainer.scrollHeight;
 
-      // Update Agent Cards
-      updateAgentCard(event);
+      // Update Task Banner if start of run
+      if (event.event_type === 'agent_started' && event.message.includes('Analyzing requirements')) {
+        document.getElementById('current-task').textContent = event.message.replace('Analyzing requirements for: ', '').replace('...', '');
+        document.getElementById('squad-status-pill').textContent = 'Squad In Progress';
+        document.getElementById('squad-status-pill').className = 'text-xs px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold';
+      }
 
-      // Track Cost
+      // Update Squad Cards
+      updateSquadCard(event);
+
+      // Track Cost & Tokens
       if (event.data && event.data.cost_usd) {
         accumulatedSpend += parseFloat(event.data.cost_usd);
         document.getElementById('total-spend').textContent = '$' + accumulatedSpend.toFixed(6);
+      }
+      if (event.data && event.data.tokens) {
+        accumulatedTokens += parseInt(event.data.tokens);
+        document.getElementById('total-tokens').textContent = accumulatedTokens.toLocaleString();
       }
 
       // Track Artifacts
@@ -260,32 +278,40 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         document.getElementById('artifact-count').textContent = artifactCounter + ' artifacts';
         addArtifactCard(event);
       }
+
+      if (event.event_type === 'run_completed') {
+        document.getElementById('squad-status-pill').textContent = 'Delivery Complete ✓';
+        document.getElementById('squad-status-pill').className = 'text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold';
+      }
     }
 
-    function updateAgentCard(event) {
+    function updateSquadCard(event) {
       const name = (event.agent_name || '').toLowerCase();
       let key = '';
       if (name.includes('analyst') || name.includes('ba')) key = 'ba';
-      else if (name.includes('manager')) key = 'manager';
-      else if (name.includes('designer')) key = 'designer';
-      else if (name.includes('engineer') || name.includes('backend')) key = 'engineer';
+      else if (name.includes('solution')) key = 'solution_architect';
+      else if (name.includes('data')) key = 'data_architect';
+      else if (name.includes('designer') || name.includes('ui')) key = 'ui_designer';
+      else if (name.includes('fullstack') || name.includes('full-stack') || name.includes('engineer')) key = 'fullstack';
+      else if (name.includes('devops')) key = 'devops';
       else if (name.includes('qa')) key = 'qa';
 
       if (!key) return;
 
       const card = document.getElementById('card-' + key);
       const badge = document.getElementById('status-' + key);
-      const topBadge = document.getElementById('active-agent-badge');
+      const topLabel = document.getElementById('active-agent-label');
+
+      if (!card || !badge) return;
 
       if (event.event_type === 'agent_started') {
-        card.className = 'p-4 rounded-lg border border-indigo-500 bg-indigo-950/20 shadow-lg shadow-indigo-500/10 transition';
-        badge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold pulsing';
+        card.className = 'p-3 rounded-lg border border-indigo-500 bg-indigo-950/30 shadow-md shadow-indigo-500/10 transition';
+        badge.className = 'text-[9px] px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold pulsing';
         badge.textContent = 'Active';
-        topBadge.textContent = 'Active: ' + event.agent_name;
-        topBadge.className = 'text-xs px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 font-semibold';
+        topLabel.textContent = event.agent_name + ' running...';
       } else if (event.event_type === 'step_completed') {
-        card.className = 'p-4 rounded-lg border border-emerald-500/40 bg-emerald-950/10 transition';
-        badge.className = 'text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold';
+        card.className = 'p-3 rounded-lg border border-emerald-500/40 bg-emerald-950/10 transition';
+        badge.className = 'text-[9px] px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold';
         badge.textContent = 'Done ✓';
       }
     }
@@ -295,13 +321,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       if (artifactCounter === 1) container.innerHTML = '';
 
       const card = document.createElement('div');
-      card.className = 'p-3.5 rounded-lg border border-slate-800 bg-slate-950/80 text-xs space-y-1.5';
+      card.className = 'p-3 rounded-lg border border-slate-800 bg-slate-950/80 text-xs space-y-1.5 transition hover:border-slate-700';
       card.innerHTML = `
         <div class="flex items-center justify-between font-semibold text-slate-200">
           <span>${event.message}</span>
           <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">${event.agent_name}</span>
         </div>
-        <p class="text-slate-400 line-clamp-3 font-mono">${event.data && event.data.snippet ? event.data.snippet : 'Artifact compiled and verified.'}</p>
+        <p class="text-slate-400 line-clamp-3 font-mono text-[11px] bg-slate-900/60 p-2 rounded border border-slate-800/80">${event.data && event.data.snippet ? event.data.snippet : 'Artifact compiled and verified.'}</p>
       `;
       container.appendChild(card);
     }
@@ -319,39 +345,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     function getTextColor(agent) {
       const a = (agent || '').toLowerCase();
       if (a.includes('analyst')) return 'text-indigo-400';
-      if (a.includes('manager')) return 'text-blue-400';
-      if (a.includes('designer')) return 'text-teal-400';
-      if (a.includes('engineer')) return 'text-emerald-400';
+      if (a.includes('solution')) return 'text-sky-400';
+      if (a.includes('data')) return 'text-cyan-400';
+      if (a.includes('designer') || a.includes('ui')) return 'text-teal-400';
+      if (a.includes('fullstack') || a.includes('full-stack')) return 'text-emerald-400';
+      if (a.includes('devops')) return 'text-purple-400';
       if (a.includes('qa')) return 'text-amber-400';
       return 'text-slate-400';
     }
 
     function clearLogs() {
       document.getElementById('log-container').innerHTML = '';
-    }
-
-    async function deploySquad() {
-      const input = document.getElementById('prompt-input');
-      const val = input.value.trim();
-      if (!val) return;
-
-      appendLog({
-        event_type: 'agent_started',
-        agent_name: 'Squad Orchestrator',
-        message: 'Squad commissioned for task: ' + val,
-        timestamp: new Date().toISOString()
-      });
-
-      try {
-        await fetch('/api/dream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idea: val })
-        });
-        input.value = '';
-      } catch (err) {
-        console.error('Failed to trigger squad:', err);
-      }
     }
 
     // Connect to SSE Stream
