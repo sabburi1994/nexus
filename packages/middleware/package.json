@@ -1,0 +1,10 @@
+{
+  "name": "@nexus/middleware",
+  "version": "1.0.0",
+  "description": "Cross-framework middleware for security headers, zero-leak credential scrubbing, and rate-limiting",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "keywords": ["nexus", "middleware", "security", "telemetry"],
+  "author": "Antigravity & sabburi1994",
+  "license": "Apache-2.0"
+}

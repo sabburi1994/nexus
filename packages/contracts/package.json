@@ -1,0 +1,13 @@
+{
+  "name": "@nexus/contracts",
+  "version": "1.0.0",
+  "description": "Shared agentic schemas, telemetry contracts, and execution protocols for Nexus apps",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["nexus", "contracts", "schemas", "agents"],
+  "author": "Antigravity & sabburi1994",
+  "license": "Apache-2.0"
+}
