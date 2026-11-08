@@ -1,0 +1,25 @@
+{
+  "name": "nexus-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nexus Platform: Autonomous Agentic Application Framework and Reusable Monorepo Packages",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint"
+  },
+  "keywords": [
+    "nexus",
+    "ai-framework",
+    "monorepo",
+    "vertex-ai",
+    "gemini-3.8-flash",
+    "autonomous-agents",
+    "mcp"
+  ],
+  "author": "Antigravity & sabburi1994",
+  "license": "Apache-2.0"
+}

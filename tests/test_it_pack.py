@@ -115,6 +115,7 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     assert (app_path / "docs" / "ARCHITECTURE.md").exists()
     assert (app_path / "docs" / "DATA_ARCHITECTURE.md").exists()
     assert (app_path / "frontend" / "src" / "App.tsx").exists()
+    assert (app_path / "frontend" / "package.json").exists()
     assert (app_path / "backend" / "src" / "main.py").exists()
     assert (app_path / "backend" / "tests" / "test_api.py").exists()
     assert (app_path / "infra" / "terraform" / "main.tf").exists()

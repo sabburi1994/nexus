@@ -153,6 +153,32 @@ class NexusITTeam:
         # 2. Frontend
         (frontend_dir / "App.tsx").write_text(fullstack.frontend_app_tsx, encoding="utf-8")
         (frontend_dir / "api.ts").write_text(fullstack.frontend_api_client_ts, encoding="utf-8")
+        frontend_pkg = f"""{{
+  "name": "{proposal.app_name}-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {{
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  }},
+  "dependencies": {{
+    "@nexus/ui": "workspace:*",
+    "@nexus/contracts": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }},
+  "devDependencies": {{
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1"
+  }}
+}}
+"""
+        (app_dir / "frontend" / "package.json").write_text(frontend_pkg, encoding="utf-8")
 
         # 3. Backend
         (backend_dir / "main.py").write_text(fullstack.backend_main_py, encoding="utf-8")
