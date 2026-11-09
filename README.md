@@ -8,6 +8,14 @@ Nexus bridges the gap between raw ideas and production code. It serves two disti
 
 ---
 
+## 🚀 Quickstart & Installation
+
+```bash
+pip install nexus-agent-framework
+```
+
+---
+
 ## 🏛️ The Nexus Core IT Pack
 
 Nexus comes pre-packaged with an autonomous IT squad that simulates a real-world software engineering organization:

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nexus-framework"
+name = "nexus-agent-framework"
 version = "0.1.0"
 description = "Autonomous Application & Platform Framework for Google Cloud and Gemini 3.8"
 readme = "README.md"
