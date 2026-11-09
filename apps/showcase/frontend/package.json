@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nexus/ui": "*",
     "@nexus/contracts": "*",
+    "@nexus/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -19,6 +19,6 @@
     "@types/react-dom": "^18.3.0",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
-    "vite": "^5.3.1"
+    "vite": "^8.3.7"
   }
 }
