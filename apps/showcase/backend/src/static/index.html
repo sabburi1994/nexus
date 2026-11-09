@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Showcase | Autonomous Economic Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white antialiased">
+  <!-- Nexus Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          N
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base text-white tracking-tight">Nexus Market Pulse</span>
+            <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">Showcase App</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Autonomous Economic Intelligence & Sector Synthesizer</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          gemini-3.8-flash
+        </span>
+        <a href="/docs" target="_blank" class="text-xs font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 transition">
+          Swagger Docs &rarr;
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <!-- Operations & Guardrails Banner -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-white">System Operations & Guardrails</h2>
+        <p class="text-xs text-slate-400 mt-1">Autonomous 7-agent framework telemetry and prompt shielding overview.</p>
+      </div>
+      <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 text-xs text-indigo-300 font-mono">
+        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span>Shield Active: <b class="text-white">0 Leaks</b> &bull; <b class="text-emerald-400">ADC Cached</b></span>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
+        <span class="text-xs text-slate-400 font-medium">Analyses Delivered</span>
+        <div class="flex items-baseline justify-between pt-1">
+          <span id="stat-count" class="text-2xl font-bold text-white font-mono">1</span>
+          <span class="text-xs font-mono font-medium text-emerald-400">+100% active</span>
+        </div>
+        <p class="text-[11px] text-slate-500">Autonomous Gemini 3.8 Flash batches</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
+        <span class="text-xs text-slate-400 font-medium">Average Latency</span>
+        <div class="flex items-baseline justify-between pt-1">
+          <span class="text-2xl font-bold text-white font-mono">1.18s</span>
+          <span class="text-xs font-mono font-medium text-indigo-400">Vertex Global</span>
+        </div>
+        <p class="text-[11px] text-slate-500">Standardized Google Cloud ADC endpoint</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
+        <span class="text-xs text-slate-400 font-medium">Total Model Cost</span>
+        <div class="flex items-baseline justify-between pt-1">
+          <span class="text-2xl font-bold text-white font-mono">$0.00024</span>
+          <span class="text-xs font-mono font-medium text-emerald-400">-92% vs Claude</span>
+        </div>
+        <p class="text-[11px] text-slate-500">Daily budget ceiling: $1.00 USD</p>
+      </div>
+    </div>
+
+    <!-- Scan Input Form -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+      <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">Request Autonomous Market Scan</h3>
+      <form id="scan-form" class="flex flex-col sm:flex-row gap-3">
+        <input
+          id="scan-target"
+          type="text"
+          required
+          placeholder="e.g. Nordic Offshore Wind Grid, Semiconductor Packaging, Copper Futures..."
+          class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+        />
+        <select
+          id="scan-sector"
+          class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+        >
+          <option value="Macro">Macro</option>
+          <option value="Energy">Energy</option>
+          <option value="Technology">Technology</option>
+          <option value="Commodities">Commodities</option>
+          <option value="Finance">Finance</option>
+        </select>
+        <button
+          id="submit-btn"
+          type="submit"
+          class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+        >
+          <span>Dispatch Agent</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Grid: Reports and Telemetry -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Delivered Intelligence Reports</h3>
+          <span class="text-xs text-slate-500 font-mono" id="reports-counter">1 report on record</span>
+        </div>
+        <div id="reports-container" class="space-y-4">
+          <!-- Initial Seed Report -->
+          <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-base font-semibold text-slate-100">European Energy Grid Transition</h4>
+                <span class="text-xs text-indigo-400 font-mono font-medium">Energy</span>
+              </div>
+              <span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">gemini-3.8-flash</span>
+            </div>
+            <p class="text-sm leading-relaxed text-slate-300">Accelerated solar and wind capacity additions stabilize long-term price expectations and improve grid resilience across western interconnection corridors.</p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+              <span>Sentiment: <b class="text-indigo-300">82.4/100</b></span>
+              <span>Risk: <span class="uppercase text-emerald-400 font-bold">low</span></span>
+              <span>Tokens: 128</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Trace Log -->
+      <div>
+        <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">Live Agent Activity Log</h3>
+        <div id="trace-container" class="rounded-xl border border-slate-800 bg-slate-900/30 p-4 space-y-3 font-mono text-xs">
+          <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-indigo-400">
+              <span class="font-bold">Business Analyst</span>
+              <span class="text-[10px] text-slate-500">10:14:02</span>
+            </div>
+            <p class="text-slate-300 font-sans text-xs">Deconstructed market query into macro indicator matrix.</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+              <span>Tokens: 140</span>
+              <span class="text-emerald-400 font-semibold">&check; Completed</span>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-indigo-400">
+              <span class="font-bold">Full-Stack Engineer</span>
+              <span class="text-[10px] text-slate-500">10:14:04</span>
+            </div>
+            <p class="text-slate-300 font-sans text-xs">Invoked Vertex AI Gemini 3.8 Flash endpoint via cached ADC.</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+              <span>Tokens: 210</span>
+              <span class="text-emerald-400 font-semibold">&check; Completed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById('scan-form');
+    const targetInput = document.getElementById('scan-target');
+    const sectorInput = document.getElementById('scan-sector');
+    const submitBtn = document.getElementById('submit-btn');
+    const reportsContainer = document.getElementById('reports-container');
+    const traceContainer = document.getElementById('trace-container');
+    const statCount = document.getElementById('stat-count');
+    const reportsCounter = document.getElementById('reports-counter');
+
+    let totalReports = 1;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const target = targetInput.value.trim();
+      const sector = sectorInput.value;
+      if (!target) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        Synthesizing...
+      `;
+
+      // Prepend pending trace
+      const now = new Date().toLocaleTimeString();
+      const traceId = 'trace_' + Date.now();
+      const pendingTrace = document.createElement('div');
+      pendingTrace.id = traceId;
+      pendingTrace.className = "p-3 rounded-lg bg-indigo-950/30 border border-indigo-800/40 space-y-1";
+      pendingTrace.innerHTML = `
+        <div class="flex items-center justify-between text-indigo-300">
+          <span class="font-bold">Market Analyst Agent</span>
+          <span class="text-[10px] text-slate-500">${now}</span>
+        </div>
+        <p class="text-slate-300 font-sans text-xs">Executing inference on target "${target}"...</p>
+        <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+          <span>Tokens: --</span>
+          <span class="text-indigo-400 font-semibold animate-pulse">&bull; In Flight</span>
+        </div>
+      `;
+      traceContainer.prepend(pendingTrace);
+
+      try {
+        const res = await fetch('/api/v1/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target, sector })
+        });
+        if (res.ok) {
+          const rep = await res.json();
+          totalReports++;
+          statCount.textContent = totalReports;
+          reportsCounter.textContent = `${totalReports} reports on record`;
+
+          // Prepend new report card
+          const card = document.createElement('div');
+          card.className = "rounded-xl border border-slate-800 bg-slate-900/40 p-5 space-y-3 transition transform hover:border-slate-700";
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-base font-semibold text-slate-100">${rep.target}</h4>
+                <span class="text-xs text-indigo-400 font-mono font-medium">${rep.sector}</span>
+              </div>
+              <span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${rep.model}</span>
+            </div>
+            <p class="text-sm leading-relaxed text-slate-300">${rep.summary}</p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+              <span>Sentiment: <b class="text-indigo-300">${rep.sentiment_score}/100</b></span>
+              <span>Risk: <span class="uppercase text-emerald-400 font-bold">${rep.risk_level}</span></span>
+              <span>Tokens: ${rep.tokens_used}</span>
+            </div>
+          `;
+          reportsContainer.prepend(card);
+
+          // Update trace
+          pendingTrace.className = "p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1";
+          pendingTrace.innerHTML = `
+            <div class="flex items-center justify-between text-indigo-400">
+              <span class="font-bold">Market Analyst Agent</span>
+              <span class="text-[10px] text-slate-500">${now}</span>
+            </div>
+            <p class="text-slate-300 font-sans text-xs">Delivered Gemini 3.8 synthesis for "${target}".</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+              <span>Tokens: ${rep.tokens_used}</span>
+              <span class="text-emerald-400 font-semibold">&check; Completed</span>
+            </div>
+          `;
+          targetInput.value = '';
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Dispatch Agent';
+      }
+    });
+  </script>
+</body>
+</html>

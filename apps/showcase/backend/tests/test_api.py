@@ -15,6 +15,12 @@ def test_health_check() -> None:
     assert "Nexus Showcase API" in data["app"]
 
 
+def test_static_ui() -> None:
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "Nexus Market Pulse" in resp.text
+
+
 def test_scan_and_list_reports() -> None:
     # 1. Trigger scan
     payload = {"target": "Semiconductor Supply Chain", "sector": "Technology"}
