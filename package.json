@@ -4,7 +4,9 @@
   "private": true,
   "description": "Nexus Platform: Autonomous Agentic Application Framework and Reusable Monorepo Packages",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*",
+    "apps/*/frontend"
   ],
   "scripts": {
     "build": "turbo run build",

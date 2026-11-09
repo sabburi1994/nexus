@@ -32,6 +32,10 @@ jobs:
         run: |
           pytest -o pythonpath=src tests/
 
+      - name: Run Showcase App Tests
+        run: |
+          cd apps/showcase/backend && pytest tests/
+
       - name: Validate Package Build (sdist & wheel)
         run: |
           python -m build
@@ -60,3 +64,6 @@ jobs:
 
       - name: Compile @nexus/scraper
         run: npx tsc -p packages/scraper
+
+      - name: Compile @nexus/ui
+        run: npx tsc -p packages/ui
