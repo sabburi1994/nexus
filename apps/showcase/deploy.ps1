@@ -24,6 +24,7 @@ gcloud run deploy $Service `
     --source $backendDir `
     --project $ProjectId `
     --region $Region `
+    --port 8080 `
     --allow-unauthenticated `
     --quiet `
     --set-env-vars "GCP_PROJECT_ID=$ProjectId,GEMINI_MODEL=gemini-3.8-flash"
