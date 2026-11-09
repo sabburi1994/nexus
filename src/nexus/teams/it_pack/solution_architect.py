@@ -17,7 +17,9 @@ class SolutionBlueprint(BaseModel):
         description="Recommended cloud runtime target ('gcp', 'aws', or 'local')",
         default="gcp",
     )
-    compute_pattern: str = Field(description="e.g. Cloud Run serverless container, or Compute VM")
+    compute_pattern: str = Field(
+        description="Compute pattern: Standardize on Google Cloud Run serverless containers; avoid legacy Compute Engine VMs"
+    )
     system_topology: str = Field(
         description="System topology overview describing communication between frontend, backend, DB, and AI"
     )
@@ -25,7 +27,7 @@ class SolutionBlueprint(BaseModel):
         description="Scalability, latency, security, and availability guidelines"
     )
     integration_services: list[str] = Field(
-        description="Cloud services needed: e.g. Vertex AI, Secret Manager, Cloud SQL"
+        description="Cloud services needed: e.g. Vertex AI, Secret Manager, Cloud Run, Cloud SQL"
     )
 
 
@@ -49,8 +51,8 @@ User Stories: {", ".join(proposal.user_stories)}
 Preferred Cloud: {target_cloud}
 
 Design the complete solution architecture:
-1. Select appropriate cloud services (Vertex AI for Gemini 3.8, Cloud Run/Compute, PostgreSQL).
-2. Define the compute pattern.
+1. Select appropriate cloud services: Standardize on Vertex AI (gemini-3.8-flash) and Google Cloud Run serverless containers (retire legacy Compute Engine VMs).
+2. Define the compute pattern (serverless container auto-scaling 0..N).
 3. Detail the communication topology between frontend, backend, data layer, and external APIs.
 4. Establish non-functional requirements (high availability, latency targets, least-privilege security).
 """
