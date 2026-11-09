@@ -11,11 +11,15 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class NexusTelemetryMiddleware(BaseHTTPMiddleware):
-    """Injects X-Request-ID and X-Process-Time headers on every response."""
+    """Injects telemetry, timing, and Nexus correlation headers on every response."""
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         start_time = time.perf_counter()
-        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        request_id = (
+            request.headers.get("X-Request-ID")
+            or request.headers.get("X-Nexus-Correlation-ID")
+            or f"nex-{uuid.uuid4().hex[:12]}"
+        )
 
         request.state.request_id = request_id
 
@@ -23,5 +27,7 @@ class NexusTelemetryMiddleware(BaseHTTPMiddleware):
 
         duration = time.perf_counter() - start_time
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Nexus-Correlation-ID"] = request_id
+        response.headers["X-Nexus-Framework-Version"] = "0.1.0"
         response.headers["X-Process-Time"] = f"{duration * 1000.0:.2f}ms"
         return response
