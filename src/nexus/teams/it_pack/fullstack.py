@@ -43,9 +43,16 @@ UI Style: {ui_spec.color_palette}
 
 Generate:
 1. `backend_main_py`: Production-grade FastAPI app using `from nexus.api import create_nexus_app` and `from nexus.ai import GeminiClient`.
-2. `backend_models_py`: Pydantic input/output schemas and SQLAlchemy entities.
+2. `backend_models_py`: Pydantic input/output schemas and SQLAlchemy entities. (Entities inherit directly from `NexusEntity`, e.g. `class User(NexusEntity):` without also listing `Base`).
 3. `frontend_app_tsx`: Modern React + Tailwind interface consuming the API endpoints.
 4. `frontend_api_client_ts`: Clean TypeScript fetch helper with type definitions.
+
+CRITICAL SYNTAX INSTRUCTIONS:
+- Ensure all Python files compile cleanly under `ast.parse()`.
+- Never put literal JSON templates or curly braces inside an f-string unless escaped as `{{` and `}}`. Prefer raw multi-line strings (r'''...''') or regular non-f strings for LLM prompt templates to prevent Python SyntaxError.
 """
-        system = "You are a pragmatic, master Full-Stack Engineer writing clean, production-grade Python and TypeScript."
+        system = (
+            "You are a pragmatic, master Full-Stack Engineer writing clean, production-grade Python and TypeScript. "
+            "You strictly ensure Python syntax validity and never create broken f-strings with unescaped curly braces."
+        )
         return self.provider.structured(prompt, FullStackSpecification, system_instruction=system)

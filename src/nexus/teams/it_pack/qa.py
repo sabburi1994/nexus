@@ -4,6 +4,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from nexus.providers.base import BaseModelProvider
 from nexus.teams.it_pack.ba import ProductProposal
+from nexus.teams.it_pack.fullstack import FullStackSpecification
 from nexus.teams.it_pack.solution_architect import SolutionBlueprint
 
 
@@ -23,17 +24,28 @@ class QaEngineerAgent:
     def __init__(self, provider: BaseModelProvider) -> None:
         self.provider = provider
 
-    def verify_and_test(self, proposal: ProductProposal, solution: SolutionBlueprint | None = None) -> QaSpecification:
-        """Validate architecture and produce executable pytest test suite."""
+    def verify_and_test(
+        self,
+        proposal: ProductProposal,
+        solution: SolutionBlueprint | None = None,
+        fullstack: FullStackSpecification | None = None,
+    ) -> QaSpecification:
+        """Validate architecture and produce executable pytest test suite against the implemented backend code."""
         cloud_target = solution.cloud_provider if solution else "gcp"
+        backend_snippet = fullstack.backend_main_py[:3500] if fullstack else "# No backend code supplied"
         prompt = f"""You are a Lead QA & Security Engineer.
-Review the application spec:
+Review the application spec and actual implemented backend code:
 App: {proposal.title} ({proposal.app_name})
 Features: {', '.join(proposal.core_features)}
 Cloud Target: {cloud_target}
 
+Implemented Backend Code (`src/main.py`):
+```python
+{backend_snippet}
+```
+
 Generate:
-1. `test_suite_code`: Executable pytest tests using FastAPI TestClient to test the health and primary API routes.
+1. `test_suite_code`: Executable pytest tests using FastAPI TestClient (`from main import app`) to test `/health` and the ACTUAL endpoints implemented in `src/main.py`. Do NOT import imaginary modules (like `services`). Only test routes that are actually defined in `main.py`. Note that `/health` returns `{{"status": "ok", "healthy": True}}`.
 2. `security_verdict`: Confirmation that prompt injection shields and permission scopes are validated.
 3. `passed_preflight`: Set True if ready for release.
 """

@@ -134,9 +134,11 @@ def dream_cmd(idea: str, output_dir: Path) -> None:
     print(f"App: {project.proposal.title} ({project.proposal.app_name})")
     print(f"Tagline: {project.proposal.tagline}")
     print(f"Output Directory: {project.output_path}")
-    print(f"Tasks: {len(project.sprint_plan.tasks)} sprint tasks defined")
+    print(f"Stories: {len(project.proposal.user_stories)} user stories defined")
+    print(f"Cloud Target: {project.solution.cloud_provider.upper()} ({project.solution.compute_pattern})")
+    print(f"Data Schema: {project.data_architecture.database_engine} ({len(project.data_architecture.tables)} tables)")
     print(f"UI Component: {project.ui.component_name}.tsx")
-    print(f"QA Status: {'PASS' if project.qa.passed_preflight else 'WARN'}")
+    print(f"QA Preflight: {'PASS' if project.qa.passed_preflight else 'WARN'}")
 
 
 def run_dashboard_cmd(host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True) -> None:
@@ -214,3 +216,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+app = main
+

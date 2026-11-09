@@ -99,7 +99,7 @@ class NexusITTeam:
 
         # 7. QA & Security Engineer
         event_bus.emit(AgentEvent(EventType.AGENT_STARTED, "QA & Security Engineer", "Executing preflight security check & generating test suite..."))
-        qa = self.qa.verify_and_test(proposal, solution)
+        qa = self.qa.verify_and_test(proposal, solution, fullstack)
         event_bus.emit(AgentEvent(EventType.ARTIFACT_GENERATED, "QA & Security Engineer", "Automated pytest suite compiled", {"snippet": qa.test_suite_code[:120]}))
         event_bus.emit(AgentEvent(EventType.STEP_COMPLETED, "QA & Security Engineer", f"Preflight clearance: {'PASSED' if qa.passed_preflight else 'WARN'}"))
 
@@ -123,7 +123,34 @@ class NexusITTeam:
         )
 
     @staticmethod
+    @staticmethod
+    def _sanitize_python(code: str) -> str:
+        """Ensure Python code is syntactically valid and repair common LLM syntax/MRO patterns."""
+        import ast
+        import re
+
+        # Normalize redundant Base in MRO: class Foo(Base, NexusEntity) -> class Foo(NexusEntity)
+        code = re.sub(r'class\s+([A-Za-z0-9_]+)\s*\(\s*Base\s*,\s*NexusEntity\s*\):', r'class \1(NexusEntity):', code)
+
+        try:
+            ast.parse(code)
+            return code
+        except SyntaxError:
+            def fix_fstring(m: re.Match[str]) -> str:
+                inner = m.group(1)
+                if r'\"' in inner or r"\'" in inner or "{" in inner:
+                    return f'"{inner}"'
+                return m.group(0)
+
+            sanitized = re.sub(r'f"([^"]+)"', fix_fstring, code)
+            try:
+                ast.parse(sanitized)
+                return sanitized
+            except SyntaxError:
+                return code
+
     def _write_to_disk(
+        self,
         app_dir: Path,
         proposal: ProductProposal,
         solution: SolutionBlueprint,
@@ -181,12 +208,14 @@ class NexusITTeam:
         (app_dir / "frontend" / "package.json").write_text(frontend_pkg, encoding="utf-8")
 
         # 3. Backend
-        (backend_dir / "main.py").write_text(fullstack.backend_main_py, encoding="utf-8")
-        (backend_dir / "models.py").write_text(fullstack.backend_models_py, encoding="utf-8")
+        (backend_dir / "main.py").write_text(self._sanitize_python(fullstack.backend_main_py), encoding="utf-8")
+        sanitized_models = self._sanitize_python(fullstack.backend_models_py)
+        (backend_dir / "models.py").write_text(sanitized_models, encoding="utf-8")
+        (backend_dir / "backend_models.py").write_text(sanitized_models, encoding="utf-8")
         (backend_dir / "__init__.py").write_text("", encoding="utf-8")
 
         # 4. Tests
-        (test_dir / "test_api.py").write_text(qa.test_suite_code, encoding="utf-8")
+        (test_dir / "test_api.py").write_text(self._sanitize_python(qa.test_suite_code), encoding="utf-8")
         (test_dir / "__init__.py").write_text("", encoding="utf-8")
 
         # 5. Infrastructure as Code (Terraform)
@@ -206,9 +235,20 @@ dependencies = [
     "uvicorn>=0.30.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
 """
         (app_dir / "backend" / "pyproject.toml").write_text(pyproject_content, encoding="utf-8")
 

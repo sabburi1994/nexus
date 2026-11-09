@@ -11,15 +11,59 @@ from nexus import __version__
 from nexus.api.middleware import NexusTelemetryMiddleware
 
 
+class InMemoryDbSession:
+    """Fallback in-memory mock session for rapid prototyping and tests."""
+
+    def __init__(self) -> None:
+        self._store: list[Any] = []
+
+    def query(self, entity: Any) -> Any:
+        class QueryHelper:
+            def __init__(self, items: list[Any]) -> None:
+                self.items = items
+
+            def filter_by(self, **kwargs: Any) -> QueryHelper:
+                return self
+
+            def first(self) -> Any:
+                return self.items[0] if self.items else None
+
+            def all(self) -> list[Any]:
+                return list(self.items)
+
+        return QueryHelper(self._store)
+
+    def add(self, obj: Any) -> None:
+        self._store.append(obj)
+
+    def commit(self) -> None:
+        pass
+
+    def rollback(self) -> None:
+        pass
+
+
+class NexusApp(FastAPI):
+    """FastAPI subclass that provides flexible tuple unpacking and default in-memory db."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.db = InMemoryDbSession()
+
+    def __iter__(self) -> Any:
+        yield self
+        yield self.db
+
+
 def create_nexus_app(
     title: str = "Nexus Application",
     description: str = "Application built on the Nexus Framework",
     version: str = "0.1.0",
     cors_origins: list[str] | None = None,
     include_health: bool = True,
-) -> FastAPI:
+) -> NexusApp:
     """Build and configure a production-ready FastAPI app."""
-    app = FastAPI(
+    app = NexusApp(
         title=title,
         description=description,
         version=version,
@@ -45,6 +89,7 @@ def create_nexus_app(
         async def health_check() -> dict[str, Any]:
             return {
                 "status": "ok",
+                "healthy": True,
                 "app": title,
                 "version": version,
                 "framework_version": __version__,

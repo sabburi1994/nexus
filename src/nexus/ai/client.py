@@ -134,7 +134,17 @@ class GeminiClient:
         self.location = location
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.default_model = default_model
-        self._http = httpx.Client(timeout=90.0)
+        self._http = httpx.Client(timeout=httpx.Timeout(180.0, connect=30.0, read=180.0))
+
+    def _post(self, url: str, headers: dict[str, str], body: dict[str, Any], max_retries: int = 2) -> httpx.Response:
+        import time
+        for attempt in range(max_retries):
+            try:
+                return self._http.post(url, headers=headers, json=body)
+            except (httpx.ReadTimeout, httpx.ConnectTimeout):
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2.0)
 
     def _build_url_and_headers(self, model: str) -> tuple[str, dict[str, str]]:
         token = get_gcp_access_token()
@@ -188,7 +198,7 @@ class GeminiClient:
         if system_instruction:
             body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-        resp = self._http.post(url, headers=headers, json=body)
+        resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
             raise RuntimeError(f"Gemini API returned status {resp.status_code}: {resp.text}")
 
@@ -251,7 +261,7 @@ class GeminiClient:
         if system_instruction:
             body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-        resp = self._http.post(url, headers=headers, json=body)
+        resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
             raise RuntimeError(f"Gemini structured output failed {resp.status_code}: {resp.text}")
 
@@ -310,7 +320,7 @@ class GeminiClient:
             if system_instruction:
                 body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-            resp = self._http.post(url, headers=headers, json=body)
+            resp = self._post(url, headers=headers, body=body)
             if resp.status_code != 200:
                 raise RuntimeError(f"Gemini converse error {resp.status_code}: {resp.text}")
 
