@@ -1,17 +1,21 @@
 """Nexus Tools: Strongly-typed, permission-governed tool definitions for agents."""
+
 from __future__ import annotations
 
-from enum import Enum
 import inspect
-from typing import Any, Callable, Mapping
-from pydantic import BaseModel, create_model
+from collections.abc import Callable
+from enum import Enum
+from typing import Any
+
+from pydantic import create_model
 
 
 class ToolPermission(str, Enum):
     """Permission level governing when and how an agent can execute a tool."""
-    READ_ONLY = "read_only"    # Safe, read-only operations (e.g. search, queries)
-    MUTATION = "mutation"      # State changes (e.g. database updates, sending email)
-    CRITICAL = "critical"      # High-risk actions (e.g. live trading, deleting records)
+
+    READ_ONLY = "read_only"  # Safe, read-only operations (e.g. search, queries)
+    MUTATION = "mutation"  # State changes (e.g. database updates, sending email)
+    CRITICAL = "critical"  # High-risk actions (e.g. live trading, deleting records)
 
 
 class Tool:
@@ -37,7 +41,9 @@ class Tool:
         for param_name, param in sig.parameters.items():
             if param_name in ("self", "cls"):
                 continue
-            annotation = param.annotation if param.annotation != inspect.Parameter.empty else Any
+            annotation = (
+                param.annotation if param.annotation != inspect.Parameter.empty else Any
+            )
             default = param.default if param.default != inspect.Parameter.empty else ...
             fields[param_name] = (annotation, default)
 
@@ -71,6 +77,8 @@ def tool(
     permission: ToolPermission = ToolPermission.READ_ONLY,
 ) -> Callable[[Callable[..., Any]], Tool]:
     """Decorator to declare an agent tool."""
+
     def decorator(fn: Callable[..., Any]) -> Tool:
         return Tool(fn=fn, name=name, description=description, permission=permission)
+
     return decorator

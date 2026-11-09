@@ -1,9 +1,9 @@
 """Nexus Agents: Base Autonomous Agent Primitive."""
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence
-from pydantic import BaseModel
+from collections.abc import Sequence
 
 from nexus.agents.context import AgentContext
 from nexus.providers.base import BaseModelProvider
@@ -87,7 +87,9 @@ class BaseAgent:
             # If plain text returned
             if resp.text:
                 context.add_model_message(resp.text)
-                return AgentRunResult(output=resp.text, turns=turn_count, context=context)
+                return AgentRunResult(
+                    output=resp.text, turns=turn_count, context=context
+                )
 
         return AgentRunResult(
             output="Agent completed max turns without final message.",

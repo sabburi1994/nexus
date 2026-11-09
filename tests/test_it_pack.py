@@ -1,7 +1,10 @@
 """Tests for the Nexus Core IT Pack."""
+
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
+
 from nexus.providers.mock import MockProvider
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
 from nexus.teams.it_pack.data_architect import DataArchitecture
@@ -71,8 +74,8 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     )
     mock_devops = DevopsSpecification(
         cloud_target="gcp",
-        terraform_main_tf="resource \"google_cloud_run_service\" \"api\" {}",
-        terraform_variables_tf="variable \"project_id\" {}",
+        terraform_main_tf='resource "google_cloud_run_service" "api" {}',
+        terraform_variables_tf='variable "project_id" {}',
         docker_compose_yml="version: '3.8'\nservices:\n  db:\n    image: postgres:16",
         ci_cd_workflow_yml="name: Deploy\non: [push]",
     )
@@ -83,7 +86,7 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     )
 
     class ITMockProvider(MockProvider):
-        def structured(self, prompt: str, response_model: type, **kwargs):
+        def structured(self, prompt: str, response_model: Any, **kwargs: Any) -> Any:  # type: ignore[override]
             if response_model == ProductProposal:
                 return mock_proposal
             if response_model == SolutionBlueprint:
@@ -104,7 +107,9 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     out_dir = tmp_path / "delivered"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    project = team.build_from_idea("I want a watch tracking app", target_cloud="gcp", output_dir=out_dir)
+    project = team.build_from_idea(
+        "I want a watch tracking app", target_cloud="gcp", output_dir=out_dir
+    )
 
     assert project.proposal.app_name == "watchhub"
     assert project.solution.cloud_provider == "gcp"

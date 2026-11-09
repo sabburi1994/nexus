@@ -1,7 +1,9 @@
 """Nexus Orchestrator: Universal Protocol Translators (MCP, Claude, OpenAI, Gemini)."""
+
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any
+
 from nexus.tools.base import Tool
 
 
@@ -15,7 +17,9 @@ class OrchestratorProtocol:
         return {
             "name": tool.name,
             "description": tool.description,
-            "inputSchema": schema.get("parameters", {"type": "object", "properties": {}}),
+            "inputSchema": schema.get(
+                "parameters", {"type": "object", "properties": {}}
+            ),
         }
 
     @staticmethod
@@ -27,7 +31,9 @@ class OrchestratorProtocol:
             "function": {
                 "name": tool.name,
                 "description": tool.description,
-                "parameters": schema.get("parameters", {"type": "object", "properties": {}}),
+                "parameters": schema.get(
+                    "parameters", {"type": "object", "properties": {}}
+                ),
             },
         }
 
@@ -38,7 +44,9 @@ class OrchestratorProtocol:
         return {
             "name": tool.name,
             "description": tool.description,
-            "input_schema": schema.get("parameters", {"type": "object", "properties": {}}),
+            "input_schema": schema.get(
+                "parameters", {"type": "object", "properties": {}}
+            ),
         }
 
     @staticmethod
@@ -48,5 +56,7 @@ class OrchestratorProtocol:
         return {
             "name": tool.name,
             "description": tool.description,
-            "parameters": schema.get("parameters", {"type": "object", "properties": {}}),
+            "parameters": schema.get(
+                "parameters", {"type": "object", "properties": {}}
+            ),
         }

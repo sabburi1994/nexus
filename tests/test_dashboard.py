@@ -1,7 +1,7 @@
 """Tests for the Nexus Localhost Visualizer and Telemetry Dashboard."""
+
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from nexus.dashboard.server import create_dashboard_app

@@ -1,8 +1,10 @@
 """Nexus Providers: Zero-Cost Mock Provider for testing and local development."""
+
 from __future__ import annotations
 
-import json
-from typing import Any, Callable, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 from nexus.providers.base import BaseModelProvider, ModelResponse

@@ -1,7 +1,10 @@
 """Nexus Providers: Google Cloud Vertex AI & Gemini 3.8 Flash Provider."""
+
 from __future__ import annotations
 
-from typing import Any, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 from nexus.ai.client import GeminiClient

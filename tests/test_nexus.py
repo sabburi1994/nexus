@@ -1,11 +1,15 @@
 """Unit tests for the Nexus Platform Framework."""
+
 from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from nexus.ai.client import GeminiClient, GeminiResponse
+from nexus.ai.client import GeminiClient
 from nexus.ai.pricing import calculate_cost_usd
 from nexus.api.app import create_nexus_app
 from nexus.db.base import NexusEntity
@@ -47,7 +51,7 @@ class ConcreteEntity(NexusEntity):
 
 def test_nexus_db_entity_metadata() -> None:
     """Verify NexusEntity defines required fields."""
-    columns = ConcreteEntity.__table__.columns  # type: ignore[attr-defined]
+    columns = ConcreteEntity.__table__.columns
     assert "id" in columns
     assert "created_at" in columns
     assert "updated_at" in columns
@@ -65,7 +69,7 @@ def test_gemini_client_mock_generate(monkeypatch: pytest.MonkeyPatch) -> None:
     class MockResponse:
         status_code = 200
 
-        def json(self) -> dict:
+        def json(self) -> dict[str, Any]:
             return {
                 "candidates": [
                     {"content": {"parts": [{"text": "Gemini 3.8 Flash operational."}]}}
@@ -90,6 +94,7 @@ def test_gemini_client_mock_generate(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_scraper_client() -> None:
     """Verify ScraperClient initializes with standard headers."""
     from nexus.scraping.client import ScraperClient
+
     scraper = ScraperClient(rate_limit_delay_seconds=0.01)
     headers = scraper._get_headers()
     assert "User-Agent" in headers
@@ -100,11 +105,11 @@ async def test_scraper_client() -> None:
 def test_cli_new_app(tmp_path: Path) -> None:
     """Verify nexus new command scaffolds an app structure."""
     from nexus.cli.main import scaffold_new_app
-    
+
     test_dir = tmp_path / "apps"
     test_dir.mkdir(parents=True, exist_ok=True)
     scaffold_new_app(app_name="demo_service", output_dir=test_dir)
-    
+
     assert (test_dir / "demo_service" / "pyproject.toml").exists()
     assert (test_dir / "demo_service" / "src" / "demo_service" / "main.py").exists()
     assert (test_dir / "demo_service" / "Dockerfile").exists()

@@ -1,4 +1,5 @@
 """Token pricing and spend tracking for Vertex AI models."""
+
 from __future__ import annotations
 
 from typing import Final

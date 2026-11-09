@@ -1,8 +1,11 @@
 """Nexus Providers: Abstract interface for LLM backends."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Mapping, Sequence, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)

@@ -1,8 +1,10 @@
 """Nexus DB: Declarative Base and standard entity mixins."""
+
 from __future__ import annotations
 
 import datetime
 import uuid
+
 from sqlalchemy import DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -10,7 +12,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     """Base class for all Nexus database models."""
-    pass
 
 
 class NexusEntity(Base):

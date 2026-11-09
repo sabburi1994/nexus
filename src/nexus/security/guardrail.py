@@ -1,7 +1,9 @@
 """Nexus Security: Pre and post-execution guardrail manager."""
+
 from __future__ import annotations
 
 from typing import Any
+
 from nexus.security.injection import check_prompt_injection
 from nexus.security.sanitizer import sanitize_text
 from nexus.tools.base import Tool, ToolPermission
@@ -9,7 +11,6 @@ from nexus.tools.base import Tool, ToolPermission
 
 class SecurityViolationError(Exception):
     """Raised when a security guardrail detects malicious activity."""
-    pass
 
 
 class GuardrailManager:

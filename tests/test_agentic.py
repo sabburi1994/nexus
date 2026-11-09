@@ -1,4 +1,5 @@
 """Tests for the Nexus Agentic Framework primitives."""
+
 from __future__ import annotations
 
 import pytest
@@ -7,7 +8,12 @@ from nexus.agents import AgentContext, BaseAgent, BudgetExceededError
 from nexus.maintenance import AutonomousHealer, DiagnosisResult
 from nexus.providers.mock import MockProvider
 from nexus.qa import EvaluationScore, LLMJudge
-from nexus.security import GuardrailManager, SecurityViolationError, check_prompt_injection, sanitize_text
+from nexus.security import (
+    GuardrailManager,
+    SecurityViolationError,
+    check_prompt_injection,
+    sanitize_text,
+)
 from nexus.tools import ToolPermission, tool
 
 
@@ -24,7 +30,9 @@ def test_prompt_injection_guardrail() -> None:
 
 def test_credential_sanitizer() -> None:
     """Verify sanitizer masks API keys and emails before model ingestion."""
-    text = "User test@example.com with secret sk-abcdef123456789012345 requested access."
+    text = (
+        "User test@example.com with secret sk-abcdef123456789012345 requested access."
+    )
     clean = sanitize_text(text)
     assert "test@example.com" not in clean
     assert "[REDACTED_EMAIL]" in clean
@@ -48,7 +56,12 @@ def test_guardrail_blocks_agent_run() -> None:
 
 def test_tool_decorator_and_permissions() -> None:
     """Verify @tool extracts JSON schema and retains permission."""
-    @tool(name="fetch_price", description="Fetch stock price", permission=ToolPermission.READ_ONLY)
+
+    @tool(
+        name="fetch_price",
+        description="Fetch stock price",
+        permission=ToolPermission.READ_ONLY,
+    )
     def fetch_price(ticker: str, count: int = 10) -> dict[str, float]:
         return {ticker: 150.0}
 

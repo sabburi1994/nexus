@@ -1,4 +1,5 @@
 """Nexus AI: Standardized Google Cloud Vertex AI & Gemini 3.8 Client."""
+
 from __future__ import annotations
 
 import json
@@ -7,7 +8,9 @@ import os
 import shutil
 import subprocess
 import time
-from typing import Any, Callable, Mapping, Sequence, TypeVar
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, TypeVar
+
 import httpx
 from pydantic import BaseModel
 
@@ -132,12 +135,23 @@ class GeminiClient:
     ) -> None:
         self.project_id = project_id or get_gcp_project()
         self.location = location
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.api_key = (
+            api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        )
         self.default_model = default_model
-        self._http = httpx.Client(timeout=httpx.Timeout(180.0, connect=30.0, read=180.0))
+        self._http = httpx.Client(
+            timeout=httpx.Timeout(180.0, connect=30.0, read=180.0)
+        )
 
-    def _post(self, url: str, headers: dict[str, str], body: dict[str, Any], max_retries: int = 2) -> httpx.Response:
+    def _post(
+        self,
+        url: str,
+        headers: dict[str, str],
+        body: dict[str, Any],
+        max_retries: int = 2,
+    ) -> httpx.Response:
         import time
+
         for attempt in range(max_retries):
             try:
                 return self._http.post(url, headers=headers, json=body)
@@ -145,6 +159,7 @@ class GeminiClient:
                 if attempt == max_retries - 1:
                     raise
                 time.sleep(2.0)
+        raise RuntimeError("HTTP request failed after max retries")
 
     def _build_url_and_headers(self, model: str) -> tuple[str, dict[str, str]]:
         token = get_gcp_access_token()
@@ -200,7 +215,9 @@ class GeminiClient:
 
         resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
-            raise RuntimeError(f"Gemini API returned status {resp.status_code}: {resp.text}")
+            raise RuntimeError(
+                f"Gemini API returned status {resp.status_code}: {resp.text}"
+            )
 
         data = resp.json()
         usage = data.get("usageMetadata", {})
@@ -240,6 +257,7 @@ class GeminiClient:
         parts: list[dict[str, Any]] = []
         if inline_pdf_bytes:
             import base64
+
             b64 = base64.b64encode(inline_pdf_bytes).decode("ascii")
             parts.append({"inlineData": {"mimeType": "application/pdf", "data": b64}})
         parts.append({"text": prompt})
@@ -263,7 +281,9 @@ class GeminiClient:
 
         resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
-            raise RuntimeError(f"Gemini structured output failed {resp.status_code}: {resp.text}")
+            raise RuntimeError(
+                f"Gemini structured output failed {resp.status_code}: {resp.text}"
+            )
 
         data = resp.json()
         candidates = data.get("candidates", [])
@@ -295,11 +315,13 @@ class GeminiClient:
                 fn_name = getattr(t, "__name__", "tool")
                 doc = getattr(t, "__doc__", "") or f"Execute {fn_name}"
                 tool_dispatch[fn_name] = t
-                func_declarations.append({
-                    "name": fn_name,
-                    "description": doc.strip(),
-                    "parameters": {"type": "object", "properties": {}},
-                })
+                func_declarations.append(
+                    {
+                        "name": fn_name,
+                        "description": doc.strip(),
+                        "parameters": {"type": "object", "properties": {}},
+                    }
+                )
             elif isinstance(t, dict):
                 func_declarations.append(t)
 
@@ -322,7 +344,9 @@ class GeminiClient:
 
             resp = self._post(url, headers=headers, body=body)
             if resp.status_code != 200:
-                raise RuntimeError(f"Gemini converse error {resp.status_code}: {resp.text}")
+                raise RuntimeError(
+                    f"Gemini converse error {resp.status_code}: {resp.text}"
+                )
 
             data = resp.json()
             usage = data.get("usageMetadata", {})
@@ -339,7 +363,9 @@ class GeminiClient:
                 # Text answer completed
                 text = "".join(p.get("text", "") for p in parts).strip()
                 cost = calculate_cost_usd(total_inp, total_out, chosen_model)
-                return GeminiResponse(text, total_inp, total_out, cost, chosen_model, data)
+                return GeminiResponse(
+                    text, total_inp, total_out, cost, chosen_model, data
+                )
 
             # Append model turn to conversation
             current_contents.append({"role": "model", "parts": parts})
@@ -351,16 +377,26 @@ class GeminiClient:
                 args = call.get("args", {})
                 fn = tool_dispatch.get(name)
                 try:
-                    result = fn(**args) if fn else {"status": "error", "message": f"Tool {name} not found"}
+                    result = (
+                        fn(**args)
+                        if fn
+                        else {"status": "error", "message": f"Tool {name} not found"}
+                    )
                 except Exception as exc:
                     result = {"status": "error", "message": str(exc)}
 
-                response_parts.append({
-                    "functionResponse": {
-                        "name": name,
-                        "response": {"output": result if isinstance(result, (dict, list)) else str(result)},
+                response_parts.append(
+                    {
+                        "functionResponse": {
+                            "name": name,
+                            "response": {
+                                "output": result
+                                if isinstance(result, (dict, list))
+                                else str(result)
+                            },
+                        }
                     }
-                })
+                )
             current_contents.append({"role": "user", "parts": response_parts})
 
         raise RuntimeError(f"Gemini converse exceeded max_turns={max_turns}")
@@ -368,7 +404,7 @@ class GeminiClient:
     @staticmethod
     def _sanitize_schema(schema: dict[str, Any]) -> dict[str, Any]:
         """Strip keywords unsupported by Gemini JSON Schema parser."""
-        s = json.loads(json.dumps(schema))
+        s: dict[str, Any] = dict(json.loads(json.dumps(schema)))
         for key in ("title", "$defs", "$schema", "default"):
             s.pop(key, None)
         return s

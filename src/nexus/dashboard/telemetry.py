@@ -1,11 +1,13 @@
 """Nexus Dashboard: Real-time telemetry, event streaming, and agent tracking."""
+
 from __future__ import annotations
 
 import asyncio
 import datetime
-from enum import Enum
 import json
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from enum import Enum
+from typing import Any
 
 
 class EventType(str, Enum):
@@ -30,11 +32,13 @@ class AgentEvent:
         message: str,
         data: dict[str, Any] | None = None,
     ) -> None:
-        self.event_type = event_type if isinstance(event_type, str) else event_type.value
+        self.event_type = (
+            event_type if isinstance(event_type, str) else event_type.value
+        )
         self.agent_name = agent_name
         self.message = message
         self.data = data or {}
-        self.timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        self.timestamp = datetime.datetime.now(datetime.UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         return {

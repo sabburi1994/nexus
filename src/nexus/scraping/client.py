@@ -1,4 +1,5 @@
 """Nexus Scraping: Resilient web scraping and ingestion client."""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,6 +7,7 @@ import logging
 import random
 import time
 from typing import Any
+
 import httpx
 
 logger = logging.getLogger("nexus.scraping")
@@ -63,16 +65,25 @@ class ScraperClient:
                 if resp.status_code == 200:
                     return resp.text
                 if resp.status_code in (429, 500, 502, 503, 504):
-                    logger.warning("Scrape retry %d for %s (status %d)", attempt, url, resp.status_code)
-                    await asyncio.sleep(2.0 ** attempt)
+                    logger.warning(
+                        "Scrape retry %d for %s (status %d)",
+                        attempt,
+                        url,
+                        resp.status_code,
+                    )
+                    await asyncio.sleep(2.0**attempt)
                     continue
                 resp.raise_for_status()
             except Exception as exc:
                 last_error = exc
-                logger.warning("Scrape error on attempt %d for %s: %s", attempt, url, exc)
-                await asyncio.sleep(2.0 ** attempt)
+                logger.warning(
+                    "Scrape error on attempt %d for %s: %s", attempt, url, exc
+                )
+                await asyncio.sleep(2.0**attempt)
 
-        raise RuntimeError(f"Failed to fetch {url} after {self.max_retries} attempts: {last_error}")
+        raise RuntimeError(
+            f"Failed to fetch {url} after {self.max_retries} attempts: {last_error}"
+        )
 
     async def close(self) -> None:
         """Close underlying HTTP client."""

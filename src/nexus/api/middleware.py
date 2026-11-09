@@ -1,9 +1,11 @@
 """Nexus API middleware: Request ID injection and process timing."""
+
 from __future__ import annotations
 
 import time
 import uuid
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -11,10 +13,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 class NexusTelemetryMiddleware(BaseHTTPMiddleware):
     """Injects X-Request-ID and X-Process-Time headers on every response."""
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.perf_counter()
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
-        
+
         request.state.request_id = request_id
 
         response = await call_next(request)

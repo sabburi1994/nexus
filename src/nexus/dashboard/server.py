@@ -1,14 +1,15 @@
 """Nexus Dashboard: Pure Observability & Agent Squad Visualizer for External Orchestrators."""
+
 from __future__ import annotations
 
-import asyncio
 from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from nexus import __version__
-from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus
+from nexus.dashboard.telemetry import event_bus
 
 
 def create_dashboard_app() -> FastAPI:

@@ -1,8 +1,10 @@
 """Nexus API: Standard FastAPI application factory for microservices."""
+
 from __future__ import annotations
 
 import datetime
 from typing import Any
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -85,6 +87,7 @@ def create_nexus_app(
     app.add_middleware(NexusTelemetryMiddleware)
 
     if include_health:
+
         @app.get("/health", tags=["system"])
         async def health_check() -> dict[str, Any]:
             return {
@@ -93,7 +96,7 @@ def create_nexus_app(
                 "app": title,
                 "version": version,
                 "framework_version": __version__,
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             }
 
         @app.get("/ready", tags=["system"])
@@ -102,7 +105,9 @@ def create_nexus_app(
 
     # Standard global exception handler
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def global_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         req_id = getattr(request.state, "request_id", "unknown")
         return JSONResponse(
             status_code=500,
