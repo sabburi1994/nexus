@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "build:packages": "tsc -p packages/contracts && tsc -p packages/middleware && tsc -p packages/scraper && tsc -p packages/ui",
     "test": "turbo run test",
     "lint": "turbo run lint"
   },

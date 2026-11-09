@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "./dist",
+    "typeRoots": [
+      "../../node_modules/@types",
+      "../../../finhub/frontend/node_modules/@types"
+    ],
+    "paths": {
+      "react": ["../../../finhub/frontend/node_modules/@types/react"]
+    }
+  },
+  "include": ["src"]
+}
