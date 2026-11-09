@@ -4,6 +4,9 @@
   "description": "Cross-framework middleware for security headers, zero-leak credential scrubbing, and rate-limiting",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "keywords": ["nexus", "middleware", "security", "telemetry"],
   "author": "Antigravity & sabburi1994",
   "license": "Apache-2.0"

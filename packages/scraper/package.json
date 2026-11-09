@@ -4,6 +4,9 @@
   "description": "Polite web scraping, RSS ingestion, and canonical verification contracts for Nexus apps",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "keywords": ["nexus", "scraper", "rss", "feed", "polite"],
   "author": "Antigravity & sabburi1994",
   "license": "Apache-2.0"

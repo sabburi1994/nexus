@@ -4,6 +4,9 @@
   "description": "Shared UI components and design system for Nexus platform applications",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc"
   },
