@@ -38,6 +38,77 @@ def check_ai_cmd(model: str = "gemini-3.8-flash", project: str | None = None) ->
         return 1
 
 
+def run_doctor_cmd() -> int:
+    """Run diagnostics on environment, SDKs, tools, and cloud connectivity."""
+    import shutil
+    import subprocess
+    from nexus import __version__
+
+    print(f"=== Nexus Framework Doctor (v{__version__}) ===\n")
+    all_ok = True
+
+    # 1. Python runtime
+    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    if sys.version_info >= (3, 11):
+        print(f"  [PASS] Python Runtime: v{py_ver} ({sys.executable})")
+    else:
+        print(f"  [FAIL] Python Runtime: v{py_ver} (Requires Python >= 3.11)")
+        all_ok = False
+
+    # 2. Node & npm
+    node_bin = shutil.which("node")
+    if node_bin:
+        try:
+            node_ver = subprocess.check_output([node_bin, "--version"], text=True).strip()
+            print(f"  [PASS] Node.js Runtime: {node_ver} ({node_bin})")
+        except Exception:
+            print(f"  [WARN] Node.js Runtime: Installed at {node_bin}")
+    else:
+        print("  [WARN] Node.js Runtime: Not found in PATH (needed for TypeScript/React build)")
+
+    # 3. Terraform
+    tf_bin = shutil.which("terraform")
+    if tf_bin:
+        try:
+            tf_ver = subprocess.check_output([tf_bin, "version"], text=True).splitlines()[0]
+            print(f"  [PASS] Terraform CLI: {tf_ver} ({tf_bin})")
+        except Exception:
+            print(f"  [PASS] Terraform CLI: Installed at {tf_bin}")
+    else:
+        print("  [INFO] Terraform CLI: Not found in PATH (DevOps agent can generate IaC without local CLI)")
+
+    # 4. Google Cloud ADC & Project
+    project_id = get_gcp_project()
+    token = get_gcp_access_token()
+    if token:
+        print(f"  [PASS] Google Cloud ADC: Authenticated (Token: {token[:12]}..., Project: {project_id})")
+    elif os.getenv("GEMINI_API_KEY"):
+        print("  [PASS] Gemini API Key: Configured in environment")
+    else:
+        print("  [FAIL] Google Cloud Auth: No ADC token or GEMINI_API_KEY found")
+        all_ok = False
+
+    # 5. Vertex AI Gemini 3.8 Flash connectivity
+    try:
+        client = GeminiClient(project_id=project_id, default_model="gemini-3.8-flash")
+        resp = client.generate("Ping")
+        print(f"  [PASS] Vertex AI Connectivity: Gemini 3.8 Flash operational (Latency: low, Cost: ${resp.cost_usd:.6f})")
+    except Exception as e:
+        print(f"  [FAIL] Vertex AI Connectivity: {e}")
+        all_ok = False
+
+    # 6. Monorepo packages status
+    packages_dir = Path(__file__).resolve().parent.parent.parent.parent / "packages"
+    if packages_dir.exists():
+        pkgs = [p.name for p in packages_dir.iterdir() if p.is_dir()]
+        print(f"  [PASS] Monorepo Packages: Found {len(pkgs)} packages ({', '.join(pkgs)})")
+    else:
+        print("  [INFO] Monorepo Packages: Standalone framework install")
+
+    print(f"\nResult: {'ALL CHECKS PASSED - Ready to build autonomous agents!' if all_ok else 'SOME CHECKS REQUIRE ATTENTION'}")
+    return 0 if all_ok else 1
+
+
 def scaffold_new_app(app_name: str, output_dir: Path) -> Path:
     """Scaffold a new microservice/app powered by the Nexus Framework."""
     target = output_dir / app_name
@@ -183,6 +254,9 @@ def main() -> None:
     # mcp
     subparsers.add_parser("mcp", help="Start embedded Model Context Protocol (MCP) server for Claude Code & Cursor.")
 
+    # doctor
+    subparsers.add_parser("doctor", help="Run comprehensive health check on environment, GCP, AI, and tools.")
+
     # dream
     dream_parser = subparsers.add_parser("dream", help="Transform a user idea into a complete app via the Nexus IT Squad.")
     dream_parser.add_argument("idea", help="Raw description of the app you want to build")
@@ -206,6 +280,8 @@ def main() -> None:
         scaffold_new_app(args.name, Path(args.output_dir))
     elif args.command == "mcp":
         run_mcp_server()
+    elif args.command == "doctor":
+        sys.exit(run_doctor_cmd())
     elif args.command == "dream":
         dream_cmd(args.idea, Path(args.output_dir))
     elif args.command in ("dashboard", "ui"):

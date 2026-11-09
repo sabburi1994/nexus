@@ -1,0 +1,62 @@
+name: Nexus CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-python:
+    name: Python Test Suite & Wheel Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev] build
+
+      - name: Run Pytest Suite
+        run: |
+          pytest -o pythonpath=src tests/
+
+      - name: Validate Package Build (sdist & wheel)
+        run: |
+          python -m build
+
+  build-packages:
+    name: Monorepo TypeScript Packages Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install TypeScript & React Types
+        run: |
+          npm install --no-save typescript @types/react @types/react-dom
+
+      - name: Compile @nexus/contracts
+        run: npx tsc -p packages/contracts
+
+      - name: Compile @nexus/middleware
+        run: npx tsc -p packages/middleware
+
+      - name: Compile @nexus/scraper
+        run: npx tsc -p packages/scraper
