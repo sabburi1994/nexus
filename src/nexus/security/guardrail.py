@@ -31,9 +31,7 @@ class GuardrailManager:
         if self.block_injections:
             check = check_prompt_injection(prompt)
             if not check.is_safe:
-                raise SecurityViolationError(
-                    f"Prompt blocked by Nexus Injection Guardrail: '{check.matched_pattern}'"
-                )
+                raise SecurityViolationError(f"Prompt blocked by Nexus Injection Guardrail: '{check.matched_pattern}'")
 
         if self.sanitize_inputs:
             return sanitize_text(prompt)
@@ -44,6 +42,4 @@ class GuardrailManager:
         """Verify tool execution privileges."""
         if tool.permission == ToolPermission.CRITICAL and self.require_approval:
             # Critical tools require affirmative authorization
-            raise SecurityViolationError(
-                f"Execution of CRITICAL tool '{tool.name}' requires explicit authorization."
-            )
+            raise SecurityViolationError(f"Execution of CRITICAL tool '{tool.name}' requires explicit authorization.")

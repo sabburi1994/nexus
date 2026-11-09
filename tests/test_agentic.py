@@ -30,9 +30,7 @@ def test_prompt_injection_guardrail() -> None:
 
 def test_credential_sanitizer() -> None:
     """Verify sanitizer masks API keys and emails before model ingestion."""
-    text = (
-        "User test@example.com with secret sk-abcdef123456789012345 requested access."
-    )
+    text = "User test@example.com with secret sk-abcdef123456789012345 requested access."
     clean = sanitize_text(text)
     assert "test@example.com" not in clean
     assert "[REDACTED_EMAIL]" in clean

@@ -71,9 +71,7 @@ def test_gemini_client_mock_generate(monkeypatch: pytest.MonkeyPatch) -> None:
 
         def json(self) -> dict[str, Any]:
             return {
-                "candidates": [
-                    {"content": {"parts": [{"text": "Gemini 3.8 Flash operational."}]}}
-                ],
+                "candidates": [{"content": {"parts": [{"text": "Gemini 3.8 Flash operational."}]}}],
                 "usageMetadata": {
                     "promptTokenCount": 15,
                     "candidatesTokenCount": 8,

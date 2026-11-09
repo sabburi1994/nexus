@@ -14,13 +14,9 @@ class ProductProposal(BaseModel):
     title: str = Field(description="Human-readable product title")
     tagline: str = Field(description="One-sentence product value proposition")
     target_audience: str = Field(description="Primary user persona")
-    user_stories: list[str] = Field(
-        description="Key user stories: As a [user], I want to [action] so that [benefit]"
-    )
+    user_stories: list[str] = Field(description="Key user stories: As a [user], I want to [action] so that [benefit]")
     core_features: list[str] = Field(description="Numbered core features")
-    ui_concept: str = Field(
-        description="Description of the primary user dashboard/workflow"
-    )
+    ui_concept: str = Field(description="Description of the primary user dashboard/workflow")
     wireframe_preview_html: str = Field(
         description="A clean HTML/Tailwind wireframe mockup representing the primary screen"
     )
@@ -48,9 +44,5 @@ Transform this vague idea into a comprehensive, professional Product Proposal:
 4. Design a clean UI concept.
 5. Provide a realistic HTML/Tailwind wireframe preview that renders a mockup of the primary view.
 """
-        system = (
-            "You are a pragmatic, user-centric Business Analyst in an elite IT squad."
-        )
-        return self.provider.structured(
-            prompt, ProductProposal, system_instruction=system
-        )
+        system = "You are a pragmatic, user-centric Business Analyst in an elite IT squad."
+        return self.provider.structured(prompt, ProductProposal, system_instruction=system)

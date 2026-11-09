@@ -32,9 +32,7 @@ class AgentEvent:
         message: str,
         data: dict[str, Any] | None = None,
     ) -> None:
-        self.event_type = (
-            event_type if isinstance(event_type, str) else event_type.value
-        )
+        self.event_type = event_type if isinstance(event_type, str) else event_type.value
         self.agent_name = agent_name
         self.message = message
         self.data = data or {}

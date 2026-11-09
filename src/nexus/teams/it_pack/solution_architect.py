@@ -17,9 +17,7 @@ class SolutionBlueprint(BaseModel):
         description="Recommended cloud runtime target ('gcp', 'aws', or 'local')",
         default="gcp",
     )
-    compute_pattern: str = Field(
-        description="e.g. Cloud Run serverless container, or Compute VM"
-    )
+    compute_pattern: str = Field(description="e.g. Cloud Run serverless container, or Compute VM")
     system_topology: str = Field(
         description="System topology overview describing communication between frontend, backend, DB, and AI"
     )
@@ -40,9 +38,7 @@ class SolutionArchitectAgent:
     def __init__(self, provider: BaseModelProvider) -> None:
         self.provider = provider
 
-    def design_solution(
-        self, proposal: ProductProposal, target_cloud: str = "gcp"
-    ) -> SolutionBlueprint:
+    def design_solution(self, proposal: ProductProposal, target_cloud: str = "gcp") -> SolutionBlueprint:
         """Formulate complete system solution blueprint."""
         prompt = f"""You are a Principal Solution Architect.
 Review the following product proposal:
@@ -59,6 +55,4 @@ Design the complete solution architecture:
 4. Establish non-functional requirements (high availability, latency targets, least-privilege security).
 """
         system = "You are a pragmatic, battle-tested Principal Solution Architect."
-        return self.provider.structured(
-            prompt, SolutionBlueprint, system_instruction=system
-        )
+        return self.provider.structured(prompt, SolutionBlueprint, system_instruction=system)

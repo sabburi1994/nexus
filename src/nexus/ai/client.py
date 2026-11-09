@@ -135,13 +135,9 @@ class GeminiClient:
     ) -> None:
         self.project_id = project_id or get_gcp_project()
         self.location = location
-        self.api_key = (
-            api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-        )
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.default_model = default_model
-        self._http = httpx.Client(
-            timeout=httpx.Timeout(180.0, connect=30.0, read=180.0)
-        )
+        self._http = httpx.Client(timeout=httpx.Timeout(180.0, connect=30.0, read=180.0))
 
     def _post(
         self,
@@ -215,9 +211,7 @@ class GeminiClient:
 
         resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
-            raise RuntimeError(
-                f"Gemini API returned status {resp.status_code}: {resp.text}"
-            )
+            raise RuntimeError(f"Gemini API returned status {resp.status_code}: {resp.text}")
 
         data = resp.json()
         usage = data.get("usageMetadata", {})
@@ -281,9 +275,7 @@ class GeminiClient:
 
         resp = self._post(url, headers=headers, body=body)
         if resp.status_code != 200:
-            raise RuntimeError(
-                f"Gemini structured output failed {resp.status_code}: {resp.text}"
-            )
+            raise RuntimeError(f"Gemini structured output failed {resp.status_code}: {resp.text}")
 
         data = resp.json()
         candidates = data.get("candidates", [])
@@ -344,9 +336,7 @@ class GeminiClient:
 
             resp = self._post(url, headers=headers, body=body)
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"Gemini converse error {resp.status_code}: {resp.text}"
-                )
+                raise RuntimeError(f"Gemini converse error {resp.status_code}: {resp.text}")
 
             data = resp.json()
             usage = data.get("usageMetadata", {})
@@ -363,9 +353,7 @@ class GeminiClient:
                 # Text answer completed
                 text = "".join(p.get("text", "") for p in parts).strip()
                 cost = calculate_cost_usd(total_inp, total_out, chosen_model)
-                return GeminiResponse(
-                    text, total_inp, total_out, cost, chosen_model, data
-                )
+                return GeminiResponse(text, total_inp, total_out, cost, chosen_model, data)
 
             # Append model turn to conversation
             current_contents.append({"role": "model", "parts": parts})
@@ -377,11 +365,7 @@ class GeminiClient:
                 args = call.get("args", {})
                 fn = tool_dispatch.get(name)
                 try:
-                    result = (
-                        fn(**args)
-                        if fn
-                        else {"status": "error", "message": f"Tool {name} not found"}
-                    )
+                    result = fn(**args) if fn else {"status": "error", "message": f"Tool {name} not found"}
                 except Exception as exc:
                     result = {"status": "error", "message": str(exc)}
 
@@ -389,11 +373,7 @@ class GeminiClient:
                     {
                         "functionResponse": {
                             "name": name,
-                            "response": {
-                                "output": result
-                                if isinstance(result, (dict, list))
-                                else str(result)
-                            },
+                            "response": {"output": result if isinstance(result, (dict, list)) else str(result)},
                         }
                     }
                 )

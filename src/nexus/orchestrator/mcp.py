@@ -44,9 +44,7 @@ class NexusMcpServer:
             }
 
         if method == "tools/list":
-            tool_list = [
-                OrchestratorProtocol.to_mcp_tool(t) for t in self.tools.values()
-            ]
+            tool_list = [OrchestratorProtocol.to_mcp_tool(t) for t in self.tools.values()]
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
@@ -73,9 +71,7 @@ class NexusMcpServer:
                     "jsonrpc": "2.0",
                     "id": req_id,
                     "result": {
-                        "content": [
-                            {"type": "text", "text": json.dumps(res, default=str)}
-                        ],
+                        "content": [{"type": "text", "text": json.dumps(res, default=str)}],
                         "isError": False,
                     },
                 }
@@ -84,9 +80,7 @@ class NexusMcpServer:
                     "jsonrpc": "2.0",
                     "id": req_id,
                     "result": {
-                        "content": [
-                            {"type": "text", "text": f"Error executing {name}: {exc}"}
-                        ],
+                        "content": [{"type": "text", "text": f"Error executing {name}: {exc}"}],
                         "isError": True,
                     },
                 }

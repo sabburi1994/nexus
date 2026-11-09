@@ -15,14 +15,10 @@ from sqlalchemy.ext.asyncio import (
 class DatabaseSessionManager:
     """Manages async PostgreSQL connection pools and session lifecycles."""
 
-    def __init__(
-        self, database_url: str, echo: bool = False, pool_size: int = 10
-    ) -> None:
+    def __init__(self, database_url: str, echo: bool = False, pool_size: int = 10) -> None:
         # Normalize sqlite or postgres URLs for async drivers
         url = database_url
-        if url.startswith("postgresql://") and not url.startswith(
-            "postgresql+asyncpg://"
-        ):
+        if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("sqlite://") and not url.startswith("sqlite+aiosqlite://"):
             url = url.replace("sqlite://", "sqlite+aiosqlite://", 1)

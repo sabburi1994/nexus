@@ -107,9 +107,7 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     out_dir = tmp_path / "delivered"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    project = team.build_from_idea(
-        "I want a watch tracking app", target_cloud="gcp", output_dir=out_dir
-    )
+    project = team.build_from_idea("I want a watch tracking app", target_cloud="gcp", output_dir=out_dir)
 
     assert project.proposal.app_name == "watchhub"
     assert project.solution.cloud_provider == "gcp"

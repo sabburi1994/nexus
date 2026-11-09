@@ -99,9 +99,7 @@ class NexusITTeam:
                 f"Evaluating system topology and cloud strategy for {target_cloud.upper()}...",
             )
         )
-        solution = self.solution_architect.design_solution(
-            proposal, target_cloud=target_cloud
-        )
+        solution = self.solution_architect.design_solution(proposal, target_cloud=target_cloud)
         event_bus.emit(
             AgentEvent(
                 EventType.ARTIFACT_GENERATED,
@@ -246,11 +244,7 @@ class NexusITTeam:
         saved_path = None
         if output_dir:
             app_dir = output_dir / proposal.app_name
-            saved_path = str(
-                self._write_to_disk(
-                    app_dir, proposal, solution, data_arch, ui, fullstack, devops, qa
-                )
-            )
+            saved_path = str(self._write_to_disk(app_dir, proposal, solution, data_arch, ui, fullstack, devops, qa))
             event_bus.emit(
                 AgentEvent(
                     EventType.RUN_COMPLETED,
@@ -348,17 +342,11 @@ class NexusITTeam:
             + f"\n\n## SQL Schema\n```sql\n{data_arch.sql_ddl_schema}\n```",
             encoding="utf-8",
         )
-        (docs_dir / "preview_mockup.html").write_text(
-            proposal.wireframe_preview_html, encoding="utf-8"
-        )
+        (docs_dir / "preview_mockup.html").write_text(proposal.wireframe_preview_html, encoding="utf-8")
 
         # 2. Frontend
-        (frontend_dir / "App.tsx").write_text(
-            fullstack.frontend_app_tsx, encoding="utf-8"
-        )
-        (frontend_dir / "api.ts").write_text(
-            fullstack.frontend_api_client_ts, encoding="utf-8"
-        )
+        (frontend_dir / "App.tsx").write_text(fullstack.frontend_app_tsx, encoding="utf-8")
+        (frontend_dir / "api.ts").write_text(fullstack.frontend_api_client_ts, encoding="utf-8")
         frontend_pkg = f"""{{
   "name": "{proposal.app_name}-web",
   "version": "0.1.0",
@@ -384,38 +372,24 @@ class NexusITTeam:
   }}
 }}
 """
-        (app_dir / "frontend" / "package.json").write_text(
-            frontend_pkg, encoding="utf-8"
-        )
+        (app_dir / "frontend" / "package.json").write_text(frontend_pkg, encoding="utf-8")
 
         # 3. Backend
-        (backend_dir / "main.py").write_text(
-            self._sanitize_python(fullstack.backend_main_py), encoding="utf-8"
-        )
+        (backend_dir / "main.py").write_text(self._sanitize_python(fullstack.backend_main_py), encoding="utf-8")
         sanitized_models = self._sanitize_python(fullstack.backend_models_py)
         (backend_dir / "models.py").write_text(sanitized_models, encoding="utf-8")
-        (backend_dir / "backend_models.py").write_text(
-            sanitized_models, encoding="utf-8"
-        )
+        (backend_dir / "backend_models.py").write_text(sanitized_models, encoding="utf-8")
         (backend_dir / "__init__.py").write_text("", encoding="utf-8")
 
         # 4. Tests
-        (test_dir / "test_api.py").write_text(
-            self._sanitize_python(qa.test_suite_code), encoding="utf-8"
-        )
+        (test_dir / "test_api.py").write_text(self._sanitize_python(qa.test_suite_code), encoding="utf-8")
         (test_dir / "__init__.py").write_text("", encoding="utf-8")
 
         # 5. Infrastructure as Code (Terraform)
         (infra_dir / "main.tf").write_text(devops.terraform_main_tf, encoding="utf-8")
-        (infra_dir / "variables.tf").write_text(
-            devops.terraform_variables_tf, encoding="utf-8"
-        )
-        (app_dir / "docker-compose.yml").write_text(
-            devops.docker_compose_yml, encoding="utf-8"
-        )
-        (github_dir / "deploy.yml").write_text(
-            devops.ci_cd_workflow_yml, encoding="utf-8"
-        )
+        (infra_dir / "variables.tf").write_text(devops.terraform_variables_tf, encoding="utf-8")
+        (app_dir / "docker-compose.yml").write_text(devops.docker_compose_yml, encoding="utf-8")
+        (github_dir / "deploy.yml").write_text(devops.ci_cd_workflow_yml, encoding="utf-8")
 
         # 6. pyproject.toml
         pyproject_content = f"""[project]
@@ -443,8 +417,6 @@ build-backend = "hatchling.build"
 pythonpath = ["src"]
 asyncio_mode = "auto"
 """
-        (app_dir / "backend" / "pyproject.toml").write_text(
-            pyproject_content, encoding="utf-8"
-        )
+        (app_dir / "backend" / "pyproject.toml").write_text(pyproject_content, encoding="utf-8")
 
         return app_dir

@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nexus/ui": "workspace:*",
-    "@nexus/contracts": "workspace:*",
+    "@nexus/ui": "*",
+    "@nexus/contracts": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

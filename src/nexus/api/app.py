@@ -105,9 +105,7 @@ def create_nexus_app(
 
     # Standard global exception handler
     @app.exception_handler(Exception)
-    async def global_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         req_id = getattr(request.state, "request_id", "unknown")
         return JSONResponse(
             status_code=500,

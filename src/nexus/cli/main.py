@@ -16,15 +16,11 @@ def check_ai_cmd(model: str = "gemini-3.8-flash", project: str | None = None) ->
     project_id = project or get_gcp_project()
     token = get_gcp_access_token()
 
-    print(
-        f"--- Checking Nexus AI Connection ---\nProject: {project_id}\nModel: {model}"
-    )
+    print(f"--- Checking Nexus AI Connection ---\nProject: {project_id}\nModel: {model}")
 
     if not token and not os.getenv("GEMINI_API_KEY"):
         print("FAIL: No GCP OAuth access token or GEMINI_API_KEY available.")
-        print(
-            "Hint: Run 'gcloud auth application-default login' or configure IAM service account."
-        )
+        print("Hint: Run 'gcloud auth application-default login' or configure IAM service account.")
         return 1
 
     if token:
@@ -56,9 +52,7 @@ def run_doctor_cmd() -> int:
     all_ok = True
 
     # 1. Python runtime
-    py_ver = (
-        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    )
+    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     if sys.version_info >= (3, 11):
         print(f"  [PASS] Python Runtime: v{py_ver} ({sys.executable})")
     else:
@@ -69,39 +63,29 @@ def run_doctor_cmd() -> int:
     node_bin = shutil.which("node")
     if node_bin:
         try:
-            node_ver = subprocess.check_output(
-                [node_bin, "--version"], text=True
-            ).strip()
+            node_ver = subprocess.check_output([node_bin, "--version"], text=True).strip()
             print(f"  [PASS] Node.js Runtime: {node_ver} ({node_bin})")
         except Exception:
             print(f"  [WARN] Node.js Runtime: Installed at {node_bin}")
     else:
-        print(
-            "  [WARN] Node.js Runtime: Not found in PATH (needed for TypeScript/React build)"
-        )
+        print("  [WARN] Node.js Runtime: Not found in PATH (needed for TypeScript/React build)")
 
     # 3. Terraform
     tf_bin = shutil.which("terraform")
     if tf_bin:
         try:
-            tf_ver = subprocess.check_output(
-                [tf_bin, "version"], text=True
-            ).splitlines()[0]
+            tf_ver = subprocess.check_output([tf_bin, "version"], text=True).splitlines()[0]
             print(f"  [PASS] Terraform CLI: {tf_ver} ({tf_bin})")
         except Exception:
             print(f"  [PASS] Terraform CLI: Installed at {tf_bin}")
     else:
-        print(
-            "  [INFO] Terraform CLI: Not found in PATH (DevOps agent can generate IaC without local CLI)"
-        )
+        print("  [INFO] Terraform CLI: Not found in PATH (DevOps agent can generate IaC without local CLI)")
 
     # 4. Google Cloud ADC & Project
     project_id = get_gcp_project()
     token = get_gcp_access_token()
     if token:
-        print(
-            f"  [PASS] Google Cloud ADC: Authenticated (Token: {token[:12]}..., Project: {project_id})"
-        )
+        print(f"  [PASS] Google Cloud ADC: Authenticated (Token: {token[:12]}..., Project: {project_id})")
     elif os.getenv("GEMINI_API_KEY"):
         print("  [PASS] Gemini API Key: Configured in environment")
     else:
@@ -123,9 +107,7 @@ def run_doctor_cmd() -> int:
     packages_dir = Path(__file__).resolve().parent.parent.parent.parent / "packages"
     if packages_dir.exists():
         pkgs = [p.name for p in packages_dir.iterdir() if p.is_dir()]
-        print(
-            f"  [PASS] Monorepo Packages: Found {len(pkgs)} packages ({', '.join(pkgs)})"
-        )
+        print(f"  [PASS] Monorepo Packages: Found {len(pkgs)} packages ({', '.join(pkgs)})")
     else:
         print("  [INFO] Monorepo Packages: Standalone framework install")
 
@@ -181,9 +163,7 @@ async def ask_ai(prompt: str) -> dict[str, str]:
     resp = ai_client.generate(prompt)
     return {{"response": resp.text, "model": resp.model}}
 """
-    (target / "src" / app_name / "main.py").write_text(
-        main_py_content, encoding="utf-8"
-    )
+    (target / "src" / app_name / "main.py").write_text(main_py_content, encoding="utf-8")
     (target / "src" / app_name / "__init__.py").write_text("", encoding="utf-8")
 
     # Write Dockerfile
@@ -215,11 +195,7 @@ def run_mcp_server() -> None:
         res = client.generate("Ping")
         return {"status": "ok", "response": res.text, "model": res.model}
 
-    server.register_tool(
-        Tool(
-            fn=check_ai_tool, name="nexus_check_ai", permission=ToolPermission.READ_ONLY
-        )
-    )
+    server.register_tool(Tool(fn=check_ai_tool, name="nexus_check_ai", permission=ToolPermission.READ_ONLY))
     server.run_stdio()
 
 
@@ -229,9 +205,7 @@ def dream_cmd(idea: str, output_dir: Path) -> None:
 
     print("--- Nexus Core IT Squad Activated ---")
     print(f'Goal: "{idea}"')
-    print(
-        "Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer\n"
-    )
+    print("Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer\n")
 
     team = NexusITTeam()
     project = team.build_from_idea(idea, output_dir=output_dir)
@@ -241,19 +215,13 @@ def dream_cmd(idea: str, output_dir: Path) -> None:
     print(f"Tagline: {project.proposal.tagline}")
     print(f"Output Directory: {project.output_path}")
     print(f"Stories: {len(project.proposal.user_stories)} user stories defined")
-    print(
-        f"Cloud Target: {project.solution.cloud_provider.upper()} ({project.solution.compute_pattern})"
-    )
-    print(
-        f"Data Schema: {project.data_architecture.database_engine} ({len(project.data_architecture.tables)} tables)"
-    )
+    print(f"Cloud Target: {project.solution.cloud_provider.upper()} ({project.solution.compute_pattern})")
+    print(f"Data Schema: {project.data_architecture.database_engine} ({len(project.data_architecture.tables)} tables)")
     print(f"UI Component: {project.ui.component_name}.tsx")
     print(f"QA Preflight: {'PASS' if project.qa.passed_preflight else 'WARN'}")
 
 
-def run_dashboard_cmd(
-    host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True
-) -> None:
+def run_dashboard_cmd(host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True) -> None:
     """Launch the Nexus Visualizer localhost dashboard."""
     import webbrowser
 
@@ -286,24 +254,18 @@ def main() -> None:
         prog="nexus",
         description="Nexus Platform Framework: Scaffolding, AI verification, and cloud tools.",
     )
-    parser.add_argument(
-        "--version", action="version", version=f"Nexus Framework v{__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"Nexus Framework v{__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
     # check-ai
-    ai_parser = subparsers.add_parser(
-        "check-ai", help="Verify Vertex AI & Gemini 3.8 Flash connectivity."
-    )
+    ai_parser = subparsers.add_parser("check-ai", help="Verify Vertex AI & Gemini 3.8 Flash connectivity.")
     ai_parser.add_argument("--model", default="gemini-3.8-flash", help="Model ID")
     ai_parser.add_argument("--project", default=None, help="GCP Project ID")
 
     # new
     new_parser = subparsers.add_parser("new", help="Scaffold a new Nexus application.")
     new_parser.add_argument("name", help="Name of application to scaffold")
-    new_parser.add_argument(
-        "--output-dir", default=".", help="Directory where app will be created"
-    )
+    new_parser.add_argument("--output-dir", default=".", help="Directory where app will be created")
 
     # mcp
     subparsers.add_parser(
@@ -322,34 +284,22 @@ def main() -> None:
         "dream",
         help="Transform a user idea into a complete app via the Nexus IT Squad.",
     )
-    dream_parser.add_argument(
-        "idea", help="Raw description of the app you want to build"
-    )
-    dream_parser.add_argument(
-        "--output-dir", default=".", help="Directory where project will be saved"
-    )
+    dream_parser.add_argument("idea", help="Raw description of the app you want to build")
+    dream_parser.add_argument("--output-dir", default=".", help="Directory where project will be saved")
 
     # dashboard / ui
     dash_parser = subparsers.add_parser(
         "dashboard",
         help="Launch the localhost progress visualizer & tracking dashboard.",
     )
-    dash_parser.add_argument(
-        "--port", type=int, default=8000, help="Port to serve dashboard on"
-    )
+    dash_parser.add_argument("--port", type=int, default=8000, help="Port to serve dashboard on")
     dash_parser.add_argument("--host", default="127.0.0.1", help="Host address")
-    dash_parser.add_argument(
-        "--no-browser", action="store_true", help="Do not open browser automatically"
-    )
+    dash_parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
 
     ui_parser = subparsers.add_parser("ui", help="Alias for 'nexus dashboard'.")
-    ui_parser.add_argument(
-        "--port", type=int, default=8000, help="Port to serve dashboard on"
-    )
+    ui_parser.add_argument("--port", type=int, default=8000, help="Port to serve dashboard on")
     ui_parser.add_argument("--host", default="127.0.0.1", help="Host address")
-    ui_parser.add_argument(
-        "--no-browser", action="store_true", help="Do not open browser automatically"
-    )
+    ui_parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
 
     args = parser.parse_args()
     if args.command == "check-ai":
@@ -363,9 +313,7 @@ def main() -> None:
     elif args.command == "dream":
         dream_cmd(args.idea, Path(args.output_dir))
     elif args.command in ("dashboard", "ui"):
-        run_dashboard_cmd(
-            host=args.host, port=args.port, open_browser=not args.no_browser
-        )
+        run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)
     else:
         parser.print_help()
 

@@ -41,20 +41,14 @@ def test_nexus_mcp_server_initialize_and_tools() -> None:
         """Ping pong tool."""
         return "pong"
 
-    server.register_tool(
-        Tool(fn=ping, name="ping", permission=ToolPermission.READ_ONLY)
-    )
+    server.register_tool(Tool(fn=ping, name="ping", permission=ToolPermission.READ_ONLY))
 
     # Initialize
-    init_res = server.handle_request(
-        {"jsonrpc": "2.0", "id": 1, "method": "initialize"}
-    )
+    init_res = server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "initialize"})
     assert init_res["result"]["serverInfo"]["name"] == "test-mcp"
 
     # tools/list
-    list_res = server.handle_request(
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
-    )
+    list_res = server.handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     tools = list_res["result"]["tools"]
     assert len(tools) == 1
     assert tools[0]["name"] == "ping"

@@ -26,9 +26,7 @@ class AgentContext:
         self.total_input_tokens: int = 0
         self.total_output_tokens: int = 0
 
-    def record_usage(
-        self, input_tokens: int, output_tokens: int, cost_usd: float
-    ) -> None:
+    def record_usage(self, input_tokens: int, output_tokens: int, cost_usd: float) -> None:
         """Record model inference tokens and check budget ceiling."""
         self.total_input_tokens += input_tokens
         self.total_output_tokens += output_tokens

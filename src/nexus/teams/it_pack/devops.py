@@ -13,16 +13,10 @@ class DevopsSpecification(BaseModel):
     """Infrastructure as Code (Terraform) and deployment configurations."""
 
     cloud_target: str = Field(description="Cloud target: gcp, aws, or local")
-    terraform_main_tf: str = Field(
-        description="Complete, executable Terraform main.tf file"
-    )
+    terraform_main_tf: str = Field(description="Complete, executable Terraform main.tf file")
     terraform_variables_tf: str = Field(description="Terraform variables.tf file")
-    docker_compose_yml: str = Field(
-        description="Local development docker-compose.yml file"
-    )
-    ci_cd_workflow_yml: str = Field(
-        description="GitHub Actions CI/CD deployment workflow"
-    )
+    docker_compose_yml: str = Field(description="Local development docker-compose.yml file")
+    ci_cd_workflow_yml: str = Field(description="GitHub Actions CI/CD deployment workflow")
 
 
 class DevopsEngineerAgent:
@@ -34,9 +28,7 @@ class DevopsEngineerAgent:
     def __init__(self, provider: BaseModelProvider) -> None:
         self.provider = provider
 
-    def build_infrastructure(
-        self, proposal: ProductProposal, solution: SolutionBlueprint
-    ) -> DevopsSpecification:
+    def build_infrastructure(self, proposal: ProductProposal, solution: SolutionBlueprint) -> DevopsSpecification:
         """Generate Terraform IaC and deployment artifacts for the target cloud."""
         prompt = f"""You are a Senior DevOps & Cloud Infrastructure Engineer.
 Design the Infrastructure as Code (Terraform) and container configs for:
@@ -55,7 +47,7 @@ Generate:
    - Stage 3 [Build & Push]: Container packaging and tagging
    - Stage 4 [Deployment & Health Probe]: Cloud deployment with post-deploy HTTP /health probe green flag validation.
 """
-        system = "You are an elite DevOps Engineer specializing in clean Terraform (IaC) and reliable cloud deployments."
-        return self.provider.structured(
-            prompt, DevopsSpecification, system_instruction=system
+        system = (
+            "You are an elite DevOps Engineer specializing in clean Terraform (IaC) and reliable cloud deployments."
         )
+        return self.provider.structured(prompt, DevopsSpecification, system_instruction=system)

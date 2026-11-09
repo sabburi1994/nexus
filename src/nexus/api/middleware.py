@@ -13,9 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 class NexusTelemetryMiddleware(BaseHTTPMiddleware):
     """Injects X-Request-ID and X-Process-Time headers on every response."""
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         start_time = time.perf_counter()
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
 

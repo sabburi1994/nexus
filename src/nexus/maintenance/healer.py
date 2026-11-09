@@ -12,9 +12,7 @@ class DiagnosisResult(BaseModel):
 
     root_cause: str = Field(description="Underlying cause of the exception or failure")
     suggested_fix: str = Field(description="Step-by-step resolution or code diff")
-    is_transient: bool = Field(
-        description="True if error was network/rate-limit related"
-    )
+    is_transient: bool = Field(description="True if error was network/rate-limit related")
     confidence: float = Field(ge=0.0, le=1.0)
 
 
@@ -36,9 +34,5 @@ Stack Trace:
 Context Code:
 {context_snippet or "No snippet provided"}
 """
-        system = (
-            "You are an autonomous site-reliability engineer and codebase maintainer."
-        )
-        return self.provider.structured(
-            prompt, DiagnosisResult, system_instruction=system
-        )
+        system = "You are an autonomous site-reliability engineer and codebase maintainer."
+        return self.provider.structured(prompt, DiagnosisResult, system_instruction=system)

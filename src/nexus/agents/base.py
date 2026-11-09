@@ -31,10 +31,7 @@ class AgentRunResult:
         self.output_tokens = context.total_output_tokens
 
     def __repr__(self) -> str:
-        return (
-            f"<AgentRunResult output={self.output[:40]!r}... "
-            f"turns={self.turns} cost=${self.total_cost_usd:.6f}>"
-        )
+        return f"<AgentRunResult output={self.output[:40]!r}... turns={self.turns} cost=${self.total_cost_usd:.6f}>"
 
 
 class BaseAgent:
@@ -87,9 +84,7 @@ class BaseAgent:
             # If plain text returned
             if resp.text:
                 context.add_model_message(resp.text)
-                return AgentRunResult(
-                    output=resp.text, turns=turn_count, context=context
-                )
+                return AgentRunResult(output=resp.text, turns=turn_count, context=context)
 
         return AgentRunResult(
             output="Agent completed max turns without final message.",

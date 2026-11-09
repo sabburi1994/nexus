@@ -76,14 +76,10 @@ class ScraperClient:
                 resp.raise_for_status()
             except Exception as exc:
                 last_error = exc
-                logger.warning(
-                    "Scrape error on attempt %d for %s: %s", attempt, url, exc
-                )
+                logger.warning("Scrape error on attempt %d for %s: %s", attempt, url, exc)
                 await asyncio.sleep(2.0**attempt)
 
-        raise RuntimeError(
-            f"Failed to fetch {url} after {self.max_retries} attempts: {last_error}"
-        )
+        raise RuntimeError(f"Failed to fetch {url} after {self.max_retries} attempts: {last_error}")
 
     async def close(self) -> None:
         """Close underlying HTTP client."""
