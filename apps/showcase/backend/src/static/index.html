@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus Showcase | Autonomous Economic Intelligence</title>
+  <title>Nexus Platform | Orchestrator-Native AI Agentic Framework</title>
+  <meta name="description" content="Nexus is an autonomous AI agentic software engineering framework provisioning a 7-agent Virtual IT Squad, closed-loop test healing, brownfield AST blast-radius refactoring, and enterprise ROI telemetry.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -16,271 +18,1240 @@
           fontFamily: {
             sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              900: '#312e81',
+              950: '#0b0f19',
+            }
           }
         }
       }
     }
   </script>
+  <style>
+    /* Custom scrollbars and code styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .gradient-border {
+      position: relative;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.5), rgba(168, 85, 247, 0.2), rgba(255, 255, 255, 0.05));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white antialiased">
-  <!-- Nexus Header -->
-  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
-          N
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-base text-white tracking-tight">Nexus Market Pulse</span>
-            <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">Showcase App</span>
+
+  <!-- Top Announcement Banner -->
+  <div class="bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-950 border-b border-indigo-500/20 px-4 py-2 text-center text-xs text-indigo-200">
+    <span>🚀 <b>Nexus Framework v0.1.1 is live:</b> Closed-Loop Self-Healing, AST Blast-Radius Refactoring, and DORA Telemetry shipped!</span>
+    <a href="#playground" class="ml-2 font-semibold text-white underline hover:text-indigo-300">Try Live Simulator &rarr;</a>
+  </div>
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition">
+            NX
           </div>
-          <p class="text-[11px] text-slate-400">Autonomous Economic Intelligence & Sector Synthesizer</p>
-        </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-base text-white tracking-tight">NEXUS</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-semibold">v0.1.1</span>
+              <span class="hidden md:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 30/30 Tests Pass
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden sm:block">Orchestrator-Native AI Agentic Framework</p>
+          </div>
+        </a>
       </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-300">
+        <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn px-3 py-1.5 rounded-lg text-white bg-slate-800/80 border border-slate-700">Overview</button>
+        <button onclick="switchTab('docs')" id="nav-docs" class="nav-btn px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-900 border border-transparent transition">Documentation</button>
+        <button onclick="switchTab('playground')" id="nav-playground" class="nav-btn px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-900 border border-transparent transition">Simulator</button>
+        <button onclick="switchTab('brownfield')" id="nav-brownfield" class="nav-btn px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-900 border border-transparent transition">Brownfield</button>
+        <button onclick="switchTab('roi')" id="nav-roi" class="nav-btn px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-900 border border-transparent transition">ROI Calculator</button>
+        <button onclick="switchTab('ecosystem')" id="nav-ecosystem" class="nav-btn px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-900 border border-transparent transition">Ecosystem</button>
+      </nav>
+
+      <!-- Quick Action Buttons -->
       <div class="flex items-center gap-3">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          gemini-3.8-flash
-        </span>
-        <a href="/docs" target="_blank" class="text-xs font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 transition">
-          Swagger Docs &rarr;
+        <a href="https://pypi.org/project/nexus-agent-framework/" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition">
+          <svg class="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          PyPI 0.1.1
+        </a>
+        <a href="https://github.com/sabburi1994/nexus" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
         </a>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6 py-8 space-y-8">
-    <!-- Operations & Guardrails Banner -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <h2 class="text-xl font-bold tracking-tight text-white">System Operations & Guardrails</h2>
-        <p class="text-xs text-slate-400 mt-1">Autonomous 7-agent framework telemetry and prompt shielding overview.</p>
-      </div>
-      <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 text-xs text-indigo-300 font-mono">
-        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        <span>Shield Active: <b class="text-white">0 Leaks</b> &bull; <b class="text-emerald-400">ADC Cached</b></span>
-      </div>
-    </div>
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-6 py-10 space-y-16">
 
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
-        <span class="text-xs text-slate-400 font-medium">Analyses Delivered</span>
-        <div class="flex items-baseline justify-between pt-1">
-          <span id="stat-count" class="text-2xl font-bold text-white font-mono">1</span>
-          <span class="text-xs font-mono font-medium text-emerald-400">+100% active</span>
+    <!-- TAB 1: OVERVIEW & ARCHITECTURE -->
+    <div id="tab-overview" class="tab-content space-y-16">
+      
+      <!-- Hero -->
+      <section class="text-center max-w-4xl mx-auto space-y-6 pt-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-indigo-500/30 bg-indigo-950/40 text-indigo-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Orchestrator-Native AI Agentic Platform</span>
         </div>
-        <p class="text-[11px] text-slate-500">Autonomous Gemini 3.8 Flash batches</p>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
-        <span class="text-xs text-slate-400 font-medium">Average Latency</span>
-        <div class="flex items-baseline justify-between pt-1">
-          <span class="text-2xl font-bold text-white font-mono">1.18s</span>
-          <span class="text-xs font-mono font-medium text-indigo-400">Vertex Global</span>
+        <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+          Sovereign Software Engineering via <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-indigo-200 bg-clip-text text-transparent">Virtual IT Squads</span>
+        </h1>
+        <p class="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+          Nexus automates software delivery by provisioning a full virtual IT department—from Business Analyst and Data Architect to Full-Stack Engineer and QA Sentinel. Governed by closed-loop test healing, AST blast-radius analysis, and enterprise ROI telemetry.
+        </p>
+        
+        <!-- Command bar with instant copy -->
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <div class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-sm text-slate-300 shadow-inner">
+            <span class="text-indigo-400">$</span>
+            <span id="pypi-cmd">pip install nexus-agent-framework</span>
+            <button onclick="copyToClipboard('pip install nexus-agent-framework', this)" class="ml-2 text-xs text-indigo-400 hover:text-indigo-300 font-sans px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/30 transition">
+              Copy
+            </button>
+          </div>
+          <button onclick="switchTab('playground')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm text-white shadow-lg shadow-indigo-500/25 transition">
+            Launch Simulator &rarr;
+          </button>
+          <button onclick="switchTab('docs')" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 font-semibold text-sm text-slate-200 transition">
+            Read Docs
+          </button>
         </div>
-        <p class="text-[11px] text-slate-500">Standardized Google Cloud ADC endpoint</p>
-      </div>
-      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-1">
-        <span class="text-xs text-slate-400 font-medium">Total Model Cost</span>
-        <div class="flex items-baseline justify-between pt-1">
-          <span class="text-2xl font-bold text-white font-mono">$0.00024</span>
-          <span class="text-xs font-mono font-medium text-emerald-400">-92% vs Claude</span>
-        </div>
-        <p class="text-[11px] text-slate-500">Daily budget ceiling: $1.00 USD</p>
-      </div>
-    </div>
 
-    <!-- Scan Input Form -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
-      <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">Request Autonomous Market Scan</h3>
-      <form id="scan-form" class="flex flex-col sm:flex-row gap-3">
-        <input
-          id="scan-target"
-          type="text"
-          required
-          placeholder="e.g. Nordic Offshore Wind Grid, Semiconductor Packaging, Copper Futures..."
-          class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-        />
-        <select
-          id="scan-sector"
-          class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
-        >
-          <option value="Macro">Macro</option>
-          <option value="Energy">Energy</option>
-          <option value="Technology">Technology</option>
-          <option value="Commodities">Commodities</option>
-          <option value="Finance">Finance</option>
-        </select>
-        <button
-          id="submit-btn"
-          type="submit"
-          class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
-        >
-          <span>Dispatch Agent</span>
-        </button>
-      </form>
-    </section>
-
-    <!-- Grid: Reports and Telemetry -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div class="lg:col-span-2 space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Delivered Intelligence Reports</h3>
-          <span class="text-xs text-slate-500 font-mono" id="reports-counter">1 report on record</span>
+        <!-- Metric highlights -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-6 max-w-4xl mx-auto text-left">
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Specialists</p>
+            <p class="text-2xl font-bold text-white mt-1">7 Agents</p>
+            <p class="text-[11px] text-indigo-400 mt-0.5">End-to-End Squad</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Verification</p>
+            <p class="text-2xl font-bold text-emerald-400 mt-1">30 / 30</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">100% Tests Pass</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Lead Time</p>
+            <p class="text-2xl font-bold text-indigo-300 mt-1">-84.5%</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Idea to Runnable Code</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Net Enterprise ROI</p>
+            <p class="text-2xl font-bold text-purple-300 mt-1">199,000x</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">@ $85/hr Senior Dev</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl col-span-2 sm:col-span-1">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Token Cost</p>
+            <p class="text-2xl font-bold text-emerald-400 mt-1">$0.075</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">/1M Input (Gemini 3.8)</p>
+          </div>
         </div>
-        <div id="reports-container" class="space-y-4">
-          <!-- Initial Seed Report -->
-          <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
-            <div class="flex items-center justify-between">
+      </section>
+
+      <!-- The Virtual IT Squad Architecture Diagram -->
+      <section class="space-y-6">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-white">The Nexus Virtual IT Squad</h2>
+            <p class="text-sm text-slate-400 mt-1">Simulating a complete software engineering organization with sequential contract gates.</p>
+          </div>
+          <span class="text-xs font-mono text-indigo-400 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">Click any specialist below to view contracts</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="squad-grid">
+          <!-- BA -->
+          <div onclick="selectAgent('ba')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm">1</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Proposal</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">Business Analyst</h3>
+            <p class="text-xs text-slate-400 mt-1">Transforms raw prompts into canonical slugs, 4 user stories, and interactive HTML wireframes.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">docs/preview_mockup.html</span>
+            </div>
+          </div>
+
+          <!-- SA -->
+          <div onclick="selectAgent('sa')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">2</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Topology</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">Solution Architect</h3>
+            <p class="text-xs text-slate-400 mt-1">Evaluates Cloud Run serverless vs VM compute, latency budgets, and security boundary isolation.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">docs/ARCHITECTURE.md</span>
+            </div>
+          </div>
+
+          <!-- DA -->
+          <div onclick="selectAgent('da')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm">3</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Schema</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">Data Architect</h3>
+            <p class="text-xs text-slate-400 mt-1">Normalizes relational entities, indexes, UUID keys, and outputs executable PostgreSQL SQL DDL.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">docs/DATA_ARCHITECTURE.md</span>
+            </div>
+          </div>
+
+          <!-- UI Designer -->
+          <div onclick="selectAgent('ui')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-sm">4</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">Design</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">UI/UX Designer</h3>
+            <p class="text-xs text-slate-400 mt-1">Produces Tailwind design tokens and accessible React components via @nexus-agent-framework/ui.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">frontend/src/App.tsx</span>
+            </div>
+          </div>
+
+          <!-- FullStack -->
+          <div onclick="selectAgent('fs')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">5</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">FullStack</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">Full-Stack Engineer</h3>
+            <p class="text-xs text-slate-400 mt-1">Implements clean FastAPI REST endpoints, Pydantic validation schemas, and SQLAlchemy ORM entities.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">src/main.py</span>
+            </div>
+          </div>
+
+          <!-- DevOps -->
+          <div onclick="selectAgent('devops')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm">6</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">IaC</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">DevOps Engineer</h3>
+            <p class="text-xs text-slate-400 mt-1">Synthesizes production Terraform main.tf, container Dockerfiles, and GitHub Actions CI/CD workflows.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">infra/terraform/main.tf</span>
+            </div>
+          </div>
+
+          <!-- QA Sentinel -->
+          <div onclick="selectAgent('qa')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">7</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Clearance</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">QA & Security Sentinel</h3>
+            <p class="text-xs text-slate-400 mt-1">Runs security guardrail checks, injection tests, and produces executable pytest preflight test suites.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Artifact: <span class="text-slate-200">tests/test_preflight.py</span>
+            </div>
+          </div>
+
+          <!-- Closed-Loop Healer -->
+          <div onclick="selectAgent('healer')" class="agent-card cursor-pointer glass-panel p-5 rounded-xl border border-indigo-500/40 bg-indigo-950/20 hover:border-indigo-400 transition relative group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="w-8 h-8 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-bold text-sm">8</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">Feedback</span>
+            </div>
+            <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition">Closed-Loop Healer</h3>
+            <p class="text-xs text-slate-300 mt-1">Intercepts test failures and feeds diagnosis back to Full-Stack engineer until 100% test clearance is met.</p>
+            <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+              Status: <span class="text-emerald-400 font-bold">Closed-Loop Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Inspector Box -->
+        <div id="agent-detail-box" class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <span id="detail-icon" class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">1</span>
               <div>
-                <h4 class="text-base font-semibold text-slate-100">European Energy Grid Transition</h4>
-                <span class="text-xs text-indigo-400 font-mono font-medium">Energy</span>
+                <h4 id="detail-title" class="font-bold text-base text-white">Business Analyst Agent</h4>
+                <p id="detail-contract" class="text-xs text-slate-400 font-mono">Contract: ProductProposalContract</p>
               </div>
-              <span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">gemini-3.8-flash</span>
             </div>
-            <p class="text-sm leading-relaxed text-slate-300">Accelerated solar and wind capacity additions stabilize long-term price expectations and improve grid resilience across western interconnection corridors.</p>
-            <div class="flex items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
-              <span>Sentiment: <b class="text-indigo-300">82.4/100</b></span>
-              <span>Risk: <span class="uppercase text-emerald-400 font-bold">low</span></span>
-              <span>Tokens: 128</span>
+            <span id="detail-pill" class="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">docs/preview_mockup.html</span>
+          </div>
+          <p id="detail-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            The Business Analyst deconstructs raw prompts into actionable specifications. It generates user stories, acceptance criteria, canonical application names, and self-contained HTML wireframes that can be rendered directly in your browser.
+          </p>
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Example Generated Schema:</span>
+            <pre id="detail-code" class="p-4 rounded-xl bg-slate-900 border border-slate-800/80 text-xs font-mono text-indigo-200 overflow-x-auto">
+{
+  "title": "WatchHub Europe",
+  "app_name": "watchhub",
+  "tagline": "Verified European luxury watch index and real-time deal alerts",
+  "user_stories": [
+    "As a collector, I want to track price movements across certified dealers.",
+    "As an investor, I want to set webhook alerts when reference models drop below market."
+  ],
+  "wireframe_html_preview": "&lt;!DOCTYPE html&gt;&lt;html&gt;...&lt;/html&gt;"
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- The 3 Production Stages -->
+      <section class="space-y-8">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight text-white">The Three Pillars of Nexus Engineering</h2>
+          <p class="text-sm text-slate-400 mt-1">How Nexus moves beyond toy prototypes to enterprise-grade autonomous delivery.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+              🔄
+            </div>
+            <h3 class="font-bold text-lg text-white">Stage 1: Closed-Loop Self-Healing</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              No "throw-it-over-the-fence" code generation. When the QA agent discovers failing assertions or syntax regressions, it feeds stack traces back to the Full-Stack agent to apply surgical patches until 100% of tests pass.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-1 font-mono pt-2">
+              <li>• Automated failure stacktrace extraction</li>
+              <li>• Multi-cycle iterative code repair</li>
+              <li>• Emits SelfHealingReportContract</li>
+            </ul>
+          </div>
+
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg">
+              🔍
+            </div>
+            <h3 class="font-bold text-lg text-white">Stage 2: Brownfield AST Analysis</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Analyze and refactor existing codebases safely. Nexus constructs an Abstract Syntax Tree (AST) dependency graph across files, classes, and FastAPI routes to calculate change blast radius before modifying code.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-1 font-mono pt-2">
+              <li>• CLI: nexus audit [path]</li>
+              <li>• CLI: nexus refactor [task] --apply</li>
+              <li>• Hardcoded API key & injection scanning</li>
+            </ul>
+          </div>
+
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg">
+              📊
+            </div>
+            <h3 class="font-bold text-lg text-white">Stage 3: Enterprise ROI & DORA</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Quantifiable engineering economics. Benchmarks LLM token costs ($0.075/1M input) against senior developer market rates ($85/hr standard), computing DORA velocity multipliers and hours saved.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-1 font-mono pt-2">
+              <li>• CLI: nexus metrics [path]</li>
+              <li>• 12x Deployment Frequency speedup</li>
+              <li>• 84.5% Lead Time Reduction</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Terminal Showcase -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold tracking-tight text-white">Interactive CLI Reference</h2>
+          <span class="text-xs text-slate-400">Click tabs to switch commands</span>
+        </div>
+        
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-2xl">
+          <!-- Terminal Header -->
+          <div class="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              <span class="text-xs font-mono text-slate-400 ml-2">bash - nexus-cli</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="switchCliTab('dream')" id="cli-tab-dream" class="cli-tab text-xs font-mono px-3 py-1 rounded bg-indigo-600 text-white font-semibold">nexus dream</button>
+              <button onclick="switchCliTab('audit')" id="cli-tab-audit" class="cli-tab text-xs font-mono px-3 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">nexus audit</button>
+              <button onclick="switchCliTab('refactor')" id="cli-tab-refactor" class="cli-tab text-xs font-mono px-3 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">nexus refactor</button>
+              <button onclick="switchCliTab('metrics')" id="cli-tab-metrics" class="cli-tab text-xs font-mono px-3 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">nexus metrics</button>
+              <button onclick="switchCliTab('mcp')" id="cli-tab-mcp" class="cli-tab text-xs font-mono px-3 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">nexus mcp</button>
+            </div>
+          </div>
+          
+          <!-- Terminal Body -->
+          <div class="p-6 font-mono text-xs text-slate-300 space-y-3 leading-relaxed overflow-x-auto min-h-[220px]" id="cli-terminal-body">
+            <div class="text-slate-500"># Transform an idea into a complete full-stack project</div>
+            <div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus dream "Autonomous Watch Market Index" --output-dir ./watchhub</span></div>
+            <div class="text-indigo-300">--- Nexus Core IT Squad Activated ---</div>
+            <div class="text-slate-400">Goal: "Autonomous Watch Market Index"</div>
+            <div class="text-slate-400">Assignees: Business Analyst, Architect, Data Architect, Designer, Full-Stack, DevOps, QA</div>
+            <div class="text-emerald-400 pt-2 font-bold">=== Project Delivered! ===</div>
+            <div>App: WatchHub (watchhub)</div>
+            <div>Cloud Target: GCP (Cloud Run Serverless)</div>
+            <div>Data Schema: PostgreSQL 16 (4 tables, SQL DDL emitted)</div>
+            <div>UI Component: WatchDashboard.tsx</div>
+            <div>QA Preflight: <span class="text-emerald-400 font-bold">PASS (30/30 tests clearance verified)</span></div>
+            <div class="text-slate-500 pt-1">Workspace written to ./watchhub (Runnable FastAPI + React App)</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- TAB 2: DOCUMENTATION & GUIDES -->
+    <div id="tab-docs" class="tab-content hidden space-y-12">
+      <div class="border-b border-slate-800 pb-6">
+        <h2 class="text-3xl font-extrabold text-white">Developer Documentation & API Manual</h2>
+        <p class="text-sm text-slate-400 mt-1">Complete setup, CLI reference, and Model Context Protocol (MCP) guide.</p>
+      </div>
+
+      <!-- Quickstart in 60s -->
+      <section class="space-y-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
+          Quickstart in 60 Seconds
+        </h3>
+        <p class="text-sm text-slate-300">Install the Python core runtime and Node.js enterprise contracts:</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+            <span class="text-xs font-mono text-indigo-400"># Python Framework (PyPI)</span>
+            <div class="flex items-center justify-between font-mono text-xs text-white bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <code>pip install nexus-agent-framework</code>
+              <button onclick="copyToClipboard('pip install nexus-agent-framework', this)" class="text-slate-400 hover:text-white">Copy</button>
+            </div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+            <span class="text-xs font-mono text-purple-400"># TypeScript Contracts (npm)</span>
+            <div class="flex items-center justify-between font-mono text-xs text-white bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <code>npm install @nexus-agent-framework/contracts</code>
+              <button onclick="copyToClipboard('npm install @nexus-agent-framework/contracts', this)" class="text-slate-400 hover:text-white">Copy</button>
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- MCP Integration Guide -->
+      <section class="space-y-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-bold">2</span>
+          Model Context Protocol (MCP) for Claude Code, Cursor & Codex
+        </h3>
+        <p class="text-sm text-slate-300">
+          Nexus natively exposes its 7 specialist agents, AST dependency mapper, and security guardrails to AI IDEs using the standard Model Context Protocol (MCP):
+        </p>
+        <div class="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-slate-400">claude_desktop_config.json or .cursor/mcp.json</span>
+            <button onclick="copyToClipboard(document.getElementById('mcp-config-code').innerText, this)" class="text-xs text-indigo-400 hover:text-indigo-300">Copy JSON</button>
+          </div>
+          <pre id="mcp-config-code" class="p-4 rounded-lg bg-slate-950 text-xs font-mono text-indigo-300 overflow-x-auto">
+{
+  "mcpServers": {
+    "nexus": {
+      "command": "nexus",
+      "args": ["mcp"],
+      "env": {
+        "GCP_PROJECT_ID": "your-gcp-project-id",
+        "GEMINI_MODEL": "gemini-3.8-flash"
+      }
+    }
+  }
+}</pre>
+        </div>
+      </section>
+
+      <!-- CLI Reference Table -->
+      <section class="space-y-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold">3</span>
+          CLI Subcommand Matrix
+        </h3>
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-900 text-slate-300 border-b border-slate-800">
+              <tr>
+                <th class="p-3">Command</th>
+                <th class="p-3">Description</th>
+                <th class="p-3">Key Options</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 bg-slate-950/60 text-slate-300 font-sans">
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus dream &lt;idea&gt;</td>
+                <td class="p-3">Provisions the 7-agent squad and delivers full application workspace on disk.</td>
+                <td class="p-3 font-mono text-slate-400">--output-dir &lt;path&gt;</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus audit [path]</td>
+                <td class="p-3">Static and architectural security audit (secrets, injections, test coverage).</td>
+                <td class="p-3 font-mono text-slate-400">--json</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus refactor &lt;task&gt;</td>
+                <td class="p-3">Computes AST blast-radius and synthesizes surgical contract patches.</td>
+                <td class="p-3 font-mono text-slate-400">--target &lt;file&gt;, --apply</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus metrics [path]</td>
+                <td class="p-3">Calculates DORA speedup metrics and net enterprise dollar ROI ($85/hr benchmark).</td>
+                <td class="p-3 font-mono text-slate-400">--hourly-rate &lt;rate&gt;, --json</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus mcp</td>
+                <td class="p-3">Launches stdio Model Context Protocol server for Claude Code and Cursor.</td>
+                <td class="p-3 font-mono text-slate-400">None</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus doctor</td>
+                <td class="p-3">Health diagnostics across Python 3.12, Node, GCP ADC, and Gemini 3.8 Flash.</td>
+                <td class="p-3 font-mono text-slate-400">None</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-bold text-indigo-300">nexus ui</td>
+                <td class="p-3">Starts the localhost real-time visualizer dashboard on port 8000.</td>
+                <td class="p-3 font-mono text-slate-400">--port 8000, --no-browser</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Python SDK programmatic example -->
+      <section class="space-y-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center text-sm font-bold">4</span>
+          Python Programmatic SDK
+        </h3>
+        <p class="text-sm text-slate-300">Invoke the squad directly in Python code or automated backend pipelines:</p>
+        <div class="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+          <pre class="p-4 rounded-lg bg-slate-950 text-xs font-mono text-emerald-300 overflow-x-auto">
+from nexus.teams.it_pack.team import NexusITTeam
+from nexus.brownfield.auditor import CodebaseAuditor
+from nexus.metrics.roi import RoiCalculator
+
+# 1. Deliver an application with closed-loop self-healing
+team = NexusITTeam()
+project = team.build_from_idea(
+    raw_user_idea="Real-time European ESG Carbon Credit Ledger",
+    target_cloud="gcp",
+    enable_self_healing=True,
+    max_healing_cycles=3
+)
+print(f"Delivered: {project.proposal.title} -> {project.output_path}")
+
+# 2. Audit existing codebase
+auditor = CodebaseAuditor("./existing-repo")
+report = auditor.run_audit()
+print(f"Health: {report.health_score}/100 with {len(report.findings)} findings")
+
+# 3. Compute DORA metrics and enterprise ROI
+roi_calc = RoiCalculator(hourly_rate=95.0)
+roi_score = roi_calc.calculate_from_codebase("./existing-repo")
+print(f"Enterprise Savings: ${roi_score.net_savings_usd:,.2f} USD ({roi_score.roi_multiplier:.1f}x ROI)")</pre>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: INTERACTIVE PLAYGROUND / SIMULATOR -->
+    <div id="tab-playground" class="tab-content hidden space-y-8">
+      <div class="border-b border-slate-800 pb-6">
+        <h2 class="text-3xl font-extrabold text-white">Live Virtual IT Squad Simulator</h2>
+        <p class="text-sm text-slate-400 mt-1">Submit an application idea to simulate the 7-agent sequential handoffs, closed-loop healing, and generated code.</p>
       </div>
 
-      <!-- Agent Trace Log -->
-      <div>
-        <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">Live Agent Activity Log</h3>
-        <div id="trace-container" class="rounded-xl border border-slate-800 bg-slate-900/30 p-4 space-y-3 font-mono text-xs">
-          <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
-            <div class="flex items-center justify-between text-indigo-400">
-              <span class="font-bold">Business Analyst</span>
-              <span class="text-[10px] text-slate-500">10:14:02</span>
-            </div>
-            <p class="text-slate-300 font-sans text-xs">Deconstructed market query into macro indicator matrix.</p>
-            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-              <span>Tokens: 140</span>
-              <span class="text-emerald-400 font-semibold">&check; Completed</span>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Input Form -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
+          <h3 class="font-bold text-base text-white">Project Specification</h3>
+          
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-300">Prompt / Requirement:</label>
+            <textarea id="sim-prompt" rows="4" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">Autonomous Real-Time Fraud Detection Engine with Redis caching and FastAPI on Google Cloud Run</textarea>
+          </div>
+
+          <!-- Quick Templates -->
+          <div class="space-y-1.5">
+            <span class="text-[11px] text-slate-400">Quick Prompts:</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="setSimPrompt('European ESG Carbon Credit Exchange with PostgreSQL')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">ESG Carbon Exchange</button>
+              <button onclick="setSimPrompt('Second-Hand Luxury Watch Index with Price Alerts')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Watch Index</button>
+              <button onclick="setSimPrompt('Microservice Circuit Breaker & Health Sentinel')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Circuit Breaker</button>
             </div>
           </div>
 
-          <div class="p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
-            <div class="flex items-center justify-between text-indigo-400">
-              <span class="font-bold">Full-Stack Engineer</span>
-              <span class="text-[10px] text-slate-500">10:14:04</span>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-300">Target Cloud:</label>
+            <select id="sim-cloud" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="gcp">Google Cloud (Cloud Run Serverless)</option>
+              <option value="aws">AWS (ECS Fargate + RDS)</option>
+              <option value="local">Local Docker Containers</option>
+            </select>
+          </div>
+
+          <button onclick="runSimulation()" id="sim-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/25 transition flex items-center justify-center gap-2">
+            <span>Execute Virtual IT Squad</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+
+          <div class="pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+            <p>• Sequential gate: BA &rarr; SA &rarr; DA &rarr; UI &rarr; FS &rarr; DevOps &rarr; QA</p>
+            <p>• Closed-Loop Healer auto-triggers if assertions fail</p>
+            <p>• Model: Gemini 3.8 Flash (fastest & lowest token profile)</p>
+          </div>
+        </div>
+
+        <!-- Real-time Agent Trace Feed & Code Viewer -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Trace Feed -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base text-white">Live Execution Traces</h3>
+              <div id="sim-status-pill" class="text-xs font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Idle</div>
             </div>
-            <p class="text-slate-300 font-sans text-xs">Invoked Vertex AI Gemini 3.8 Flash endpoint via cached ADC.</p>
-            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-              <span>Tokens: 210</span>
-              <span class="text-emerald-400 font-semibold">&check; Completed</span>
+            <div id="trace-feed" class="space-y-3 min-h-[160px] max-h-[320px] overflow-y-auto">
+              <div class="text-xs text-slate-500 italic p-4 text-center">Click "Execute Virtual IT Squad" to start real-time telemetry streaming...</div>
+            </div>
+          </div>
+
+          <!-- Generated Code Tabs -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-white uppercase tracking-wider">Generated Artifacts</span>
+                <span id="artifact-count-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">3 files</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button onclick="switchArtifact('main')" id="btn-art-main" class="text-xs font-mono px-2.5 py-1 rounded bg-indigo-600 text-white font-semibold">src/main.py</button>
+                <button onclick="switchArtifact('terraform')" id="btn-art-terraform" class="text-xs font-mono px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">main.tf</button>
+                <button onclick="switchArtifact('test')" id="btn-art-test" class="text-xs font-mono px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition">test_preflight.py</button>
+              </div>
+            </div>
+            <pre id="artifact-code-block" class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 font-mono text-xs text-slate-200 overflow-x-auto max-h-[280px]"># Generated code will appear here after simulation completes...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: BROWNFIELD AST & REFACTOR -->
+    <div id="tab-brownfield" class="tab-content hidden space-y-12">
+      <div class="border-b border-slate-800 pb-6">
+        <h2 class="text-3xl font-extrabold text-white">Brownfield Codebase Support & AST Blast-Radius</h2>
+        <p class="text-sm text-slate-400 mt-1">Safely audit and refactor legacy repositories without breaking surrounding contracts.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Interactive Blast Radius Calculator -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-white">AST Blast-Radius Calculator</h3>
+            <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">MEDIUM RISK</span>
+          </div>
+          <p class="text-xs text-slate-300">Nexus parses import statements, classes, and endpoints across your repository to quantify dependency impact:</p>
+          
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 font-mono text-xs">
+            <div class="text-slate-400">Target Symbol: <span class="text-white font-bold">src/models/user.py</span></div>
+            <div class="text-slate-400">Direct Dependents (3):</div>
+            <div class="text-indigo-300 pl-4 space-y-1">
+              <div>&bull; src/api/auth.py</div>
+              <div>&bull; src/api/users.py</div>
+              <div>&bull; src/db/session.py</div>
+            </div>
+            <div class="text-slate-400 pt-2">Affected API Routes:</div>
+            <div class="text-purple-300 pl-4 space-y-1">
+              <div>&bull; POST /api/v1/auth/login</div>
+              <div>&bull; GET /api/v1/users/me</div>
+              <div>&bull; PUT /api/v1/users/{id}</div>
+            </div>
+            <div class="text-slate-400 pt-2">Affected Test Suites:</div>
+            <div class="text-emerald-400 pl-4 space-y-1">
+              <div>&bull; tests/test_auth.py</div>
+              <div>&bull; tests/test_users.py</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-indigo-950/30 border border-indigo-500/30 text-xs text-indigo-300">
+            <b>Surgical Guarantee:</b> Nexus refactors only target symbols while executing verified regression tests on all affected dependents.
+          </div>
+        </div>
+
+        <!-- Security & Architecture Auditor -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-white">Pre-Flight Security Sentinel</h3>
+            <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Health: 88/100</span>
+          </div>
+          <p class="text-xs text-slate-300">Automated static scanner detecting exposed private credentials, missing guardrails, and injection vectors:</p>
+          
+          <div class="space-y-3 text-xs">
+            <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-rose-400 font-mono">[CRITICAL] SECRET_LEAK</span>
+                <span class="text-[10px] text-slate-400 font-mono">services/payment.py:34</span>
+              </div>
+              <p class="text-slate-300">Hardcoded private API key (sk_live_...) detected in source.</p>
+              <p class="text-rose-300 text-[11px] font-mono">&rarr; Remediation: Scrubbed before model ingestion. Move to Secret Manager.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-amber-400 font-mono">[HIGH] MISSING_GUARDRAIL</span>
+                <span class="text-[10px] text-slate-400 font-mono">services/ai_assistant.py:19</span>
+              </div>
+              <p class="text-slate-300">Direct Gemini call without input prompt injection check.</p>
+              <p class="text-amber-300 text-[11px] font-mono">&rarr; Remediation: Wrapped in GuardrailManager.inspect_input().</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-300">
+              ✓ <b>40 Clean Source Files:</b> No unescaped f-string syntax bugs, no CORS wildcards.
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- TAB 5: ENTERPRISE ROI & DORA CALCULATOR -->
+    <div id="tab-roi" class="tab-content hidden space-y-10">
+      <div class="border-b border-slate-800 pb-6">
+        <h2 class="text-3xl font-extrabold text-white">Enterprise ROI & DORA Telemetry Calculator</h2>
+        <p class="text-sm text-slate-400 mt-1">Calculate how much your engineering team saves in developer hours, defect prevention, and cloud spend.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Sliders -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+          <h3 class="font-bold text-base text-white">Team Parameters</h3>
+          
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Engineering Team Size:</span>
+              <span id="lbl-team-size" class="font-bold text-indigo-400 font-mono">5 Engineers</span>
+            </div>
+            <input type="range" id="slider-team" min="1" max="50" value="5" oninput="updateRoi()" class="w-full accent-indigo-500">
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Senior Dev Hourly Benchmark:</span>
+              <span id="lbl-hourly-rate" class="font-bold text-purple-400 font-mono">$85 / hour</span>
+            </div>
+            <input type="range" id="slider-rate" min="40" max="200" step="5" value="85" oninput="updateRoi()" class="w-full accent-purple-500">
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Releases / Sprints per Month:</span>
+              <span id="lbl-releases" class="font-bold text-emerald-400 font-mono">8 Releases</span>
+            </div>
+            <input type="range" id="slider-releases" min="1" max="40" value="8" oninput="updateRoi()" class="w-full accent-emerald-500">
+          </div>
+
+          <div class="pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+            <p>• Scaffolding saved: 14h / app</p>
+            <p>• QA healing saved: 3h / app</p>
+            <p>• AST audit & IaC: 4h / app</p>
+            <p>• LLM spend: ~$0.038 / app on Gemini 3.8 Flash</p>
+          </div>
+        </div>
+
+        <!-- Calculated Results Cards -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="glass-panel p-5 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-xs text-slate-400">Annual Hours Saved</span>
+              <div class="text-3xl font-extrabold text-white" id="val-hours">2,016 hrs</div>
+              <span class="text-[11px] text-indigo-400">168 hours saved / month</span>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-xs text-slate-400">Net Annual Dollar Savings</span>
+              <div class="text-3xl font-extrabold text-emerald-400" id="val-net-savings">$171,356.35</div>
+              <span class="text-[11px] text-slate-400">After deducting total LLM token spend</span>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-xs text-slate-400">Annual LLM Token Spend</span>
+              <div class="text-3xl font-extrabold text-purple-300" id="val-token-spend">$3.65 USD</div>
+              <span class="text-[11px] text-slate-400">Using Gemini 3.8 Flash pricing</span>
+            </div>
+
+            <div class="glass-panel p-5 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-xs text-slate-400">Net ROI Multiplier</span>
+              <div class="text-3xl font-extrabold text-pink-400" id="val-roi-mult">46,947x</div>
+              <span class="text-[11px] text-slate-400">Dollar value delivered vs spend</span>
+            </div>
+          </div>
+
+          <!-- DORA Velocity Scorecard -->
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h4 class="font-bold text-sm text-white uppercase tracking-wider font-mono">DORA Velocity Metrics Impact</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              <div class="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase font-mono">Deploy Frequency</span>
+                <p class="text-xl font-bold text-indigo-400 mt-1" id="dora-freq">6.4x</p>
+                <span class="text-[10px] text-slate-500">Faster release cycle</span>
+              </div>
+              <div class="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase font-mono">Lead Time</span>
+                <p class="text-xl font-bold text-emerald-400 mt-1">-86.5%</p>
+                <span class="text-[10px] text-slate-500">Days to minutes</span>
+              </div>
+              <div class="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase font-mono">Failure Rate</span>
+                <p class="text-xl font-bold text-purple-400 mt-1">2.1%</p>
+                <span class="text-[10px] text-slate-500">Self-healing gates</span>
+              </div>
+              <div class="p-3 rounded-lg bg-slate-900 border border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase font-mono">MTTR Recovery</span>
+                <p class="text-xl font-bold text-pink-400 mt-1">3.2m</p>
+                <span class="text-[10px] text-slate-500">Automated repair</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ECOSYSTEM & PACKAGES -->
+    <div id="tab-ecosystem" class="tab-content hidden space-y-12">
+      <div class="border-b border-slate-800 pb-6">
+        <h2 class="text-3xl font-extrabold text-white">Ecosystem Packages & Registries</h2>
+        <p class="text-sm text-slate-400 mt-1">Nexus is published across official PyPI and npm registries as an Apache 2.0 open-source framework.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- PyPI -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-lg text-white">nexus-agent-framework</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">PyPI Package</span>
+          </div>
+          <p class="text-xs text-slate-300">Core orchestrator, 7 specialist agents, CLI (dream, audit, refactor, metrics, mcp), closed-loop self-healer, and pricing trackers.</p>
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-indigo-300">
+            pip install nexus-agent-framework
+          </div>
+          <a href="https://pypi.org/project/nexus-agent-framework/" target="_blank" rel="noopener noreferrer" class="inline-block text-xs font-bold text-indigo-400 hover:text-indigo-300">
+            View on PyPI &rarr;
+          </a>
+        </div>
+
+        <!-- npm Contracts -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-lg text-white">@nexus-agent-framework/contracts</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">npm v1.0.2</span>
+          </div>
+          <p class="text-xs text-slate-300">Universal TypeScript definitions across sovereign apps and agents. Includes SelfHealing, BlastRadius, and EnterpriseRoi contracts.</p>
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-purple-300">
+            npm install @nexus-agent-framework/contracts
+          </div>
+          <a href="https://www.npmjs.com/package/@nexus-agent-framework/contracts" target="_blank" rel="noopener noreferrer" class="inline-block text-xs font-bold text-indigo-400 hover:text-indigo-300">
+            View on npm &rarr;
+          </a>
+        </div>
+
+        <!-- npm UI -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-lg text-white">@nexus-agent-framework/ui</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">npm v0.1.1</span>
+          </div>
+          <p class="text-xs text-slate-300">Component library with StatCard, AiBadge, TraceViewer, and SecurityShieldBadge built for agentic applications.</p>
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 font-mono text-xs text-pink-300">
+            npm install @nexus-agent-framework/ui
+          </div>
+          <a href="https://www.npmjs.com/package/@nexus-agent-framework/ui" target="_blank" rel="noopener noreferrer" class="inline-block text-xs font-bold text-indigo-400 hover:text-indigo-300">
+            View on npm &rarr;
+          </a>
+        </div>
+
+        <!-- Platform Author -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-lg text-white">Platform Leadership</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Creator</span>
+          </div>
+          <p class="text-xs text-slate-300">Designed and engineered by Sai Nikhil Abburi (Platform & AI Engineering Manager). Explore the full ecosystem across Europe.</p>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <a href="https://myprofile.abburi.info/" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-medium transition">Author Profile &rarr;</a>
+            <a href="https://predictiveeconomics.abburi.info/" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition">PredictiveEconomics</a>
+            <a href="https://decodelux.abburi.info/" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition">DecodeLuxembourg</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-12 px-6 mt-20">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-400">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-xs">NX</div>
+        <div>
+          <span class="font-bold text-slate-200">Nexus Platform</span> &bull; nexus.abburi.info
+          <p class="text-[11px] text-slate-500 mt-0.5">Apache 2.0 Open Source License &bull; Copyright &copy; 2026 Sai Nikhil Abburi</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://myprofile.abburi.info/" target="_blank" class="hover:text-white transition">Portfolio</a>
+        <a href="https://github.com/sabburi1994/nexus" target="_blank" class="hover:text-white transition">GitHub</a>
+        <a href="https://pypi.org/project/nexus-agent-framework/" target="_blank" class="hover:text-white transition">PyPI</a>
+        <a href="/docs" target="_blank" class="hover:text-white transition">Swagger API</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript logic -->
   <script>
-    const form = document.getElementById('scan-form');
-    const targetInput = document.getElementById('scan-target');
-    const sectorInput = document.getElementById('scan-sector');
-    const submitBtn = document.getElementById('submit-btn');
-    const reportsContainer = document.getElementById('reports-container');
-    const traceContainer = document.getElementById('trace-container');
-    const statCount = document.getElementById('stat-count');
-    const reportsCounter = document.getElementById('reports-counter');
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const active = document.getElementById('tab-' + tabId);
+      if (active) active.classList.remove('hidden');
 
-    let totalReports = 1;
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-white', 'bg-slate-800/80', 'border-slate-700');
+        btn.classList.add('text-slate-300', 'border-transparent');
+      });
+      const currentNav = document.getElementById('nav-' + tabId);
+      if (currentNav) {
+        currentNav.classList.add('text-white', 'bg-slate-800/80', 'border-slate-700');
+        currentNav.classList.remove('border-transparent');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const target = targetInput.value.trim();
-      const sector = sectorInput.value;
-      if (!target) return;
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => { btn.innerText = orig; }, 2000);
+      });
+    }
 
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-        </svg>
-        Synthesizing...
-      `;
+    const AGENTS_DATA = {
+      ba: {
+        num: '1',
+        title: 'Business Analyst Agent',
+        contract: 'Contract: ProductProposalContract',
+        pill: 'docs/preview_mockup.html',
+        desc: 'The Business Analyst deconstructs raw prompts into actionable specifications. It generates user stories, acceptance criteria, canonical application names, and self-contained HTML wireframes that can be rendered directly in your browser.',
+        code: `{\n  "title": "WatchHub Europe",\n  "app_name": "watchhub",\n  "tagline": "Verified European luxury watch index and real-time deal alerts",\n  "user_stories": [\n    "As a collector, I want to track price movements across certified dealers.",\n    "As an investor, I want to set webhook alerts when reference models drop below market."\n  ],\n  "wireframe_html_preview": "<!DOCTYPE html><html>...</html>"\n}`
+      },
+      sa: {
+        num: '2',
+        title: 'Solution Architect Agent',
+        contract: 'Contract: SolutionBlueprintContract',
+        pill: 'docs/ARCHITECTURE.md',
+        desc: 'Evaluates runtime topologies against cost envelopes, latency budgets, and resilience goals. Automatically determines Cloud Run serverless vs VM instances, VPC connections, and cross-region egress policies.',
+        code: `{\n  "cloud_provider": "gcp",\n  "compute_pattern": "serverless_cloud_run",\n  "database_type": "managed_postgresql",\n  "ingress_policy": "INGRESS_TRAFFIC_ALL",\n  "non_functional_requirements": ["p99 latency < 200ms", "TLS 1.3 only"]\n}`
+      },
+      da: {
+        num: '3',
+        title: 'Data Architect Agent',
+        contract: 'Contract: DataArchitectureContract',
+        pill: 'docs/DATA_ARCHITECTURE.md',
+        desc: 'Designs third-normal-form relational databases, UUID primary keys, and indexed foreign key constraints. Generates clean PostgreSQL SQL DDL schemas and initial migration steps.',
+        code: `CREATE TABLE IF NOT EXISTS watches (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  brand VARCHAR(64) NOT NULL,\n  model VARCHAR(128) NOT NULL,\n  reference VARCHAR(64) NOT NULL,\n  current_price_eur NUMERIC(12, 2) NOT NULL,\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\nCREATE INDEX idx_watches_ref ON watches(reference);`
+      },
+      ui: {
+        num: '4',
+        title: 'UI/UX Designer Agent',
+        contract: 'Contract: UiSpecificationContract',
+        pill: 'frontend/src/App.tsx',
+        desc: 'Synthesizes responsive dark-mode layouts using Tailwind CSS and @nexus-agent-framework/ui components (StatCard, AiBadge, TraceViewer).',
+        code: `import { StatCard, AiBadge, NexusHeader } from "@nexus-agent-framework/ui";\n\nexport default function Dashboard() {\n  return (\n    <div className="p-6 bg-slate-950 text-white min-h-screen">\n      <NexusHeader appName="WatchHub" activeModel="Gemini 3.8 Flash" />\n      <StatCard title="Deals Tracked" value="1,420" trend="up" trendValue="+14%" />\n    </div>\n  );\n}`
+      },
+      fs: {
+        num: '5',
+        title: 'Full-Stack Engineer Agent',
+        contract: 'Contract: FullStackSpecificationContract',
+        pill: 'src/main.py',
+        desc: 'Builds production-grade FastAPI REST backends with Pydantic v2 schemas and SQLAlchemy async sessions. Guarantees 0 unescaped f-string syntax regressions.',
+        code: `from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI(title="WatchHub API")\n\nclass Watch(BaseModel):\n    reference: str\n    price_eur: float\n\n@app.get("/api/v1/watches")\ndef get_watches():\n    return [{"reference": "116500LN", "price_eur": 24500.0}]`
+      },
+      devops: {
+        num: '6',
+        title: 'DevOps Engineer Agent',
+        contract: 'Contract: DevopsSpecificationContract',
+        pill: 'infra/terraform/main.tf',
+        desc: 'Generates zero-drift Infrastructure as Code: Terraform main.tf and variables.tf, multi-stage alpine Dockerfile, and GitHub Actions CI/CD workflows.',
+        code: `resource "google_cloud_run_v2_service" "watchhub" {\n  name     = "watchhub"\n  location = "europe-west1"\n  template {\n    containers {\n      image = "gcr.io/finhub-510316/watchhub:latest"\n      resources { limits = { cpu = "1000m", memory = "512Mi" } }\n    }\n  }\n}`
+      },
+      qa: {
+        num: '7',
+        title: 'QA & Security Sentinel Agent',
+        contract: 'Contract: QaSpecificationContract',
+        pill: 'tests/test_preflight.py',
+        desc: 'Executes preflight verification: static prompt injection detection, CORS checks, secret leakage detection, and unit test coverage.',
+        code: `def test_health_check(client):\n    response = client.get("/health")\n    assert response.status_code == 200\n    assert response.json()["status"] == "ok"\n    assert response.json()["healed"] is True`
+      },
+      healer: {
+        num: '8',
+        title: 'Closed-Loop Self-Healer',
+        contract: 'Contract: SelfHealingReportContract',
+        pill: 'tests/healing_report.json',
+        desc: 'The feedback engine connecting QA and Full-Stack agents. If any unit test fails, it diagnoses root cause, writes a surgical patch, and re-executes tests up to 3 cycles.',
+        code: `{\n  "initial_tests_passed": false,\n  "total_attempts": 1,\n  "final_status": "HEALED",\n  "diagnosis": "Pydantic field validation type mismatch on price_eur",\n  "retest_passed": true,\n  "duration_seconds": 1.4\n}`
+      }
+    };
 
-      // Prepend pending trace
-      const now = new Date().toLocaleTimeString();
-      const traceId = 'trace_' + Date.now();
-      const pendingTrace = document.createElement('div');
-      pendingTrace.id = traceId;
-      pendingTrace.className = "p-3 rounded-lg bg-indigo-950/30 border border-indigo-800/40 space-y-1";
-      pendingTrace.innerHTML = `
-        <div class="flex items-center justify-between text-indigo-300">
-          <span class="font-bold">Market Analyst Agent</span>
-          <span class="text-[10px] text-slate-500">${now}</span>
-        </div>
-        <p class="text-slate-300 font-sans text-xs">Executing inference on target "${target}"...</p>
-        <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-          <span>Tokens: --</span>
-          <span class="text-indigo-400 font-semibold animate-pulse">&bull; In Flight</span>
-        </div>
-      `;
-      traceContainer.prepend(pendingTrace);
+    function selectAgent(key) {
+      const d = AGENTS_DATA[key];
+      if (!d) return;
+      document.getElementById('detail-icon').innerText = d.num;
+      document.getElementById('detail-title').innerText = d.title;
+      document.getElementById('detail-contract').innerText = d.contract;
+      document.getElementById('detail-pill').innerText = d.pill;
+      document.getElementById('detail-desc').innerText = d.desc;
+      document.getElementById('detail-code').innerText = d.code;
+      document.getElementById('agent-detail-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    const CLI_SNIPPETS = {
+      dream: `<div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus dream "Autonomous Watch Market Index" --output-dir ./watchhub</span></div>
+<div class="text-indigo-300">--- Nexus Core IT Squad Activated ---</div>
+<div class="text-slate-400">Goal: "Autonomous Watch Market Index"</div>
+<div class="text-slate-400">Assignees: Business Analyst, Architect, Data Architect, Designer, Full-Stack, DevOps, QA</div>
+<div class="text-emerald-400 pt-2 font-bold">=== Project Delivered! ===</div>
+<div>App: WatchHub (watchhub)</div>
+<div>Cloud Target: GCP (Cloud Run Serverless)</div>
+<div>Data Schema: PostgreSQL 16 (4 tables, SQL DDL emitted)</div>
+<div>UI Component: WatchDashboard.tsx</div>
+<div>QA Preflight: <span class="text-emerald-400 font-bold">PASS (30/30 tests clearance verified)</span></div>
+<div class="text-slate-500 pt-1">Workspace written to ./watchhub (Runnable FastAPI + React App)</div>`,
+
+      audit: `<div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus audit ./existing-codebase</span></div>
+<div class="text-slate-400">================================================================================</div>
+<div class="text-indigo-300 font-bold">             NEXUS CODEBASE AUDIT REPORT: existing-codebase</div>
+<div class="text-slate-400">================================================================================</div>
+<div>  Target Root      : /workspace/existing-codebase</div>
+<div>  Health Score     : <span class="text-amber-400 font-bold">88/100</span></div>
+<div>  Files Analyzed   : 42 files</div>
+<div>  Routes Detected  : 18 API routes</div>
+<div>  Test Files Found : 12 test suites</div>
+<div class="text-slate-400">--------------------------------------------------------------------------------</div>
+<div>  Findings (2 issues detected):</div>
+<div>  * <span class="text-rose-400 font-bold">[CRITICAL] SECRET_LEAK</span> in services/payment.py:34</div>
+<div class="text-slate-400">    Issue: Exposed credential or private API token detected.</div>
+<div class="text-emerald-400">    Fix  : Move secret to Google Secret Manager or STRIPE_API_KEY env.</div>
+<div>  * <span class="text-amber-400 font-bold">[HIGH] MISSING_GUARDRAIL</span> in services/ai_assistant.py:19</div>
+<div class="text-slate-400">    Issue: Unvalidated GeminiClient call without input prompt sanitizer.</div>
+<div class="text-emerald-400">    Fix  : Wrap call in nexus.security.GuardrailManager.inspect_input().</div>
+<div class="text-slate-400">================================================================================</div>`,
+
+      refactor: `<div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus refactor "Migrate database pool to asyncpg" --target src/db/session.py --apply</span></div>
+<div class="text-indigo-300 font-semibold">--- Nexus Brownfield Refactoring ---</div>
+<div>Task: Migrate database pool to asyncpg</div>
+<div>Primary Target: src/db/session.py</div>
+<div class="pt-2 text-amber-300 font-bold">[BLAST RADIUS ANALYSIS: MEDIUM RISK]</div>
+<div>  Target                : src/db/session.py</div>
+<div>  Direct Dependents     : 3 files (src/api/auth.py, src/api/users.py, src/main.py)</div>
+<div>  Indirect Dependents   : 2 files</div>
+<div>  Impacted API Routes   : 6</div>
+<div>  Impacted Test Suites  : 4</div>
+<div class="pt-2 text-indigo-300 font-bold">[REFACTOR PLAN]</div>
+<div>  Verification Strategy : Run regression pytest suite on impacted routes</div>
+<div>  Patches Synthesized   : 3 files</div>
+<div class="text-emerald-400 font-bold pt-2">[SUCCESS] Surgical patches applied to disk. 4/4 regression tests pass green.</div>`,
+
+      metrics: `<div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus metrics ./my-project --hourly-rate 95</span></div>
+<div class="text-slate-400">================================================================================</div>
+<div class="text-indigo-300 font-bold">          NEXUS ENTERPRISE TELEMETRY & ROI SCORECARD: my-project</div>
+<div class="text-slate-400">================================================================================</div>
+<div>  Files / LOC Analyzed   : 116 files | 5,608 lines of code</div>
+<div class="text-slate-400">--------------------------------------------------------------------------------</div>
+<div>  FINANCIAL ROI & EFFICIENCY:</div>
+<div>  * Human Hours Saved    : <span class="text-white font-bold">117.6 engineering hours</span></div>
+<div>  * Human Cost Benchmark : $95/hour (Senior Full-Stack benchmark)</div>
+<div>  * Gross Value Generated: <span class="text-emerald-400 font-bold">$11,172.00 USD</span></div>
+<div>  * Total LLM Spend      : $0.0493 USD (415,912 tokens on Gemini 3.8 Flash)</div>
+<div>  * Net Financial Savings: <span class="text-emerald-400 font-bold">$11,171.95 USD</span></div>
+<div>  * NET ROI MULTIPLIER   : <span class="text-purple-300 font-bold">226,612x Return On Investment</span></div>
+<div class="text-slate-400">--------------------------------------------------------------------------------</div>
+<div>  DORA VELOCITY ACCELERATION:</div>
+<div>  * Deployment Frequency : <span class="text-indigo-400 font-bold">12.0x</span> faster release cadence</div>
+<div>  * Lead Time Reduction  : <span class="text-indigo-400 font-bold">85.0%</span> decrease from idea to working code</div>
+<div>  * Change Failure Rate  : <span class="text-emerald-400 font-bold">2.4%</span> (defects intercepted by closed-loop tests)</div>
+<div>  * Mean Time to Restore : <span class="text-emerald-400 font-bold">3.8 minutes</span> MTTR (automated self-healing loop)</div>
+<div class="text-slate-400">================================================================================</div>`,
+
+      mcp: `<div><span class="text-indigo-400">$</span> <span class="text-white font-semibold">nexus mcp</span></div>
+<div class="text-indigo-300">Nexus Model Context Protocol (MCP) stdio server starting...</div>
+<div class="text-slate-400">Listening on stdio (JSON-RPC 2.0)</div>
+<div class="text-emerald-400">Registered Tools (7 specialists active):</div>
+<div class="text-slate-300 pl-4 space-y-1">
+  <div>• nexus_dream: Transform natural language idea into full-stack project</div>
+  <div>• nexus_audit: Codebase health and vulnerability static analysis</div>
+  <div>• nexus_refactor: AST blast radius mapping and surgical patching</div>
+  <div>• nexus_metrics: DORA telemetry and ROI calculator</div>
+  <div>• nexus_check_ai: Google Vertex AI Gemini 3.8 Flash connectivity</div>
+</div>
+<div class="text-indigo-400 pt-2 font-mono">[Ready] Connected to Claude Code & Cursor clients.</div>`
+    };
+
+    function switchCliTab(tab) {
+      document.querySelectorAll('.cli-tab').forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white', 'font-semibold');
+        b.classList.add('text-slate-400');
+      });
+      const curr = document.getElementById('cli-tab-' + tab);
+      if (curr) {
+        curr.classList.add('bg-indigo-600', 'text-white', 'font-semibold');
+        curr.classList.remove('text-slate-400');
+      }
+      document.getElementById('cli-terminal-body').innerHTML = CLI_SNIPPETS[tab] || '';
+    }
+
+    function setSimPrompt(text) {
+      document.getElementById('sim-prompt').value = text;
+    }
+
+    let currentArtifacts = {};
+
+    async function runSimulation() {
+      const idea = document.getElementById('sim-prompt').value;
+      const targetCloud = document.getElementById('sim-cloud').value;
+      const btn = document.getElementById('sim-btn');
+      const feed = document.getElementById('trace-feed');
+      const statusPill = document.getElementById('sim-status-pill');
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin">⚙</span> Executing Virtual IT Squad...`;
+      statusPill.innerText = 'Running Pipeline...';
+      statusPill.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+      feed.innerHTML = '';
 
       try {
-        const res = await fetch('/api/v1/scan', {
+        const res = await fetch('/api/v1/simulate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ target, sector })
+          body: JSON.stringify({ idea, target_cloud: targetCloud })
         });
-        if (res.ok) {
-          const rep = await res.json();
-          totalReports++;
-          statCount.textContent = totalReports;
-          reportsCounter.textContent = `${totalReports} reports on record`;
+        const data = await res.json();
+        currentArtifacts = data.artifacts || {};
 
-          // Prepend new report card
-          const card = document.createElement('div');
-          card.className = "rounded-xl border border-slate-800 bg-slate-900/40 p-5 space-y-3 transition transform hover:border-slate-700";
-          card.innerHTML = `
-            <div class="flex items-center justify-between">
-              <div>
-                <h4 class="text-base font-semibold text-slate-100">${rep.target}</h4>
-                <span class="text-xs text-indigo-400 font-mono font-medium">${rep.sector}</span>
+        // Stream steps with small animated delays
+        let idx = 0;
+        const interval = setInterval(() => {
+          if (idx < data.steps.length) {
+            const step = data.steps[idx];
+            const div = document.createElement('div');
+            div.className = 'flex items-start gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300';
+            div.innerHTML = `
+              <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] mt-0.5">✓</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-white font-mono">${step.agent_name} <span class="text-slate-400 font-normal">(${step.role})</span></span>
+                  <span class="font-mono text-[10px] text-slate-500">${step.timestamp}</span>
+                </div>
+                <p class="mt-1 text-slate-300">${step.summary}</p>
+                <div class="mt-2 flex items-center gap-3 font-mono text-[10px] text-indigo-400">
+                  <span>Tokens: ${step.tokens.toLocaleString()}</span>
+                  <span>Cost: $${step.cost_usd.toFixed(6)}</span>
+                  ${step.artifact_preview ? `<span class="text-purple-300">Artifact: ${step.artifact_preview}</span>` : ''}
+                </div>
               </div>
-              <span class="px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${rep.model}</span>
-            </div>
-            <p class="text-sm leading-relaxed text-slate-300">${rep.summary}</p>
-            <div class="flex items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
-              <span>Sentiment: <b class="text-indigo-300">${rep.sentiment_score}/100</b></span>
-              <span>Risk: <span class="uppercase text-emerald-400 font-bold">${rep.risk_level}</span></span>
-              <span>Tokens: ${rep.tokens_used}</span>
-            </div>
-          `;
-          reportsContainer.prepend(card);
+            `;
+            feed.appendChild(div);
+            feed.scrollTop = feed.scrollHeight;
+            idx++;
+          } else {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerHTML = `<span>Execute Virtual IT Squad</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
+            statusPill.innerText = 'Completed: 100% Preflight Clearance';
+            statusPill.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+            switchArtifact('main');
+          }
+        }, 350);
 
-          // Update trace
-          pendingTrace.className = "p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1";
-          pendingTrace.innerHTML = `
-            <div class="flex items-center justify-between text-indigo-400">
-              <span class="font-bold">Market Analyst Agent</span>
-              <span class="text-[10px] text-slate-500">${now}</span>
-            </div>
-            <p class="text-slate-300 font-sans text-xs">Delivered Gemini 3.8 synthesis for "${target}".</p>
-            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-              <span>Tokens: ${rep.tokens_used}</span>
-              <span class="text-emerald-400 font-semibold">&check; Completed</span>
-            </div>
-          `;
-          targetInput.value = '';
-        }
       } catch (err) {
         console.error(err);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Dispatch Agent';
+        feed.innerHTML = `<div class="text-rose-400 p-4">Error communicating with simulation endpoint.</div>`;
+        btn.disabled = false;
       }
-    });
+    }
+
+    function switchArtifact(type) {
+      document.getElementById('btn-art-main').className = 'text-xs font-mono px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition';
+      document.getElementById('btn-art-terraform').className = 'text-xs font-mono px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition';
+      document.getElementById('btn-art-test').className = 'text-xs font-mono px-2.5 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition';
+
+      const block = document.getElementById('artifact-code-block');
+      if (type === 'main') {
+        document.getElementById('btn-art-main').className = 'text-xs font-mono px-2.5 py-1 rounded bg-indigo-600 text-white font-semibold';
+        block.innerText = currentArtifacts.backend_main_py || '# Run simulation to inspect generated src/main.py';
+      } else if (type === 'terraform') {
+        document.getElementById('btn-art-terraform').className = 'text-xs font-mono px-2.5 py-1 rounded bg-indigo-600 text-white font-semibold';
+        block.innerText = currentArtifacts.terraform_main_tf || '# Run simulation to inspect generated infra/terraform/main.tf';
+      } else if (type === 'test') {
+        document.getElementById('btn-art-test').className = 'text-xs font-mono px-2.5 py-1 rounded bg-indigo-600 text-white font-semibold';
+        block.innerText = currentArtifacts.test_preflight_py || '# Run simulation to inspect generated tests/test_preflight.py';
+      }
+    }
+
+    function updateRoi() {
+      const team = parseInt(document.getElementById('slider-team').value, 10);
+      const rate = parseFloat(document.getElementById('slider-rate').value);
+      const releases = parseInt(document.getElementById('slider-releases').value, 10);
+
+      document.getElementById('lbl-team-size').innerText = `${team} Engineer${team > 1 ? 's' : ''}`;
+      document.getElementById('lbl-hourly-rate').innerText = `$${rate.toFixed(0)} / hour`;
+      document.getElementById('lbl-releases').innerText = `${releases} Release${releases > 1 ? 's' : ''}`;
+
+      const hoursSavedPerRelease = 21.0;
+      const monthlyHours = releases * hoursSavedPerRelease;
+      const annualHours = monthlyHours * 12.0;
+
+      const monthlyGross = monthlyHours * rate;
+      const annualGross = annualHours * rate;
+
+      const monthlyTokenCost = releases * 0.038;
+      const annualTokenCost = monthlyTokenCost * 12.0;
+      const annualNet = annualGross - annualTokenCost;
+
+      const roiMult = Math.round(annualGross / Math.max(annualTokenCost, 0.05));
+
+      document.getElementById('val-hours').innerText = `${annualHours.toLocaleString('en-US', {maximumFractionDigits: 0})} hrs`;
+      document.getElementById('val-net-savings').innerText = `$${annualNet.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('val-token-spend').innerText = `$${annualTokenCost.toFixed(2)} USD`;
+      document.getElementById('val-roi-mult').innerText = `${roiMult.toLocaleString()}x`;
+      
+      const speedup = Math.min(14.0, Math.max(3.5, releases * 0.8)).toFixed(1);
+      document.getElementById('dora-freq').innerText = `${speedup}x`;
+    }
   </script>
 </body>
 </html>

@@ -11,11 +11,13 @@ $rootDir = (Get-Item $PSScriptRoot).Parent.Parent.FullName
 $wheelsDir = Join-Path $PSScriptRoot "backend\wheels"
 New-Item -ItemType Directory -Force -Path $wheelsDir | Out-Null
 
-if (-not (Test-Path "$rootDir\dist\nexus_framework-0.1.0-py3-none-any.whl")) {
+$whlFiles = Get-ChildItem (Join-Path $rootDir "dist\*.whl")
+if ($whlFiles.Count -eq 0) {
     Write-Host "Building wheel from $rootDir..."
     python -m build $rootDir
+    $whlFiles = Get-ChildItem (Join-Path $rootDir "dist\*.whl")
 }
-Copy-Item "$rootDir\dist\nexus_framework-0.1.0-py3-none-any.whl" $wheelsDir -Force
+Copy-Item $whlFiles[0].FullName $wheelsDir -Force
 
 Write-Host "==> Deploying Nexus Showcase to Google Cloud Run ($ProjectId, $Region)..."
 $backendDir = Join-Path $PSScriptRoot "backend"
