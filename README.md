@@ -166,6 +166,15 @@ tests/test_agents.py .................. [100%]
 
 ---
 
+## 🤝 Governance & Feature Requests
+
+Nexus is free for everyone to use, run, and explore. To preserve strict architectural consistency, contracts, and quality gates:
+
+- **Nexus is maintained exclusively by the author.** External pull requests are disabled and will not be accepted.
+- **Have an idea or need a feature?** We warmly welcome your feedback! Please submit feature requests, questions, or bug reports via [GitHub Issues](https://github.com/sabburi1994/nexus/issues).
+
+---
+
 ## 📄 License
-Nexus is licensed under the [Apache 2.0 License](LICENSE).
+Nexus is licensed under the [Apache 2.0 License](LICENSE).  
 Copyright © 2026 Sai Nikhil Abburi. All rights reserved.

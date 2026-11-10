@@ -1,0 +1,30 @@
+name: Close External Pull Requests
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  close-pr:
+    runs-on: ubuntu-latest
+    if: github.actor != github.repository_owner
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Close PR and comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              state: 'closed'
+            });
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '👋 Thank you for your interest in **Nexus**!\n\nThis project is free and open for everyone to use, inspect, and integrate. However, to preserve strict architectural consistency, guardrails, and quality gates, **Nexus is maintained exclusively by the core author and does not accept external pull requests**.\n\n✨ If you have an idea, feature request, or found a bug, we would love to hear it! Please open a [GitHub Issue](https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/issues) instead.'
+            });
