@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nexus/contracts": "*",
-    "@nexus/ui": "*",
+    "@abburi/contracts": "*",
+    "@abburi/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

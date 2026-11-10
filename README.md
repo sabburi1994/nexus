@@ -50,7 +50,7 @@ Designs the relational and persistence architecture:
 - Emits clean, production-ready PostgreSQL SQL DDL schemas (`docs/DATA_ARCHITECTURE.md`).
 
 ### 4. UI/UX Designer (`UiDesignerAgent`)
-Focuses on user journey, design tokens, and interactive mockups styled with Tailwind CSS and `@nexus/ui`.
+Focuses on user journey, design tokens, and interactive mockups styled with Tailwind CSS and `@abburi/ui`.
 
 ### 5. Full-Stack Engineer (`FullStackEngineerAgent`)
 Implements the unified end-to-end codebase:
@@ -75,10 +75,10 @@ Nexus is structured as a monorepo with universal, reusable packages:
 
 | Package | Purpose | Exports / Capabilities |
 | :--- | :--- | :--- |
-| **`@nexus/ui`** | Shared React UI & Design System | `StatCard`, `AiBadge`, `MetricTrend`, `NexusHeader`, `TraceViewer`, `SecurityShieldBadge` |
-| **`@nexus/contracts`** | Universal Spec & Telemetry Contracts | `AgentTelemetryEvent`, `ProductProposalContract`, `SolutionBlueprintContract`, `DataArchitectureContract`, `DevopsSpecificationContract`, `QaSpecificationContract`, `AuditChainEntryContract` |
-| **`@nexus/middleware`** | Security & Scrubbing Middleware | `NEXUS_SECURITY_HEADERS`, `scrubSensitiveData` (zero credential leaks), `generateCorrelationId` |
-| **`@nexus/scraper`** | Ethical & Resilient Scraping | `ScrapedItem`, `DEFAULT_NEXUS_SCRAPING_POLICY`, rate-limit & backoff policy contracts |
+| **`@abburi/ui`** | Shared React UI & Design System | `StatCard`, `AiBadge`, `MetricTrend`, `NexusHeader`, `TraceViewer`, `SecurityShieldBadge` |
+| **`@abburi/contracts`** | Universal Spec & Telemetry Contracts | `AgentTelemetryEvent`, `ProductProposalContract`, `SolutionBlueprintContract`, `DataArchitectureContract`, `DevopsSpecificationContract`, `QaSpecificationContract`, `AuditChainEntryContract` |
+| **`@abburi/middleware`** | Security & Scrubbing Middleware | `NEXUS_SECURITY_HEADERS`, `scrubSensitiveData` (zero credential leaks), `generateCorrelationId` |
+| **`@abburi/scraper`** | Ethical & Resilient Scraping | `ScrapedItem`, `DEFAULT_NEXUS_SCRAPING_POLICY`, rate-limit & backoff policy contracts |
 
 ### Centralized Terraform Modules (`infra/terraform/modules/`)
 - **`nexus_app`**: Baseline GCP APIs (`aiplatform.googleapis.com`, `secretmanager.googleapis.com`), service accounts, and IAM roles (`roles/aiplatform.user`).
