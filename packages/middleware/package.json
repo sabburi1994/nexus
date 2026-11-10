@@ -1,13 +1,35 @@
 {
   "name": "@nexus-agent-framework/middleware",
-  "version": "1.0.0",
-  "description": "Cross-framework middleware for security headers, zero-leak credential scrubbing, and rate-limiting",
+  "version": "1.0.1",
+  "description": "Cross-framework security middleware for hardened headers, zero-leak credential scrubbing, and correlation tracing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
-  "keywords": ["nexus", "middleware", "security", "telemetry"],
-  "author": "Antigravity & sabburi1994",
-  "license": "Apache-2.0"
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "nexus",
+    "middleware",
+    "security",
+    "owasp",
+    "scrubbing",
+    "telemetry",
+    "tracing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sabburi1994/nexus.git",
+    "directory": "packages/middleware"
+  },
+  "homepage": "https://github.com/sabburi1994/nexus#readme",
+  "bugs": "https://github.com/sabburi1994/nexus/issues",
+  "author": "Sai Nikhil Abburi",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  }
 }

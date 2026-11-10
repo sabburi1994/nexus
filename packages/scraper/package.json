@@ -1,13 +1,35 @@
 {
   "name": "@nexus-agent-framework/scraper",
-  "version": "1.0.0",
-  "description": "Polite web scraping, RSS ingestion, and canonical verification contracts for Nexus apps",
+  "version": "1.0.1",
+  "description": "Polite web scraping protocols, RSS ingestion contracts, and rate-limiting policies for AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
-  "keywords": ["nexus", "scraper", "rss", "feed", "polite"],
-  "author": "Antigravity & sabburi1994",
-  "license": "Apache-2.0"
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "nexus",
+    "scraper",
+    "rss",
+    "crawler",
+    "robots-txt",
+    "polite-scraping",
+    "rate-limiting"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sabburi1994/nexus.git",
+    "directory": "packages/scraper"
+  },
+  "homepage": "https://github.com/sabburi1994/nexus#readme",
+  "bugs": "https://github.com/sabburi1994/nexus/issues",
+  "author": "Sai Nikhil Abburi",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  }
 }

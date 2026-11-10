@@ -1,14 +1,37 @@
 {
   "name": "@nexus-agent-framework/ui",
-  "version": "0.1.0",
-  "description": "Shared UI components and design system for Nexus platform applications",
+  "version": "0.1.1",
+  "description": "Shared React component library and design system for AI agent applications and observability",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc"
+  },
+  "keywords": [
+    "nexus",
+    "ui",
+    "react",
+    "tailwind",
+    "ai-agents",
+    "dashboard",
+    "observability",
+    "design-system"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sabburi1994/nexus.git",
+    "directory": "packages/ui"
+  },
+  "homepage": "https://github.com/sabburi1994/nexus#readme",
+  "bugs": "https://github.com/sabburi1994/nexus/issues",
+  "author": "Sai Nikhil Abburi",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
