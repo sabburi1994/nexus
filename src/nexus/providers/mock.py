@@ -59,8 +59,11 @@ class MockProvider(BaseModelProvider):
                 return response_model.model_validate(self.structured_mock)
 
         # Generate a minimal valid dummy instance of the Pydantic schema
+        import typing
+
         dummy_data: dict[str, Any] = {}
         for name, field in response_model.model_fields.items():
+            origin = getattr(field.annotation, "__origin__", None)
             if field.annotation is str:
                 dummy_data[name] = "mock_value"
             elif field.annotation is int:
@@ -69,8 +72,14 @@ class MockProvider(BaseModelProvider):
                 dummy_data[name] = 1.0
             elif field.annotation is bool:
                 dummy_data[name] = True
-            elif getattr(field.annotation, "__origin__", None) is list:
+            elif origin is list:
                 dummy_data[name] = []
+            elif origin is dict:
+                dummy_data[name] = {}
+            elif origin is typing.Literal:
+                dummy_data[name] = field.annotation.__args__[0]
+            elif isinstance(field.annotation, type) and issubclass(field.annotation, BaseModel):
+                dummy_data[name] = self.structured("", field.annotation)
             else:
                 dummy_data[name] = None
         return response_model.model_validate(dummy_data)

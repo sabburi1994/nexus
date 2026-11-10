@@ -248,6 +248,90 @@ def run_dashboard_cmd(host: str = "127.0.0.1", port: int = 8000, open_browser: b
     )
 
 
+def audit_cmd(path: Path, output_json: bool = False) -> int:
+    """Run comprehensive security and architectural audit."""
+    from nexus.brownfield.auditor import CodebaseAuditor
+
+    auditor = CodebaseAuditor(path)
+    report = auditor.run_audit()
+
+    if output_json:
+        print(report.model_dump_json(indent=2))
+        return 0
+
+    print("================================================================================")
+    print(f"             NEXUS CODEBASE AUDIT REPORT: {report.project_name}")
+    print("================================================================================")
+    print(f"  Target Root      : {report.root_path}")
+    print(f"  Health Score     : {report.health_score}/100")
+    print(f"  Files Analyzed   : {report.total_files} files")
+    print(f"  Routes Detected  : {report.total_routes_detected}")
+    print(f"  Test Files Found : {report.total_tests_detected}")
+    print("--------------------------------------------------------------------------------")
+    if not report.findings:
+        print("  [PASS] No security vulnerabilities or architecture violations detected.")
+    else:
+        print(f"  Findings ({len(report.findings)} issues detected):")
+        for f in report.findings:
+            print(f"  * [{f.severity}] {f.category} in {f.file_path}:{f.line_number}")
+            print(f"    Issue: {f.description}")
+            print(f"    Fix  : {f.remediation}")
+    print("================================================================================")
+    return 1 if any(f.severity == "CRITICAL" for f in report.findings) else 0
+
+
+def refactor_cmd(task: str, path: Path, target: str | None = None, apply_patches: bool = False) -> int:
+    """Analyze blast radius and generate surgical refactor plan."""
+    from nexus.brownfield.refactor import BrownfieldRefactorer
+
+    refactorer = BrownfieldRefactorer(path)
+    print("--- Nexus Brownfield Refactoring ---")
+    print(f"Task: {task}")
+    if target:
+        print(f"Primary Target: {target}")
+
+    plan = refactorer.plan_refactor(task, primary_target=target)
+    blast = plan.blast_radius
+
+    print(f"\n[BLAST RADIUS ANALYSIS: {blast.risk_tier} RISK]")
+    print(f"  Target                : {blast.target}")
+    print(f"  Direct Dependents     : {len(blast.direct_dependents)} files ({', '.join(blast.direct_dependents[:3]) if blast.direct_dependents else 'None'})")
+    print(f"  Indirect Dependents   : {len(blast.indirect_dependents)} files")
+    print(f"  Impacted API Routes   : {len(blast.affected_routes)}")
+    print(f"  Impacted Test Suites  : {len(blast.affected_tests)}")
+
+    print(f"\n[REFACTOR PLAN]")
+    print(f"  Verification Strategy : {plan.verification_strategy}")
+    print(f"  Estimated Risk        : {plan.estimated_risk}")
+    print(f"  Patches Synthesized   : {len(plan.patches)} files")
+    for patch in plan.patches:
+        print(f"    - [{patch.change_type.upper()}] {patch.file_path}")
+
+    if apply_patches and plan.patches:
+        for patch in plan.patches:
+            dest = path / patch.file_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(patch.diff_or_content, encoding="utf-8")
+        print("\n[SUCCESS] Surgical patches applied to disk.")
+    elif not apply_patches and plan.patches:
+        print("\n[INFO] Dry-run complete. Run with --apply to apply patches.")
+    return 0
+
+
+def metrics_cmd(path: Path, hourly_rate: float = 85.0, output_json: bool = False) -> int:
+    """Calculate enterprise ROI and DORA velocity telemetry."""
+    from nexus.metrics.roi import RoiCalculator
+
+    calculator = RoiCalculator(hourly_rate=hourly_rate)
+    report = calculator.calculate_from_codebase(path)
+
+    if output_json:
+        print(report.model_dump_json(indent=2))
+    else:
+        print(calculator.format_cli_summary(report))
+    return 0
+
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -301,6 +385,33 @@ def main() -> None:
     ui_parser.add_argument("--host", default="127.0.0.1", help="Host address")
     ui_parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
 
+    # audit (Stage 2)
+    audit_parser = subparsers.add_parser(
+        "audit",
+        help="Run security, architectural, and test health audit on an existing codebase.",
+    )
+    audit_parser.add_argument("path", nargs="?", default=".", help="Root directory to audit (default: current directory)")
+    audit_parser.add_argument("--json", action="store_true", help="Output full JSON report")
+
+    # refactor (Stage 2)
+    refactor_parser = subparsers.add_parser(
+        "refactor",
+        help="Plan and execute surgical refactoring on brownfield codebases with AST blast-radius analysis.",
+    )
+    refactor_parser.add_argument("task", help="Refactoring task description")
+    refactor_parser.add_argument("--target", default=None, help="Primary file or symbol target")
+    refactor_parser.add_argument("--path", default=".", help="Codebase directory (default: current directory)")
+    refactor_parser.add_argument("--apply", action="store_true", help="Apply generated patches directly to disk")
+
+    # metrics (Stage 3)
+    metrics_parser = subparsers.add_parser(
+        "metrics",
+        help="Calculate engineering velocity, DORA acceleration, and enterprise ROI telemetry.",
+    )
+    metrics_parser.add_argument("path", nargs="?", default=".", help="Target directory (default: current directory)")
+    metrics_parser.add_argument("--hourly-rate", type=float, default=85.0, help="Engineer hourly cost benchmark (default: $85/hr)")
+    metrics_parser.add_argument("--json", action="store_true", help="Output full JSON telemetry")
+
     args = parser.parse_args()
     if args.command == "check-ai":
         sys.exit(check_ai_cmd(model=args.model, project=args.project))
@@ -314,6 +425,12 @@ def main() -> None:
         dream_cmd(args.idea, Path(args.output_dir))
     elif args.command in ("dashboard", "ui"):
         run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)
+    elif args.command == "audit":
+        sys.exit(audit_cmd(Path(args.path), output_json=args.json))
+    elif args.command == "refactor":
+        sys.exit(refactor_cmd(args.task, Path(args.path), target=args.target, apply_patches=args.apply))
+    elif args.command == "metrics":
+        sys.exit(metrics_cmd(Path(args.path), hourly_rate=args.hourly_rate, output_json=args.json))
     else:
         parser.print_help()
 

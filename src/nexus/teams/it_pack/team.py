@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus
+from nexus.maintenance.healing_loop import ClosedLoopHealer, SelfHealingReport
 from nexus.providers.base import BaseModelProvider
 from nexus.providers.vertex import VertexAIProvider
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
@@ -35,6 +36,7 @@ class DeliveredProject(BaseModel):
     devops: DevopsSpecification
     qa: QaSpecification
     output_path: str | None = None
+    healing_report: SelfHealingReport | None = None
 
 
 class NexusITTeam:
@@ -47,6 +49,7 @@ class NexusITTeam:
     - Full-Stack Engineer
     - DevOps Engineer (Terraform / IaC)
     - QA & Security Engineer
+    - Closed-Loop Self-Healer
     """
 
     def __init__(self, provider: BaseModelProvider | None = None) -> None:
@@ -58,12 +61,15 @@ class NexusITTeam:
         self.fullstack = FullStackEngineerAgent(self.provider)
         self.devops = DevopsEngineerAgent(self.provider)
         self.qa = QaEngineerAgent(self.provider)
+        self.healer = ClosedLoopHealer(self.provider)
 
     def build_from_idea(
         self,
         raw_user_idea: str,
         target_cloud: str = "gcp",
         output_dir: Path | None = None,
+        enable_self_healing: bool = True,
+        max_healing_cycles: int = 3,
     ) -> DeliveredProject:
         """Run the end-to-end squad workflow from idea to deployed architecture."""
         # 1. Business Analyst
@@ -241,6 +247,18 @@ class NexusITTeam:
             )
         )
 
+        healing_report: SelfHealingReport | None = None
+        if enable_self_healing and not qa.passed_preflight:
+            self.healer.max_healing_cycles = max_healing_cycles
+            fullstack, qa, healing_report = self.healer.run_healing_loop(
+                proposal=proposal,
+                solution=solution,
+                fullstack=fullstack,
+                qa=qa,
+                fullstack_agent=self.fullstack,
+                qa_agent=self.qa,
+            )
+
         saved_path = None
         if output_dir:
             app_dir = output_dir / proposal.app_name
@@ -270,6 +288,7 @@ class NexusITTeam:
             devops=devops,
             qa=qa,
             output_path=saved_path,
+            healing_report=healing_report,
         )
 
     @staticmethod

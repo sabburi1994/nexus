@@ -63,3 +63,32 @@ CRITICAL SYNTAX INSTRUCTIONS:
             "You strictly ensure Python syntax validity and never create broken f-strings with unescaped curly braces."
         )
         return self.provider.structured(prompt, FullStackSpecification, system_instruction=system)
+
+    def heal_application(
+        self,
+        proposal: ProductProposal,
+        current_spec: FullStackSpecification,
+        diagnosis: Any,
+    ) -> FullStackSpecification:
+        """
+        Closed-loop self-healing: Patch the application code based on QA failure diagnostics.
+        """
+        root_cause = getattr(diagnosis, "root_cause", "Unspecified failure")
+        suggested_fix = getattr(diagnosis, "suggested_fix", "Patch failing assertions")
+
+        prompt = f"""You are the Lead Full-Stack Engineer performing closed-loop self-healing on {proposal.title}.
+
+The QA & Security preflight clearance check failed with the following diagnosis:
+Root Cause: {root_cause}
+Recommended Fix: {suggested_fix}
+
+Current Backend Code:
+```python
+{current_spec.backend_main_py[:3000]}
+```
+
+Apply targeted surgical corrections to `backend_main_py`, `backend_models_py`, `frontend_app_tsx`, and `frontend_api_client_ts` so that all endpoints, health checks, and schemas pass QA verification.
+"""
+        system = "You are a master Full-Stack Engineer performing surgical bug fixes and patches."
+        return self.provider.structured(prompt, FullStackSpecification, system_instruction=system)
+

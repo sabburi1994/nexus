@@ -98,3 +98,111 @@ export interface AuditChainEntryContract {
   payload: Record<string, unknown>;
   timestamp: string;
 }
+
+// Stage 1: Closed-Loop Self-Healing Contracts
+export interface HealingAttemptContract {
+  attemptNumber: number;
+  testFailures: string[];
+  diagnosis: string;
+  diffApplied: string;
+  retestPassed: boolean;
+  timestamp: string;
+}
+
+export interface SelfHealingReportContract {
+  initialTestsPassed: boolean;
+  totalAttempts: number;
+  maxAttemptsAllowed: number;
+  finalStatus: "HEALTHY" | "HEALED" | "EXHAUSTED";
+  attempts: HealingAttemptContract[];
+  durationSeconds: number;
+  summary: string;
+}
+
+// Stage 2: Brownfield Legacy Codebase Support Contracts
+export interface SymbolDefinitionContract {
+  name: string;
+  kind: "class" | "function" | "route";
+  filePath: string;
+  lineNumber: number;
+  routePath?: string;
+  httpMethod?: string;
+}
+
+export interface BlastRadiusContract {
+  target: string;
+  riskTier: "LOW" | "MEDIUM" | "HIGH";
+  directDependents: string[];
+  indirectDependents: string[];
+  affectedRoutes: string[];
+  affectedTests: string[];
+  totalAffectedFiles: number;
+}
+
+export interface SecurityFindingContract {
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  category: "SECRET_LEAK" | "PROMPT_INJECTION" | "MISSING_GUARDRAIL";
+  filePath: string;
+  lineNumber: number;
+  description: string;
+  remediation: string;
+}
+
+export interface CodebaseAuditReportContract {
+  projectName: string;
+  rootPath: string;
+  totalFiles: number;
+  healthScore: number;
+  findings: SecurityFindingContract[];
+  totalRoutesDetected: number;
+  totalTestsDetected: number;
+  hasCiWorkflow: boolean;
+  hasDockerfile: boolean;
+  hasTerraform: boolean;
+  summary: string;
+}
+
+export interface FilePatchContract {
+  filePath: string;
+  diffOrContent: string;
+  changeType: "modify" | "create" | "delete";
+}
+
+export interface RefactorPlanContract {
+  task: string;
+  targetFiles: string[];
+  blastRadius: BlastRadiusContract;
+  patches: FilePatchContract[];
+  verificationStrategy: string;
+  estimatedRisk: string;
+}
+
+// Stage 3: Team Telemetry & Enterprise ROI Contracts
+export interface DoraMetricsContract {
+  deploymentFrequencyMultiplier: number;
+  leadTimeReductionPct: number;
+  changeFailureRatePct: number;
+  mttrMinutes: number;
+}
+
+export interface EnterpriseRoiContract {
+  projectName: string;
+  targetPath: string;
+  timestamp: string;
+  totalFilesAnalyzed: number;
+  totalLinesOfCode: number;
+  totalRunsAnalyzed: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokenCostUsd: number;
+  engineeringHoursSaved: number;
+  hourlyRateUsd: number;
+  humanCostSavedUsd: number;
+  netSavingsUsd: number;
+  roiMultiplier: number;
+  doraMetrics: DoraMetricsContract;
+  vulnerabilitiesPrevented: number;
+  healingCyclesExecuted: number;
+  refactorTasksExecuted: number;
+  summary: string;
+}

@@ -5,7 +5,7 @@
   <a href="https://www.npmjs.com/org/nexus-agent-framework"><img src="https://img.shields.io/badge/npm-%40nexus--agent--framework-cb3837?logo=npm" alt="npm org" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python" alt="Python Versions" /></a>
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-10b981.svg" alt="License" /></a>
-  <a href="https://github.com/sabburi1994/nexus/actions"><img src="https://img.shields.io/badge/tests-20%2F20%20passed-emerald" alt="Tests" /></a>
+  <a href="https://github.com/sabburi1994/nexus/actions"><img src="https://img.shields.io/badge/tests-30%2F30%20passed-emerald" alt="Tests" /></a>
 </p>
 
 > **Nexus** is an autonomous AI agentic software engineering framework that transforms requirements into production-ready full-stack applications. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and connects natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
@@ -140,6 +140,86 @@ nexus ui
 
 ---
 
+## 🔄 Stage 1: Closed-Loop Self-Healing
+
+Nexus eliminates "throw-it-over-the-fence" code generation. When the QA Engineer detects failing unit tests or runtime syntax bugs, it automatically triggers a direct feedback loop back to the Full-Stack Engineer with exact traceback diagnostics and failure assertions:
+
+```mermaid
+sequenceDiagram
+    participant QA as QA Specialist Agent
+    participant Runner as Pytest Runner
+    participant FS as Full-Stack Engineer Agent
+    QA->>Runner: Execute test suite on generated workspace
+    alt Tests Pass
+        Runner-->>QA: All tests green (100% preflight clearance)
+    else Tests Fail
+        Runner-->>QA: Capture stacktrace & failed assertions
+        QA->>FS: Dispatch healing prompt with exact error context
+        FS->>FS: Synthesize surgical code patch
+        FS->>Runner: Re-run test suite (Loop up to max_attempts)
+        Runner-->>QA: Tests verified green
+    end
+```
+
+---
+
+## 🔍 Stage 2: Brownfield Legacy Codebase Support
+
+Nexus isn't just for greenfield scaffolding. It analyzes and safely refactors existing enterprise repositories:
+
+### 1. Security & Architecture Audit: `nexus audit`
+Scan your existing codebase for secret leaks, unvalidated AI client calls, prompt injection risks, and test coverage drift:
+```bash
+nexus audit ./existing-repo
+```
+
+### 2. AST Blast-Radius Mapping & Surgical Refactoring: `nexus refactor`
+Before touching a line of code, Nexus builds an Abstract Syntax Tree (AST) import graph across all files, classes, functions, and FastAPI routes to calculate the exact blast radius:
+```bash
+nexus refactor "Migrate database pool to PostgreSQL asyncpg" --target src/db/session.py --apply
+```
+- **Blast Radius Analysis**: Identifies all direct dependents, indirect dependents, and affected REST endpoints.
+- **Surgical Patching**: Emits targeted, contract-preserving diffs without blowing away surrounding enterprise logic.
+
+---
+
+## 📊 Stage 3: Team Telemetry & Enterprise ROI: `nexus metrics`
+
+Quantify the exact dollar return on investment (ROI) and DORA velocity acceleration delivered by Nexus across your team:
+
+```bash
+nexus metrics ./my-project --hourly-rate 95
+```
+
+```text
+================================================================================
+          NEXUS ENTERPRISE TELEMETRY & ROI SCORECARD: my-project
+================================================================================
+  Target Path            : /workspace/my-project
+  Files / LOC Analyzed   : 116 files | 5,608 lines of code
+--------------------------------------------------------------------------------
+  FINANCIAL ROI & EFFICIENCY:
+  * Human Hours Saved    : 117.6 engineering hours
+  * Human Cost Benchmark : $95/hour (Senior Full-Stack benchmark)
+  * Gross Value Generated: $11,172.00 USD
+  * Total LLM Spend      : $0.0493 USD (415,912 tokens)
+  * Net Financial Savings: $11,171.95 USD
+  * NET ROI MULTIPLIER   : 226612.0x Return On Investment
+--------------------------------------------------------------------------------
+  DORA VELOCITY ACCELERATION:
+  * Deployment Frequency : 12.0x faster release cadence
+  * Lead Time Reduction  : 85.0% decrease from idea to working code
+  * Change Failure Rate  : 2.4% (defects intercepted by closed-loop tests)
+  * Mean Time to Restore : 3.8 minutes MTTR (automated self-healing loop)
+--------------------------------------------------------------------------------
+  SECURITY & STABILITY IMPACT:
+  * Vulnerabilities Prevented: 17 security defects / secret leaks avoided
+  * Closed-Loop Healing Cycles: 9 automated QA repair loops
+================================================================================
+```
+
+---
+
 ## 🛡️ Built-in Cost & Security Guardrails
 
 - **Hard Budget Caps**: Strict `max_budget_usd` ceilings per execution context.
@@ -160,8 +240,16 @@ cd nexus
 pytest -o pythonpath=src tests/
 ```
 ```text
-tests/test_agents.py .................. [100%]
-============================== 20 passed in 1.42s ==============================
+tests/test_agentic.py ........                                           [ 26%]
+tests/test_brownfield.py ....                                            [ 40%]
+tests/test_dashboard.py ..                                               [ 46%]
+tests/test_it_pack.py ..                                                 [ 53%]
+tests/test_nexus.py ......                                               [ 73%]
+tests/test_orchestrator.py ..                                            [ 80%]
+tests/test_roi_metrics.py ...                                            [ 90%]
+tests/test_self_healing.py ...                                           [100%]
+
+======================== 30 passed in 2.27s ========================
 ```
 
 ---
