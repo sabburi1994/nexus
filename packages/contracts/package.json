@@ -1,5 +1,5 @@
 {
-  "name": "@abburi/contracts",
+  "name": "@nexus-agent-framework/contracts",
   "version": "1.0.0",
   "description": "Shared agentic schemas, telemetry contracts, and execution protocols for Nexus apps",
   "main": "dist/index.js",

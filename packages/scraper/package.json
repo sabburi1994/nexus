@@ -1,5 +1,5 @@
 {
-  "name": "@abburi/scraper",
+  "name": "@nexus-agent-framework/scraper",
   "version": "1.0.0",
   "description": "Polite web scraping, RSS ingestion, and canonical verification contracts for Nexus apps",
   "main": "dist/index.js",

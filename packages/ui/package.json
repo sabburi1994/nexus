@@ -1,5 +1,5 @@
 {
-  "name": "@abburi/ui",
+  "name": "@nexus-agent-framework/ui",
   "version": "0.1.0",
   "description": "Shared UI components and design system for Nexus platform applications",
   "main": "./dist/index.js",

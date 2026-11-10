@@ -1,5 +1,5 @@
 {
-  "name": "@abburi/middleware",
+  "name": "@nexus-agent-framework/middleware",
   "version": "1.0.0",
   "description": "Cross-framework middleware for security headers, zero-leak credential scrubbing, and rate-limiting",
   "main": "dist/index.js",
