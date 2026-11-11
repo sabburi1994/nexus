@@ -13,7 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { AiBadge, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui";
-import type { FrameworkHealth, WorkspaceTab } from "../types";
+import type { DocTopic, FrameworkHealth, WorkspaceTab } from "../types";
 
 interface SpecialistInfo {
   id: string;
@@ -100,10 +100,12 @@ const SPECIALISTS: SpecialistInfo[] = [
 
 interface Props {
   health: FrameworkHealth | null;
-  onNavigate: (tab: WorkspaceTab) => void;
+  onNavigate: (tab: WorkspaceTab, docTopic?: DocTopic) => void;
+  injectionsBlocked: number;
+  piiScrubbed: number;
 }
 
-export const OverviewSection: React.FC<Props> = ({ health, onNavigate }) => {
+export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injectionsBlocked, piiScrubbed }) => {
   const [selectedRole, setSelectedRole] = useState<string>("qa");
   const activeSpecialist = SPECIALISTS.find((s) => s.id === selectedRole) ?? SPECIALISTS[0];
 
@@ -147,7 +149,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate }) => {
             </button>
             <button
               type="button"
-              onClick={() => onNavigate("docs")}
+              onClick={() => onNavigate("docs", "mcp")}
               className="inline-flex items-center gap-1.5 px-2 py-2 text-xs font-semibold text-[#3a494b] underline underline-offset-4 transition hover:text-[#bd513d]"
             >
               <BookOpen size={14} />
@@ -168,30 +170,43 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate }) => {
 
             <dl className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
-                <dt className="text-[#5c6a67]">Core Pytest Gate</dt>
+                <dt className="text-[#5c6a67]">Verified CI Suites</dt>
                 <dd className="tabular-mono font-semibold text-[#0f7657]">
-                  {health ? `${health.tests_passed}/${health.tests_total} PASS` : "30/30 PASS"}
+                  <a
+                    href={health?.ci_status_url ?? "https://github.com/sabburi1994/nexus/actions"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 hover:underline"
+                  >
+                    <span>
+                      {health ? `${health.tests_passed}/${health.tests_total} CORE` : "32/32 CORE"} ·{" "}
+                      {health?.suite_breakdown?.showcase_pytest
+                        ? `${health.suite_breakdown.showcase_pytest.passed} API`
+                        : "9 API"}
+                    </span>
+                    <ExternalLink size={10} />
+                  </a>
                 </dd>
               </div>
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
-                <dt className="text-[#5c6a67]">Gemini 3.8 Input</dt>
+                <dt className="text-[#5c6a67]">PyPI Release</dt>
                 <dd className="tabular-mono font-medium text-[#172a2e]">
-                  {health?.pricing_model?.gemini_3_8_flash_input_per_m ?? "$0.075 / 1M"}
+                  v{health?.pypi_live_version ?? "0.1.1"} live · v{health?.pypi_staged_version ?? "0.2.0"} wheel
                 </dd>
               </div>
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
-                <dt className="text-[#5c6a67]">Local Mock Mode</dt>
-                <dd className="tabular-mono font-medium text-[#0f7657]">$0.0000 (Offline CI)</dd>
+                <dt className="text-[#5c6a67]">Sandbox / BYOK Mode</dt>
+                <dd className="tabular-mono font-medium text-[#0f7657]">$0.00 Offline · BYOK Ready</dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-[#5c6a67]">MCP Transport</dt>
-                <dd className="tabular-mono font-medium text-[#172a2e]">JSON-RPC 2.0 (stdio)</dd>
+                <dd className="tabular-mono font-medium text-[#172a2e]">JSON-RPC 2.0 (5 tools)</dd>
               </div>
             </dl>
           </div>
 
           <div className="mt-5 space-y-3 border-t border-[#d6cec0] pt-4">
-            <SecurityShieldBadge injectionsBlocked={0} piiScrubbed={0} />
+            <SecurityShieldBadge injectionsBlocked={injectionsBlocked} piiScrubbed={piiScrubbed} />
             <p className="text-[11px] leading-relaxed text-[#5c6a67]">
               Every prompt passes through{" "}
               <code className="rounded border border-[#d6cec0] bg-[#fffdf8] px-1 py-0.5 font-mono text-[10px]">

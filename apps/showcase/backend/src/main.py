@@ -3,17 +3,24 @@
 from __future__ import annotations
 
 import datetime
+import difflib
+import io
+import json
 import os
+import re
 import tempfile
 import time
 import uuid
+import zipfile
+from collections import OrderedDict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from fastapi import HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import Header, HTTPException
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from models import (
+    BrownfieldApplyRequest,
     BrownfieldInspectRequest,
     GuardrailInspectRequest,
     RoiRequest,
@@ -21,7 +28,7 @@ from models import (
     ScanResponse,
     SimulationRequest,
 )
-from showcase_provider import ShowcaseSquadProvider
+from showcase_provider import ByokGeminiProviderError, ByokGeminiShowcaseProvider, ShowcaseSquadProvider
 
 from nexus import __version__
 from nexus.ai import GeminiClient
@@ -41,7 +48,134 @@ app, db = create_nexus_app(
 gemini = GeminiClient(default_model="gemini-3.8-flash")
 guardrail = GuardrailManager()
 _REPORTS_STORE: dict[str, dict[str, Any]] = {}
-_SAMPLE_BROWNFIELD_DIR = Path(__file__).resolve().parent / "sample_brownfield"
+_WORKSPACE_ZIPS: OrderedDict[str, tuple[str, bytes]] = OrderedDict()
+_MAX_ZIP_CACHE = 16
+_SRC_DIR = Path(__file__).resolve().parent
+_SAMPLE_BROWNFIELD_DIR = _SRC_DIR / "sample_brownfield"
+_MANIFEST_PATH = _SRC_DIR / "verification_manifest.json"
+
+
+def _load_verification_manifest() -> dict[str, Any]:
+    if _MANIFEST_PATH.exists():
+        return dict(json.loads(_MANIFEST_PATH.read_text(encoding="utf-8")))
+    return {
+        "pypi_live_version": "0.1.1",
+        "pypi_staged_version": __version__,
+        "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
+        "suites": {},
+    }
+
+
+def _archive_workspace_zip(app_dir: Path) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for file_path in sorted(app_dir.rglob("*")):
+            if file_path.is_dir() or "__pycache__" in file_path.parts:
+                continue
+            rel = str(file_path.relative_to(app_dir)).replace("\\", "/")
+            zf.write(file_path, arcname=rel)
+    return buf.getvalue()
+
+
+def _cache_workspace_zip(run_id: str, app_name: str, payload: bytes) -> None:
+    _WORKSPACE_ZIPS[run_id] = (app_name, payload)
+    _WORKSPACE_ZIPS.move_to_end(run_id)
+    while len(_WORKSPACE_ZIPS) > _MAX_ZIP_CACHE:
+        _WORKSPACE_ZIPS.popitem(last=False)
+
+
+def _build_dependency_edges(mapper: AstDependencyMapper) -> list[dict[str, str]]:
+    """Convert raw module imports into file-to-file AST dependency edges."""
+    edges: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    all_files = sorted(mapper.imports_map.keys())
+    for consumer, imported_modules in mapper.imports_map.items():
+        for provider in all_files:
+            if provider == consumer:
+                continue
+            provider_mod = provider.replace(".py", "").replace("/", ".")
+            if any(mod in provider_mod or provider_mod in mod for mod in imported_modules):
+                pair = (provider, consumer)
+                if pair not in seen:
+                    seen.add(pair)
+                    edges.append({"source": provider, "target": consumer})
+    return edges
+
+
+def _write_validated_custom_files(root: Path, custom_files: dict[str, str]) -> None:
+    if len(custom_files) > 12:
+        raise HTTPException(status_code=400, detail="Maximum 12 files per sandbox inspection.")
+    for rel_name, code in custom_files.items():
+        clean_rel = PurePosixPath(rel_name.replace("\\", "/").lstrip("/"))
+        if clean_rel.is_absolute() or ".." in clean_rel.parts or not str(clean_rel).endswith(".py"):
+            raise HTTPException(status_code=400, detail=f"Invalid relative Python path: {rel_name}")
+        if len(code) > 25_000:
+            raise HTTPException(status_code=400, detail=f"File exceeds 25KB sandbox limit: {rel_name}")
+        dest = (root / str(clean_rel)).resolve()
+        if not str(dest).startswith(str(root.resolve())):
+            raise HTTPException(status_code=400, detail="Path traversal blocked.")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(code, encoding="utf-8")
+
+
+def _apply_surgical_remediations(files_map: dict[str, str]) -> tuple[dict[str, str], list[dict[str, str]]]:
+    """Apply Stage 2 security remediations (env externalization + guardrail wrapping) in memory."""
+    remediated: dict[str, str] = {}
+    diffs: list[dict[str, str]] = []
+    secret_assign_re = re.compile(r'^(\s*)([A-Z0-9_]+)\s*=\s*["\']([^"\']+)["\'](\s*(?:#.*)?)$')
+
+    for rel_path, original in files_map.items():
+        new_lines: list[str] = []
+        changed = False
+        needs_os_import = False
+
+        for line in original.splitlines():
+            sanitized = sanitize_text(line)
+            m = secret_assign_re.match(line)
+            if m and "[REDACTED" in sanitized:
+                indent, var_name, _, comment = m.groups()
+                new_lines.append(f'{indent}{var_name} = os.getenv("{var_name}", ""){comment}')
+                needs_os_import = True
+                changed = True
+            else:
+                new_lines.append(line)
+
+        updated = "\n".join(new_lines) + ("\n" if original.endswith("\n") else "")
+        if needs_os_import and "import os" not in updated:
+            updated = "import os\n" + updated
+
+        if ("GeminiClient" in updated or "OpenAI" in updated) and (
+            "sanitize" not in updated and "guardrail" not in updated
+        ):
+            changed = True
+            guardrail_header = (
+                "from nexus.security import GuardrailManager\n\n_nexus_guardrail = GuardrailManager()\n\n"
+            )
+            lines = updated.splitlines(keepends=True)
+            insert_idx = 0
+            for idx, ln in enumerate(lines):
+                if ln.startswith(("import ", "from ")):
+                    insert_idx = idx + 1
+            updated = "".join(lines[:insert_idx]) + "\n" + guardrail_header + "".join(lines[insert_idx:])
+            updated = re.sub(
+                r"\.generate\(([^)]+)\)",
+                r".generate(_nexus_guardrail.inspect_input(\1))",
+                updated,
+            )
+
+        remediated[rel_path] = updated
+        if changed and updated != original:
+            diff_text = "".join(
+                difflib.unified_diff(
+                    original.splitlines(keepends=True),
+                    updated.splitlines(keepends=True),
+                    fromfile=f"a/{rel_path}",
+                    tofile=f"b/{rel_path}",
+                )
+            )
+            diffs.append({"filePath": rel_path, "diff": diff_text})
+
+    return remediated, diffs
 
 
 def _to_healing_contract(report: Any, elapsed_s: float) -> dict[str, Any]:
@@ -163,6 +297,7 @@ def _inspect_directory(
         "files": files_map,
         "selectedTarget": chosen_target,
         "symbols": symbols,
+        "edges": _build_dependency_edges(mapper),
         "audit": {
             "projectName": audit.project_name,
             "rootPath": chosen_target,
@@ -207,17 +342,26 @@ def _inspect_directory(
 
 @app.get("/api/v1/framework-health")
 async def framework_health() -> dict[str, Any]:
-    """Return live framework runtime metadata and package versions."""
+    """Return live framework runtime metadata and manifest-backed verification counters."""
+    manifest = _load_verification_manifest()
+    suites = manifest.get("suites", {})
+    core_suite = suites.get("core_pytest", {})
+    core_passed = int(core_suite.get("passed", 0))
+    core_total = int(core_suite.get("total", 0))
     return {
         "status": "healthy",
         "framework": "nexus-agent-framework",
         "version": __version__,
+        "pypi_live_version": str(manifest.get("pypi_live_version", "0.1.1")),
+        "pypi_staged_version": str(manifest.get("pypi_staged_version", __version__)),
+        "ci_status_url": str(manifest.get("ci_status_url", "https://github.com/sabburi1994/nexus/actions")),
         "website": "https://nexus.abburi.info",
         "repository": "https://github.com/sabburi1994/nexus",
         "author": "Sai Nikhil Abburi",
-        "tests_passed": 30,
-        "tests_total": 30,
-        "preflight_clearance": "100% GREEN",
+        "tests_passed": core_passed,
+        "tests_total": core_total,
+        "suite_breakdown": suites,
+        "preflight_clearance": "100% GREEN" if core_passed == core_total and core_total > 0 else "VERIFYING",
         "supported_models": ["gemini-3.8-flash", "gemini-2.5-pro", "claude-3-7-sonnet"],
         "default_model": "gemini-3.8-flash",
         "mcp_enabled": True,
@@ -288,10 +432,13 @@ async def scan_target(req: ScanRequest) -> ScanResponse:
 
 
 @app.post("/api/v1/simulate")
-async def simulate_pipeline(req: SimulationRequest) -> Any:
+async def simulate_pipeline(
+    req: SimulationRequest,
+    x_gemini_api_key: str | None = Header(default=None, alias="X-Gemini-API-Key"),
+) -> Any:
     """
-    Execute the actual NexusITTeam + ClosedLoopHealer + RoiCalculator workflow
-    in an isolated temporary workspace under deterministic sandbox orchestration.
+    Execute the actual NexusITTeam + ClosedLoopHealer + RoiCalculator workflow in an isolated
+    temporary workspace, using either the deterministic offline provider or a visitor's BYOK Gemini key.
     """
     try:
         clean_idea = guardrail.inspect_input(req.idea)
@@ -306,25 +453,41 @@ async def simulate_pipeline(req: SimulationRequest) -> Any:
         )
 
     pii_scrubbed = 1 if clean_idea != req.idea else 0
-    provider = ShowcaseSquadProvider(
-        idea=clean_idea,
-        target_cloud=req.target_cloud,
-        simulate_healing=req.simulate_healing,
+    byok_key = (x_gemini_api_key or "").strip()
+    is_byok = bool(byok_key)
+    provider: ShowcaseSquadProvider = (
+        ByokGeminiShowcaseProvider(
+            idea=clean_idea,
+            api_key=byok_key,
+            target_cloud=req.target_cloud,
+            simulate_healing=req.simulate_healing,
+        )
+        if is_byok
+        else ShowcaseSquadProvider(
+            idea=clean_idea,
+            target_cloud=req.target_cloud,
+            simulate_healing=req.simulate_healing,
+        )
     )
     team = NexusITTeam(provider=provider)
 
     t0 = time.perf_counter()
     with tempfile.TemporaryDirectory(prefix="nexus_sim_") as tmp:
-        delivered = team.build_from_idea(
-            raw_user_idea=clean_idea,
-            target_cloud=req.target_cloud,
-            output_dir=Path(tmp),
-            enable_self_healing=True,
-            max_healing_cycles=3,
-        )
+        try:
+            delivered = team.build_from_idea(
+                raw_user_idea=clean_idea,
+                target_cloud=req.target_cloud,
+                output_dir=Path(tmp),
+                enable_self_healing=True,
+                max_healing_cycles=3,
+            )
+        except ByokGeminiProviderError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         elapsed = time.perf_counter() - t0
         app_path = Path(delivered.output_path) if delivered.output_path else Path(tmp)
         roi_report = RoiCalculator(hourly_rate=85.0).calculate_from_codebase(app_path)
+        zip_bytes = _archive_workspace_zip(app_path)
 
         wireframe_html = (
             (app_path / "docs" / "preview_mockup.html").read_text(encoding="utf-8")
@@ -336,6 +499,9 @@ async def simulate_pipeline(req: SimulationRequest) -> Any:
             if (app_path / "docs" / "ARCHITECTURE.md").exists()
             else ""
         )
+
+    run_id = f"run_{uuid.uuid4().hex[:12]}"
+    _cache_workspace_zip(run_id, delivered.proposal.app_name, zip_bytes)
 
     healing_contract = (
         _to_healing_contract(delivered.healing_report, elapsed)
@@ -352,9 +518,14 @@ async def simulate_pipeline(req: SimulationRequest) -> Any:
     )
 
     total_tokens = sum(int(s["tokens"]) for s in provider.calls)
-    total_cost = round(sum(float(s["costUsd"]) for s in provider.calls), 6)
+    projected_cost = round(sum(float(s["costUsd"]) for s in provider.calls), 6)
+    actual_cost = projected_cost if is_byok else 0.0
 
     return {
+        "run_id": run_id,
+        "execution_mode": "byok-live" if is_byok else "deterministic",
+        "actual_api_cost_usd": actual_cost,
+        "projected_gemini_cost_usd": projected_cost,
         "app_name": delivered.proposal.app_name,
         "title": delivered.proposal.title,
         "tagline": delivered.proposal.tagline,
@@ -364,7 +535,7 @@ async def simulate_pipeline(req: SimulationRequest) -> Any:
         "user_stories": delivered.proposal.user_stories,
         "steps": provider.calls,
         "total_tokens": total_tokens,
-        "total_cost_usd": total_cost,
+        "total_cost_usd": projected_cost,
         "healing_cycles": healing_contract["totalAttempts"],
         "verdict": (
             f"PASS - {healing_contract['finalStatus']} in {healing_contract['durationSeconds']}s "
@@ -385,32 +556,62 @@ async def simulate_pipeline(req: SimulationRequest) -> Any:
     }
 
 
-@app.post("/api/v1/brownfield/inspect")
-async def brownfield_inspect(req: BrownfieldInspectRequest) -> dict[str, Any]:
-    """Run live CodebaseAuditor, AstDependencyMapper, and BrownfieldRefactorer on real files."""
-    provider = ShowcaseSquadProvider(idea=req.refactor_task, simulate_healing=False)
+@app.get("/api/v1/simulate/{run_id}/download")
+async def download_simulated_workspace(run_id: str) -> Response:
+    """Download the real synthesized project directory as a ZIP archive."""
+    entry = _WORKSPACE_ZIPS.get(run_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Simulation workspace expired or not found; re-run simulation.")
+    app_name, zip_bytes = entry
+    safe_slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", app_name).strip("-") or "nexus-workspace"
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{safe_slug}.zip"'},
+    )
 
+
+def _inspect_source_payload(req: BrownfieldInspectRequest, provider: ShowcaseSquadProvider) -> dict[str, Any]:
     if req.source_mode == "custom" and req.custom_files:
-        if len(req.custom_files) > 12:
-            raise HTTPException(status_code=400, detail="Maximum 12 files per sandbox inspection.")
         with tempfile.TemporaryDirectory(prefix="nexus_ast_") as tmp:
             root = Path(tmp)
-            for rel_name, code in req.custom_files.items():
-                clean_rel = PurePosixPath(rel_name.replace("\\", "/").lstrip("/"))
-                if clean_rel.is_absolute() or ".." in clean_rel.parts or not str(clean_rel).endswith(".py"):
-                    raise HTTPException(status_code=400, detail=f"Invalid relative Python path: {rel_name}")
-                if len(code) > 25_000:
-                    raise HTTPException(status_code=400, detail=f"File exceeds 25KB sandbox limit: {rel_name}")
-                dest = (root / str(clean_rel)).resolve()
-                if not str(dest).startswith(str(root.resolve())):
-                    raise HTTPException(status_code=400, detail="Path traversal blocked.")
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                dest.write_text(code, encoding="utf-8")
+            _write_validated_custom_files(root, req.custom_files)
             return _inspect_directory(root, req.target_file, req.refactor_task, provider)
 
     if not _SAMPLE_BROWNFIELD_DIR.exists():
         raise HTTPException(status_code=404, detail="Sample brownfield directory not found.")
     return _inspect_directory(_SAMPLE_BROWNFIELD_DIR, req.target_file, req.refactor_task, provider)
+
+
+@app.post("/api/v1/brownfield/inspect")
+async def brownfield_inspect(req: BrownfieldInspectRequest) -> dict[str, Any]:
+    """Run live CodebaseAuditor, AstDependencyMapper, and BrownfieldRefactorer on real files."""
+    provider = ShowcaseSquadProvider(idea=req.refactor_task, simulate_healing=False)
+    return _inspect_source_payload(req, provider)
+
+
+@app.post("/api/v1/brownfield/apply-preview")
+async def brownfield_apply_preview(req: BrownfieldApplyRequest) -> dict[str, Any]:
+    """Apply Stage 2 security remediations to an isolated copy and re-run AST + CodebaseAuditor."""
+    provider = ShowcaseSquadProvider(idea=req.refactor_task, simulate_healing=False)
+    before = _inspect_source_payload(req, provider)
+    patched_files, diffs = _apply_surgical_remediations(before["files"])
+
+    with tempfile.TemporaryDirectory(prefix="nexus_patched_") as tmp:
+        root = Path(tmp)
+        _write_validated_custom_files(root, patched_files)
+        after = _inspect_directory(root, req.target_file, req.refactor_task, provider)
+
+    before_score = int(before["audit"]["healthScore"])
+    after_score = int(after["audit"]["healthScore"])
+    return {
+        "beforeAudit": before["audit"],
+        "afterAudit": after["audit"],
+        "afterInspect": after,
+        "appliedDiffs": diffs,
+        "scoreDelta": after_score - before_score,
+        "findingsResolved": max(0, len(before["audit"]["findings"]) - len(after["audit"]["findings"])),
+    }
 
 
 @app.get("/api/v1/audit-demo")

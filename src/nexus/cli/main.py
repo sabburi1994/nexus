@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from nexus import __version__
 from nexus.ai.client import GeminiClient, get_gcp_access_token, get_gcp_project
@@ -181,22 +182,61 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
     return target
 
 
-def run_mcp_server() -> None:
-    """Run the embedded Model Context Protocol (MCP) server for Claude Code and Cursor."""
+def build_mcp_server() -> Any:
+    """Build and configure the embedded Nexus MCP Server with core & Stage 1–3 tools."""
+    from nexus.brownfield import AstDependencyMapper, CodebaseAuditor
+    from nexus.metrics.roi import RoiCalculator
     from nexus.orchestrator.mcp import NexusMcpServer
+    from nexus.security import GuardrailManager, check_prompt_injection, sanitize_text
     from nexus.tools.base import Tool, ToolPermission
 
     server = NexusMcpServer(name="nexus-mcp", version=__version__)
 
-    # Register core tools
     def check_ai_tool(model: str = "gemini-3.8-flash") -> dict[str, str]:
-        """Check Vertex AI Gemini 3.8 connectivity."""
+        """Check Vertex AI / Gemini 3.8 connectivity."""
         client = GeminiClient(default_model=model)
         res = client.generate("Ping")
         return {"status": "ok", "response": res.text, "model": res.model}
 
+    def audit_repo_tool(path: str = ".") -> dict[str, Any]:
+        """Run CodebaseAuditor security and test health checks on an existing directory."""
+        report = CodebaseAuditor(path).run_audit()
+        return report.model_dump()
+
+    def blast_radius_tool(target: str, path: str = ".") -> dict[str, Any]:
+        """Compute AST direct/indirect dependents and impacted tests for a target module."""
+        mapper = AstDependencyMapper(path)
+        mapper.scan_codebase()
+        return mapper.compute_blast_radius(target).model_dump()
+
+    def guardrail_tool(text: str) -> dict[str, Any]:
+        """Check prompt injection risk and sanitize leaked credentials or PII."""
+        inj = check_prompt_injection(text)
+        sanitized = sanitize_text(text)
+        if inj.is_safe:
+            GuardrailManager().inspect_input(sanitized)
+        return {
+            "is_safe": inj.is_safe,
+            "matched_pattern": inj.matched_pattern,
+            "sanitized_text": sanitized,
+        }
+
+    def roi_tool(path: str = ".", hourly_rate: float = 85.0) -> dict[str, Any]:
+        """Calculate DORA velocity and engineering ROI metrics for a repository."""
+        report = RoiCalculator(hourly_rate=hourly_rate).calculate_from_codebase(path)
+        return report.model_dump()
+
     server.register_tool(Tool(fn=check_ai_tool, name="nexus_check_ai", permission=ToolPermission.READ_ONLY))
-    server.run_stdio()
+    server.register_tool(Tool(fn=audit_repo_tool, name="nexus_audit", permission=ToolPermission.READ_ONLY))
+    server.register_tool(Tool(fn=blast_radius_tool, name="nexus_blast_radius", permission=ToolPermission.READ_ONLY))
+    server.register_tool(Tool(fn=guardrail_tool, name="nexus_guardrail", permission=ToolPermission.READ_ONLY))
+    server.register_tool(Tool(fn=roi_tool, name="nexus_roi", permission=ToolPermission.READ_ONLY))
+    return server
+
+
+def run_mcp_server() -> None:
+    """Run the embedded Model Context Protocol (MCP) server for Claude Code and Cursor."""
+    build_mcp_server().run_stdio()
 
 
 def dream_cmd(idea: str, output_dir: Path) -> None:

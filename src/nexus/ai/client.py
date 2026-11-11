@@ -135,6 +135,7 @@ class GeminiClient:
     ) -> None:
         self.project_id = project_id or get_gcp_project()
         self.location = location
+        self._explicit_api_key = api_key
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.default_model = default_model
         self._http = httpx.Client(timeout=httpx.Timeout(180.0, connect=30.0, read=180.0))
@@ -158,6 +159,14 @@ class GeminiClient:
         raise RuntimeError("HTTP request failed after max retries")
 
     def _build_url_and_headers(self, model: str) -> tuple[str, dict[str, str]]:
+        # An explicitly provided BYOK key takes precedence over ambient Cloud Run IAM metadata.
+        if self._explicit_api_key:
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={self._explicit_api_key}"
+            )
+            return url, {"Content-Type": "application/json"}
+
         token = get_gcp_access_token()
         if token:
             # Vertex AI global or regional publisher endpoint

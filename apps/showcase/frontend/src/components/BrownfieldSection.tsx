@@ -1,14 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { AlertOctagon, FileCode2, GitFork, RefreshCw, ShieldAlert } from "lucide-react";
+import { AlertOctagon, CheckCircle2, FileCode2, GitFork, RefreshCw, ShieldAlert, Wand2 } from "lucide-react";
 import { BlastRadiusCard, CommandBlock, StatCard } from "@nexus-agent-framework/ui";
-import type { BrownfieldInspectResponse } from "../types";
+import { AstDependencyGraph } from "./AstDependencyGraph";
+import type { BrownfieldApplyPreviewResponse, BrownfieldInspectResponse } from "../types";
 
-const CUSTOM_TEMPLATE: Record<string, string> = {
+const CUSTOM_INSECURE_TEMPLATE: Record<string, string> = {
   "config.py": `LEGACY_TOKEN = "sk-demo9876543210abcdef9876543210"\nMODEL = "gemini-3.8-flash"\n`,
   "models.py": `from pydantic import BaseModel\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n`,
   "service.py": `from models import Order\nfrom nexus.ai import GeminiClient\n\ndef summarize(order: Order, user_text: str) -> str:\n    client = GeminiClient()\n    return client.generate(f"Summarize {order.order_id}: {user_text}").text\n`,
   "api.py": `from fastapi import FastAPI\nfrom models import Order\nfrom service import summarize\n\napp = FastAPI()\n\n@app.post("/api/v1/orders/summary")\ndef order_summary(order: Order, note: str):\n    return {"summary": summarize(order, note)}\n`,
   "tests/test_api.py": `import api\n\ndef test_routes():\n    assert api.app is not None\n`,
+};
+
+const CUSTOM_GUARDED_TEMPLATE: Record<string, string> = {
+  "config.py": `import os\n\nLEGACY_TOKEN = os.getenv("LEGACY_TOKEN", "")\nMODEL = "gemini-3.8-flash"\n`,
+  "models.py": CUSTOM_INSECURE_TEMPLATE["models.py"],
+  "service.py": `from models import Order\nfrom nexus.ai import GeminiClient\nfrom nexus.security import GuardrailManager\n\n_guardrail = GuardrailManager()\n\ndef summarize(order: Order, user_text: str) -> str:\n    safe_text = _guardrail.inspect_input(user_text)\n    client = GeminiClient()\n    return client.generate(f"Summarize {order.order_id}: {safe_text}").text\n`,
+  "api.py": CUSTOM_INSECURE_TEMPLATE["api.py"],
+  "tests/test_api.py": CUSTOM_INSECURE_TEMPLATE["tests/test_api.py"],
 };
 
 export const BrownfieldSection: React.FC = () => {
@@ -17,17 +26,25 @@ export const BrownfieldSection: React.FC = () => {
   const [refactorTask, setRefactorTask] = useState<string>(
     "Wrap unguarded GeminiClient calls with GuardrailManager and externalize legacy tokens"
   );
-  const [customFiles, setCustomFiles] = useState<Record<string, string>>(CUSTOM_TEMPLATE);
+  const [customFiles, setCustomFiles] = useState<Record<string, string>>(CUSTOM_INSECURE_TEMPLATE);
   const [activeFile, setActiveFile] = useState<string>("models.py");
   const [data, setData] = useState<BrownfieldInspectResponse | null>(null);
+  const [applyPreview, setApplyPreview] = useState<BrownfieldApplyPreviewResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [applying, setApplying] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runInspect = async (overrideTarget?: string, overrideMode?: "sample" | "custom") => {
+  const runInspect = async (
+    overrideTarget?: string,
+    overrideMode?: "sample" | "custom",
+    overrideCustomFiles?: Record<string, string>
+  ) => {
     const mode = overrideMode ?? sourceMode;
     const tgt = overrideTarget ?? targetFile;
+    const filesPayload = overrideCustomFiles ?? customFiles;
     setLoading(true);
     setError(null);
+    setApplyPreview(null);
     try {
       const res = await fetch("/api/v1/brownfield/inspect", {
         method: "POST",
@@ -36,7 +53,7 @@ export const BrownfieldSection: React.FC = () => {
           source_mode: mode,
           target_file: tgt,
           refactor_task: refactorTask,
-          custom_files: mode === "custom" ? customFiles : undefined,
+          custom_files: mode === "custom" ? filesPayload : undefined,
         }),
       });
       const json = await res.json();
@@ -53,6 +70,33 @@ export const BrownfieldSection: React.FC = () => {
       setError("Could not reach backend AST analyzer.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runApplyPreview = async () => {
+    setApplying(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/v1/brownfield/apply-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_mode: sourceMode,
+          target_file: targetFile,
+          refactor_task: refactorTask,
+          custom_files: sourceMode === "custom" ? customFiles : undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.detail || "Failed to simulate remediation patches.");
+      } else {
+        setApplyPreview(json as BrownfieldApplyPreviewResponse);
+      }
+    } catch {
+      setError("Could not reach backend patch simulator.");
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -77,7 +121,7 @@ export const BrownfieldSection: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -97,9 +141,10 @@ export const BrownfieldSection: React.FC = () => {
               type="button"
               onClick={() => {
                 setSourceMode("custom");
+                setCustomFiles(CUSTOM_INSECURE_TEMPLATE);
                 setTargetFile("models.py");
                 setActiveFile("service.py");
-                void runInspect("models.py", "custom");
+                void runInspect("models.py", "custom", CUSTOM_INSECURE_TEMPLATE);
               }}
               className={`rounded px-3 py-1.5 text-xs font-semibold transition ${
                 sourceMode === "custom"
@@ -107,7 +152,20 @@ export const BrownfieldSection: React.FC = () => {
                   : "border border-[#c9d1cf] bg-[#f8f4ec] text-[#3a494b]"
               }`}
             >
-              Editable Python Sandbox
+              Editable Sandbox (Insecure)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("custom");
+                setCustomFiles(CUSTOM_GUARDED_TEMPLATE);
+                setTargetFile("models.py");
+                setActiveFile("service.py");
+                void runInspect("models.py", "custom", CUSTOM_GUARDED_TEMPLATE);
+              }}
+              className="rounded border border-[#9ec9b8] bg-[#e6f4ee] px-3 py-1.5 text-xs font-semibold text-[#0f7657] transition hover:bg-[#d7ede3]"
+            >
+              Editable Sandbox (Guarded 100/100)
             </button>
           </div>
         </div>
@@ -132,7 +190,7 @@ export const BrownfieldSection: React.FC = () => {
               </select>
             </label>
           </div>
-          <div className="md:col-span-6">
+          <div className="md:col-span-5">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5c6a67]">
               Surgical Refactor Goal
               <input
@@ -143,15 +201,24 @@ export const BrownfieldSection: React.FC = () => {
               />
             </label>
           </div>
-          <div className="md:col-span-2">
+          <div className="md:col-span-3 flex gap-2">
             <button
               type="button"
               disabled={loading}
               onClick={() => void runInspect()}
-              className="flex w-full items-center justify-center gap-1.5 rounded border border-[#172a2e] bg-[#172a2e] px-3 py-2 text-xs font-semibold text-[#fffdf8] transition hover:border-[#bd513d] hover:bg-[#bd513d] disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded border border-[#172a2e] bg-[#172a2e] px-3 py-2 text-xs font-semibold text-[#fffdf8] transition hover:border-[#bd513d] hover:bg-[#bd513d] disabled:opacity-50"
             >
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
               <span>Re-Scan AST</span>
+            </button>
+            <button
+              type="button"
+              disabled={applying}
+              onClick={() => void runApplyPreview()}
+              className="flex items-center justify-center gap-1.5 rounded border border-[#0f7657] bg-[#0f7657] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0b5c43] disabled:opacity-50"
+            >
+              <Wand2 size={13} />
+              <span>{applying ? "Applying..." : "Apply Fixes"}</span>
             </button>
           </div>
         </div>
@@ -160,6 +227,52 @@ export const BrownfieldSection: React.FC = () => {
           <p className="mt-3 rounded border border-[#dfb1a6] bg-[#fbece7] px-3 py-2 text-xs text-[#a93f35]">{error}</p>
         )}
       </section>
+
+      {/* Before -> After Remediation Delta Banner */}
+      {applyPreview && (
+        <section className="editorial-card border-[#9ec9b8] bg-[#e6f4ee] p-5 text-[#172a2e]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[#0f7657]" />
+              <div>
+                <p className="font-mono text-xs font-bold uppercase tracking-wider text-[#0f7657]">
+                  Stage 2 Remediation Verified · Health Score {applyPreview.beforeAudit.healthScore}/100 →{" "}
+                  {applyPreview.afterAudit.healthScore}/100 (+{applyPreview.scoreDelta})
+                </p>
+                <p className="mt-1 text-xs text-[#2b3c39]">
+                  Resolved {applyPreview.findingsResolved} security finding(s) across{" "}
+                  {applyPreview.appliedDiffs.length} patched file(s), verified cleanly on re-scan by{" "}
+                  <code className="font-mono">CodebaseAuditor</code>.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("custom");
+                setCustomFiles(applyPreview.afterInspect.files);
+                setData(applyPreview.afterInspect);
+              }}
+              className="rounded border border-[#0f7657] bg-[#fffdf8] px-3 py-1.5 font-mono text-xs font-semibold text-[#0f7657] hover:bg-[#0f7657] hover:text-white"
+            >
+              Load Remediated Repo into Sandbox
+            </button>
+          </div>
+
+          {applyPreview.appliedDiffs.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {applyPreview.appliedDiffs.map((item) => (
+                <CommandBlock
+                  key={item.filePath}
+                  title={`APPLIED UNIFIED DIFF · ${item.filePath}`}
+                  language="diff"
+                  code={item.diff}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {data && (
         <>
@@ -189,6 +302,18 @@ export const BrownfieldSection: React.FC = () => {
             />
           </div>
 
+          <AstDependencyGraph
+            files={fileList}
+            edges={data.edges ?? []}
+            selectedTarget={data.selectedTarget}
+            blastRadius={data.blastRadius}
+            onSelectFile={(dep) => {
+              setTargetFile(dep);
+              setActiveFile(dep);
+              void runInspect(dep);
+            }}
+          />
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             {/* Left: Blast Radius & Security Audit */}
             <div className="space-y-6 lg:col-span-7">
@@ -215,10 +340,7 @@ export const BrownfieldSection: React.FC = () => {
                 ) : (
                   <div className="mt-4 space-y-3">
                     {data.audit.findings.map((finding, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded border border-[#dfb1a6] bg-[#fff8f5] p-3.5 text-xs"
-                      >
+                      <div key={idx} className="rounded border border-[#dfb1a6] bg-[#fff8f5] p-3.5 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="inline-flex items-center gap-1.5 font-mono font-bold text-[#a93f35]">
                             <AlertOctagon size={13} /> [{finding.severity}] {finding.category}

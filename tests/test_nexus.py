@@ -111,3 +111,36 @@ def test_cli_new_app(tmp_path: Path) -> None:
     assert (test_dir / "demo_service" / "pyproject.toml").exists()
     assert (test_dir / "demo_service" / "src" / "demo_service" / "main.py").exists()
     assert (test_dir / "demo_service" / "Dockerfile").exists()
+
+
+def test_mcp_server_exposes_stage1_to_3_tools(tmp_path: Path) -> None:
+    """Verify embedded MCP server exposes Stage 1-3 tools and executes them."""
+    from nexus.cli.main import build_mcp_server
+
+    sample_file = tmp_path / "models.py"
+    sample_file.write_text('API_KEY = "sk-demo9876543210abcdef9876543210"\n', encoding="utf-8")
+
+    server = build_mcp_server()
+    tools_resp = server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+    tool_names = {t["name"] for t in tools_resp["result"]["tools"]}
+    assert {"nexus_check_ai", "nexus_audit", "nexus_blast_radius", "nexus_guardrail", "nexus_roi"} <= tool_names
+
+    audit_resp = server.handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "nexus_audit", "arguments": {"path": str(tmp_path)}},
+        }
+    )
+    assert audit_resp["result"]["isError"] is False
+    assert "SECRET_LEAK" in audit_resp["result"]["content"][0]["text"]
+
+
+def test_gemini_client_explicit_api_key_precedence() -> None:
+    """Explicit api_key argument must prefer direct Gemini API over ambient GCP metadata."""
+    client = GeminiClient(api_key="AIza-test-explicit-key")
+    url, headers = client._build_url_and_headers("gemini-3.8-flash")
+    assert "generativelanguage.googleapis.com" in url
+    assert "key=AIza-test-explicit-key" in url
+    assert headers == {"Content-Type": "application/json"}

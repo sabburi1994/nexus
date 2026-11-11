@@ -61,6 +61,10 @@ class BrownfieldInspectRequest(BaseModel):
     )
 
 
+class BrownfieldApplyRequest(BrownfieldInspectRequest):
+    """Apply synthesized security/architecture remediations and re-run CodebaseAuditor."""
+
+
 class RoiRequest(BaseModel):
     team_size: int = Field(5, ge=1, le=200)
     hourly_rate: float = Field(85.0, ge=25.0, le=400.0)
@@ -83,11 +87,15 @@ class FrameworkStatusResponse(BaseModel):
     status: str
     framework: str
     version: str
+    pypi_live_version: str
+    pypi_staged_version: str
+    ci_status_url: str
     website: str
     repository: str
     author: str
     tests_passed: int
     tests_total: int
+    suite_breakdown: dict[str, Any]
     preflight_clearance: str
     supported_models: list[str]
     default_model: str

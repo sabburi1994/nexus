@@ -21,10 +21,12 @@ class VertexAIProvider(BaseModelProvider):
         project_id: str | None = None,
         location: str = "global",
         default_model: str = "gemini-3.8-flash",
+        api_key: str | None = None,
     ) -> None:
         self._client = GeminiClient(
             project_id=project_id,
             location=location,
+            api_key=api_key,
             default_model=default_model,
         )
 

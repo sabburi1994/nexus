@@ -4,7 +4,11 @@ import { NEXUS_SECURITY_HEADERS, scrubSensitiveData } from "@nexus-agent-framewo
 import { CommandBlock, RoiScorecard, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui";
 import type { GuardrailInspectResponse, RoiApiResponse } from "../types";
 
-export const TelemetrySection: React.FC = () => {
+interface Props {
+  onTelemetry?: (costDeltaUsd: number, blockedDelta: number, piiDelta: number) => void;
+}
+
+export const TelemetrySection: React.FC<Props> = ({ onTelemetry }) => {
   const [teamSize, setTeamSize] = useState(6);
   const [hourlyRate, setHourlyRate] = useState(95);
   const [releasesPerMonth, setReleasesPerMonth] = useState(10);
@@ -44,7 +48,11 @@ export const TelemetrySection: React.FC = () => {
         body: JSON.stringify({ payload: payloadToTest }),
       });
       if (res.ok) {
-        setGuardResult((await res.json()) as GuardrailInspectResponse);
+        const parsed = (await res.json()) as GuardrailInspectResponse;
+        setGuardResult(parsed);
+        if (onTelemetry) {
+          onTelemetry(0, parsed.blocked ? 1 : 0, parsed.redactions_count);
+        }
       }
     } catch {
       /* ignore */

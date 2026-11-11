@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { NexusHeader, type NexusNavItem } from "@nexus-agent-framework/ui";
 import { OverviewSection } from "./components/OverviewSection";
 import { SimulatorSection } from "./components/SimulatorSection";
@@ -6,34 +6,75 @@ import { BrownfieldSection } from "./components/BrownfieldSection";
 import { TelemetrySection } from "./components/TelemetrySection";
 import { DocsSection } from "./components/DocsSection";
 import { PackagesSection } from "./components/PackagesSection";
-import type { FrameworkHealth, WorkspaceTab } from "./types";
+import type { DocTopic, FrameworkHealth, SimulationResponse, WorkspaceTab } from "./types";
 
-function parseHashToTab(hash: string): WorkspaceTab {
+const VALID_DOC_TOPICS: readonly DocTopic[] = [
+  "quickstart",
+  "cli",
+  "mcp",
+  "orchestrators",
+  "python-sdk",
+  "packages",
+];
+
+function parseHashRoute(hash: string): { tab: WorkspaceTab; docTopic: DocTopic } {
   const clean = hash.replace(/^#\/?/, "").toLowerCase();
-  if (clean === "simulator" || clean === "playground") return "simulator";
-  if (clean === "brownfield" || clean === "ast") return "brownfield";
-  if (clean === "telemetry" || clean === "roi" || clean === "guardrails") return "telemetry";
-  if (clean === "docs" || clean === "documentation") return "docs";
-  if (clean === "packages" || clean === "registry") return "packages";
-  return "overview";
+  const [head, sub] = clean.split("/");
+  const docTopic = VALID_DOC_TOPICS.includes(sub as DocTopic) ? (sub as DocTopic) : "quickstart";
+
+  if (head === "simulator" || head === "playground") return { tab: "simulator", docTopic };
+  if (head === "brownfield" || head === "ast") return { tab: "brownfield", docTopic };
+  if (head === "telemetry" || head === "roi" || head === "guardrails") return { tab: "telemetry", docTopic };
+  if (head === "docs" || head === "documentation") return { tab: "docs", docTopic };
+  if (head === "packages" || head === "registry") return { tab: "packages", docTopic };
+  return { tab: "overview", docTopic };
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>(() => parseHashToTab(window.location.hash));
+  const initialRoute = parseHashRoute(window.location.hash);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>(initialRoute.tab);
+  const [docTopic, setDocTopic] = useState<DocTopic>(initialRoute.docTopic);
   const [health, setHealth] = useState<FrameworkHealth | null>(null);
 
-  const navigate = (tab: WorkspaceTab) => {
+  // Lifted session telemetry so header budget & security badges reflect live workspace activity across tabs.
+  const [sessionCostUsd, setSessionCostUsd] = useState<number>(0);
+  const [sessionInjectionsBlocked, setSessionInjectionsBlocked] = useState<number>(0);
+  const [sessionPiiScrubbed, setSessionPiiScrubbed] = useState<number>(0);
+  const [cachedSimulation, setCachedSimulation] = useState<SimulationResponse | null>(null);
+
+  const navigate = useCallback((tab: WorkspaceTab, nextDocTopic?: DocTopic) => {
     setActiveTab(tab);
-    const targetHash = `#${tab}`;
+    if (nextDocTopic) {
+      setDocTopic(nextDocTopic);
+    }
+    const targetHash = tab === "docs" && (nextDocTopic || docTopic !== "quickstart") ? `#docs/${nextDocTopic ?? docTopic}` : `#${tab}`;
     if (window.location.hash !== targetHash) {
       window.location.hash = targetHash;
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [docTopic]);
+
+  const selectDocTopic = useCallback((topic: DocTopic) => {
+    setDocTopic(topic);
+    const targetHash = `#docs/${topic}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  }, []);
+
+  const recordTelemetry = useCallback((costDeltaUsd: number, blockedDelta: number, piiDelta: number) => {
+    if (costDeltaUsd > 0) setSessionCostUsd((c) => Number((c + costDeltaUsd).toFixed(6)));
+    if (blockedDelta > 0) setSessionInjectionsBlocked((b) => b + blockedDelta);
+    if (piiDelta > 0) setSessionPiiScrubbed((p) => p + piiDelta);
+  }, []);
 
   useEffect(() => {
     const onHashChange = () => {
-      setActiveTab(parseHashToTab(window.location.hash));
+      const parsed = parseHashRoute(window.location.hash);
+      setActiveTab(parsed.tab);
+      if (parsed.tab === "docs") {
+        setDocTopic(parsed.docTopic);
+      }
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -64,20 +105,35 @@ export default function App() {
       <NexusHeader
         appName="Nexus"
         tagline={`Agentic Engineering Framework · v${health?.version ?? "0.2.0"}`}
-        activeModel={health?.default_model ?? "gemini-3.8-flash"}
-        budgetSpentUsd={0.0}
+        activeModel={cachedSimulation?.execution_mode === "byok-live" ? "gemini-3.8-flash (BYOK)" : health?.default_model ?? "gemini-3.8-flash"}
+        budgetSpentUsd={sessionCostUsd}
         budgetCapUsd={1.0}
         brandHref="#overview"
         navItems={navItems}
-        onNavSelect={(id) => navigate(parseHashToTab(`#${id}`))}
+        onNavSelect={(id) => navigate(parseHashRoute(`#${id}`).tab)}
       />
 
       <main className="mx-auto w-full max-w-[1260px] flex-1 px-5 py-8">
-        {activeTab === "overview" && <OverviewSection health={health} onNavigate={navigate} />}
-        {activeTab === "simulator" && <SimulatorSection />}
+        {activeTab === "overview" && (
+          <OverviewSection
+            health={health}
+            onNavigate={navigate}
+            injectionsBlocked={sessionInjectionsBlocked}
+            piiScrubbed={sessionPiiScrubbed}
+          />
+        )}
+        {activeTab === "simulator" && (
+          <SimulatorSection
+            cachedResult={cachedSimulation}
+            onResultChange={setCachedSimulation}
+            onTelemetry={recordTelemetry}
+            sessionInjectionsBlocked={sessionInjectionsBlocked}
+            sessionPiiScrubbed={sessionPiiScrubbed}
+          />
+        )}
         {activeTab === "brownfield" && <BrownfieldSection />}
-        {activeTab === "telemetry" && <TelemetrySection />}
-        {activeTab === "docs" && <DocsSection />}
+        {activeTab === "telemetry" && <TelemetrySection onTelemetry={recordTelemetry} />}
+        {activeTab === "docs" && <DocsSection activeTopic={docTopic} onSelectTopic={selectDocTopic} />}
         {activeTab === "packages" && <PackagesSection health={health} />}
       </main>
 

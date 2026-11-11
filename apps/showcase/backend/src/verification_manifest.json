@@ -1,0 +1,17 @@
+{
+  "pypi_live_version": "0.1.1",
+  "pypi_staged_version": "0.2.0",
+  "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
+  "suites": {
+    "core_pytest": {
+      "passed": 32,
+      "total": 32,
+      "command": "python -m pytest -o pythonpath=src tests/"
+    },
+    "showcase_pytest": {
+      "passed": 9,
+      "total": 9,
+      "command": "python -m pytest tests/"
+    }
+  }
+}

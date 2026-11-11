@@ -9,6 +9,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from nexus.ai.client import GeminiClient
 from nexus.ai.pricing import calculate_cost_usd
 from nexus.brownfield.analyzer import BlastRadiusResult
 from nexus.brownfield.refactor import FilePatch, RefactorPlan
@@ -559,3 +560,68 @@ def test_record_validation() -> None:
             security_verdict="PASS: All routes validated, GuardrailManager injection shield verified, and Pydantic bounds enforced.",
             passed_preflight=True,
         )
+
+
+class ByokGeminiProviderError(RuntimeError):
+    """Raised when a caller-supplied Gemini API key fails validation or upstream inference."""
+
+
+class ByokGeminiShowcaseProvider(ShowcaseSquadProvider):
+    """
+    Executes live Gemini 3.8 Flash structured inference using a caller-supplied API key
+    via the X-Gemini-API-Key header. Falls back cleanly on auth errors without logging keys.
+    """
+
+    def __init__(self, idea: str, api_key: str, target_cloud: str = "gcp", simulate_healing: bool = True) -> None:
+        super().__init__(idea=idea, target_cloud=target_cloud, simulate_healing=simulate_healing)
+        self._client = GeminiClient(api_key=api_key, default_model="gemini-3.8-flash")
+        self._byok_qa_calls = 0
+
+    @property
+    def name(self) -> str:
+        return "gemini-byok-live"
+
+    def structured(
+        self,
+        prompt: str,
+        response_model: type[T],
+        system_instruction: str | None = None,
+        model: str | None = None,
+    ) -> T:
+        if response_model is RefactorPlan:
+            return super().structured(prompt, response_model, system_instruction, model)
+
+        try:
+            result = self._client.structured(
+                prompt=prompt,
+                response_model=response_model,
+                system_instruction=system_instruction,
+                model=model,
+            )
+        except Exception as exc:
+            # Never echo caller API keys in error messages.
+            msg = re.sub(r"key=[A-Za-z0-9_-]+", "key=[REDACTED]", str(exc))
+            raise ByokGeminiProviderError(f"Live Gemini BYOK execution failed: {msg[:260]}") from exc
+
+        if response_model is QaSpecification and isinstance(result, QaSpecification):
+            self._byok_qa_calls += 1
+            if self.simulate_healing and self._byok_qa_calls == 1 and not self._healed_backend:
+                result.passed_preflight = False
+                result.security_verdict = (
+                    f"FAIL (Initial BYOK Gate): {result.security_verdict}"
+                    if result.security_verdict
+                    else "FAIL (Initial BYOK Gate): Triggered verification retry."
+                )
+        if response_model is FullStackSpecification and "closed-loop self-healing" in prompt.lower():
+            self._healed_backend = True
+
+        self._record(
+            agent_name=response_model.__name__,
+            role="Live Gemini 3.8 BYOK",
+            prompt=prompt,
+            output_text=result.model_dump_json(),
+            summary=f"Synthesized structured {response_model.__name__} directly via caller Gemini key.",
+            artifact_preview="workspace/generated",
+            status="error" if isinstance(result, QaSpecification) and not result.passed_preflight else "completed",
+        )
+        return result
