@@ -2,6 +2,9 @@
 
 > **Production security headers, zero-leak credential scrubbing, and correlation ID tracing for web applications.**
 
+- **Website & Guardrail Sandbox**: [nexus.abburi.info/#telemetry](https://nexus.abburi.info/#telemetry)
+- **Documentation**: [nexus.abburi.info/#docs](https://nexus.abburi.info/#docs)
+
 [![npm version](https://img.shields.io/npm/v/@nexus-agent-framework/middleware.svg)](https://www.npmjs.com/package/@nexus-agent-framework/middleware)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -49,4 +52,4 @@ app.use((err, req, res, next) => {
 
 ## License
 
-Licensed under the Apache 2.0 License. Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).
+Licensed under the Apache 2.0 License. Live platform & docs at [nexus.abburi.info](https://nexus.abburi.info). Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).

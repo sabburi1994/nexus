@@ -77,7 +77,8 @@ class MockProvider(BaseModelProvider):
             elif origin is dict:
                 dummy_data[name] = {}
             elif origin is typing.Literal:
-                dummy_data[name] = field.annotation.__args__[0]
+                args = getattr(field.annotation, "__args__", ())
+                dummy_data[name] = args[0] if args else None
             elif isinstance(field.annotation, type) and issubclass(field.annotation, BaseModel):
                 dummy_data[name] = self.structured("", field.annotation)
             else:

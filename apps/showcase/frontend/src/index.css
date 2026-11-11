@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --paper: #f5f1e8;
+  --surface: #fffdf8;
+  --surface-subtle: #eee9dd;
+  --surface-muted: #e6dfd1;
+  --ink: #172a2e;
+  --ink-soft: #3a494b;
+  --muted: #5c6a67;
+  --rule: #d6cec0;
+  --rule-strong: #b8af9f;
+  --terracotta: #bd513d;
+  --emerald: #0f7657;
+  --cobalt: #263aa8;
+  --sand: #f4e6c2;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, .font-editorial {
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(189, 81, 61, 0.38);
+    outline-offset: 2px;
+  }
+}
+
+.editorial-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  box-shadow: 4px 4px 0 #e6ded0;
+}
+
+.editorial-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+
+.tabular-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}

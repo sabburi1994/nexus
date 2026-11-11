@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
-from nexus.maintenance.healing_loop import ClosedLoopHealer, SelfHealingReport
+from nexus.maintenance.healing_loop import ClosedLoopHealer
 from nexus.providers.mock import MockProvider
 from nexus.teams.it_pack.ba import ProductProposal
 from nexus.teams.it_pack.fullstack import FullStackEngineerAgent, FullStackSpecification
@@ -22,7 +20,6 @@ def test_closed_loop_healer_when_already_passed() -> None:
         app_name="testapp",
         tagline="Test Tagline",
         target_audience="Developers",
-        problem_statement="Problem",
         core_features=["Auth", "API"],
         user_stories=["As a user..."],
         ui_concept="Clean dashboard",
@@ -34,7 +31,6 @@ def test_closed_loop_healer_when_already_passed() -> None:
         system_topology="Cloud Run + Cloud SQL",
         non_functional_requirements=["High availability"],
         integration_services=["Cloud Logging"],
-        latency_budget_ms=100,
     )
     fullstack = FullStackSpecification(
         backend_main_py="print('hello')",
@@ -74,7 +70,6 @@ def test_closed_loop_healing_activates_on_failure() -> None:
         app_name="payments",
         tagline="Pay seamlessly",
         target_audience="Merchants",
-        problem_statement="Slow payments",
         core_features=["Stripe"],
         user_stories=["As a merchant..."],
         ui_concept="Payment form",
@@ -86,7 +81,6 @@ def test_closed_loop_healing_activates_on_failure() -> None:
         system_topology="Cloud Run",
         non_functional_requirements=["Scalable to 10k RPS"],
         integration_services=[],
-        latency_budget_ms=150,
     )
     fullstack = FullStackSpecification(
         backend_main_py="buggy code",

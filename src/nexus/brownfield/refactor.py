@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+
 from pydantic import BaseModel, Field
 
 from nexus.brownfield.analyzer import AstDependencyMapper, BlastRadiusResult

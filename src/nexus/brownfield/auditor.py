@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+
 from pydantic import BaseModel, Field
 
 from nexus.brownfield.analyzer import AstDependencyMapper
@@ -71,7 +71,9 @@ class CodebaseAuditor:
         for path in self.root_dir.rglob("*"):
             if path.is_dir():
                 continue
-            if any(p.startswith(".") or p in ("__pycache__", "node_modules", "venv", ".venv", "dist") for p in path.parts):
+            if any(
+                p.startswith(".") or p in ("__pycache__", "node_modules", "venv", ".venv", "dist") for p in path.parts
+            ):
                 continue
 
             total_files += 1
@@ -106,7 +108,11 @@ class CodebaseAuditor:
                             )
 
                     # 2. Check unvalidated direct AI client calls
-                    if ("GeminiClient" in line or "OpenAI" in line) and "sanitize" not in content and "guardrail" not in content:
+                    if (
+                        ("GeminiClient" in line or "OpenAI" in line)
+                        and "sanitize" not in content
+                        and "guardrail" not in content
+                    ):
                         findings.append(
                             SecurityFinding(
                                 severity="HIGH",

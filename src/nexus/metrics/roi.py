@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import Any
+
 from pydantic import BaseModel, Field
 
 from nexus.ai.pricing import calculate_cost_usd

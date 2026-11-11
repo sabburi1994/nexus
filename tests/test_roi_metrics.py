@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-import pytest
 
-from nexus.metrics.roi import DoraMetrics, EnterpriseRoiReport, RoiCalculator
+from nexus.metrics.roi import RoiCalculator
 
 
 def test_roi_calculator_codebase(tmp_path: Path) -> None:

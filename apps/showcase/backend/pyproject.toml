@@ -1,10 +1,10 @@
 [project]
 name = "nexus-showcase"
-version = "0.1.0"
-description = "Reference Showcase Application demonstrating Nexus Monorepo Packages and Framework"
+version = "0.2.0"
+description = "Reference Showcase & Documentation Portal demonstrating Nexus Agent Framework (https://nexus.abburi.info)"
 requires-python = ">=3.11"
 dependencies = [
-    "nexus-framework>=0.1.0",
+    "nexus-agent-framework>=0.2.0",
     "uvicorn>=0.30.0",
 ]
 

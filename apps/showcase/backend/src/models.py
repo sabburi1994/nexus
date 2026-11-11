@@ -1,16 +1,19 @@
-"""Showcase Data Models using NexusEntity and Pydantic."""
+"""Showcase Data Models & API Schemas using NexusEntity and Pydantic."""
+
 from __future__ import annotations
 
-import uuid
 from typing import Any
+
 from pydantic import BaseModel, Field
-from sqlalchemy import Float, Integer, String, Text
+from sqlalchemy import Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
 from nexus.db import NexusEntity
 
 
 class AnalysisReport(NexusEntity):
     """Persisted market intelligence report."""
+
     __tablename__ = "analysis_reports"
 
     target_name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -20,10 +23,8 @@ class AnalysisReport(NexusEntity):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-# --- API Request & Response Schemas ---
-
 class ScanRequest(BaseModel):
-    target: str = Field(..., description="Entity or macro indicator to analyze")
+    target: str = Field(..., min_length=2, max_length=240, description="Entity or macro indicator to analyze")
     sector: str = Field("Macro", description="Economic sector or asset class")
 
 
@@ -39,38 +40,36 @@ class ScanResponse(BaseModel):
 
 
 class SimulationRequest(BaseModel):
-    idea: str = Field(..., description="Application requirement or prompt to simulate")
+    idea: str = Field(..., min_length=4, max_length=1200, description="Application requirement or prompt to simulate")
     target_cloud: str = Field("gcp", description="'gcp', 'aws', or 'local'")
+    simulate_healing: bool = Field(
+        True,
+        description="When True, intentionally triggers an initial preflight gate failure so ClosedLoopHealer executes.",
+    )
 
 
-class AgentTraceStep(BaseModel):
-    agent_name: str
-    role: str
-    status: str  # "completed", "running", "error"
-    summary: str
-    tokens: int
-    cost_usd: float
-    timestamp: str
-    artifact_preview: str | None = None
-
-
-class SimulationResponse(BaseModel):
-    app_name: str
-    title: str
-    tagline: str
-    steps: list[AgentTraceStep]
-    total_tokens: int
-    total_cost_usd: float
-    healing_cycles: int
-    verdict: str
-    artifacts: dict[str, str]
+class BrownfieldInspectRequest(BaseModel):
+    source_mode: str = Field("sample", description="'sample' (bundled legacy repo) or 'custom'")
+    target_file: str = Field("models.py", description="Relative file path for AST blast-radius calculation")
+    refactor_task: str = Field(
+        "Wrap AI prompt calls in GuardrailManager and externalize legacy secrets",
+        max_length=300,
+    )
+    custom_files: dict[str, str] | None = Field(
+        default=None,
+        description="Optional map of relative .py file paths to source code when source_mode='custom'",
+    )
 
 
 class RoiRequest(BaseModel):
-    team_size: int = Field(5, ge=1, le=100)
-    hourly_rate: float = Field(85.0, ge=30.0, le=300.0)
-    releases_per_month: int = Field(8, ge=1, le=100)
-    avg_loc_per_app: int = Field(3500, ge=500, le=50000)
+    team_size: int = Field(5, ge=1, le=200)
+    hourly_rate: float = Field(85.0, ge=25.0, le=400.0)
+    releases_per_month: int = Field(8, ge=1, le=120)
+    avg_loc_per_app: int = Field(3500, ge=300, le=100000)
+
+
+class GuardrailInspectRequest(BaseModel):
+    payload: str = Field(..., min_length=1, max_length=2500)
 
 
 class DoraTelemetry(BaseModel):
@@ -80,15 +79,19 @@ class DoraTelemetry(BaseModel):
     mttr_minutes: float
 
 
-class RoiResponse(BaseModel):
-    team_size: int
-    hourly_rate: float
-    monthly_hours_saved: float
-    annual_hours_saved: float
-    monthly_gross_savings_usd: float
-    annual_gross_savings_usd: float
-    monthly_token_cost_usd: float
-    annual_net_savings_usd: float
-    roi_multiplier: float
-    dora_metrics: DoraTelemetry
-    summary: str
+class FrameworkStatusResponse(BaseModel):
+    status: str
+    framework: str
+    version: str
+    website: str
+    repository: str
+    author: str
+    tests_passed: int
+    tests_total: int
+    preflight_clearance: str
+    supported_models: list[str]
+    default_model: str
+    mcp_enabled: bool
+    stages_active: list[str]
+    packages: dict[str, str]
+    pricing_model: dict[str, Any]

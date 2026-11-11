@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexus-agent-framework"
-version = "0.1.1"
-description = "Autonomous Agentic Software Engineering Framework & Virtual IT Squad powered by Google Gemini and MCP"
+version = "0.2.0"
+description = "Autonomous Agentic Software Engineering Framework & Virtual IT Squad powered by Google Gemini and MCP — https://nexus.abburi.info"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
@@ -53,9 +53,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sabburi1994/nexus"
-Documentation = "https://github.com/sabburi1994/nexus#readme"
-Repository = "https://github.com/sabburi1994/nexus.git"
+Homepage = "https://nexus.abburi.info"
+Documentation = "https://nexus.abburi.info/#docs"
+Simulator = "https://nexus.abburi.info/#simulator"
+Repository = "https://github.com/sabburi1994/nexus"
 Issues = "https://github.com/sabburi1994/nexus/issues"
 Changelog = "https://github.com/sabburi1994/nexus/releases"
 

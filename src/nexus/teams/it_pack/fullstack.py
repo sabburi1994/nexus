@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from nexus.providers.base import BaseModelProvider
@@ -91,4 +93,3 @@ Apply targeted surgical corrections to `backend_main_py`, `backend_models_py`, `
 """
         system = "You are a master Full-Stack Engineer performing surgical bug fixes and patches."
         return self.provider.structured(prompt, FullStackSpecification, system_instruction=system)
-

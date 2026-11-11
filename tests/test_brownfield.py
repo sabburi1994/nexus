@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import pytest
 
 from nexus.brownfield.analyzer import AstDependencyMapper
 from nexus.brownfield.auditor import CodebaseAuditor
@@ -38,7 +37,9 @@ def test_codebase_auditor(tmp_path: Path) -> None:
     src = tmp_path / "src"
     src.mkdir()
     main = src / "main.py"
-    main.write_text("from fastapi import FastAPI\napp = FastAPI()\n@app.get('/health')\ndef health(): return {}\n", encoding="utf-8")
+    main.write_text(
+        "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/health')\ndef health(): return {}\n", encoding="utf-8"
+    )
 
     auditor = CodebaseAuditor(tmp_path)
     report = auditor.run_audit()

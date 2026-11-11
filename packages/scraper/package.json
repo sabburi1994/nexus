@@ -1,7 +1,7 @@
 {
   "name": "@nexus-agent-framework/scraper",
-  "version": "1.0.1",
-  "description": "Polite web scraping protocols, RSS ingestion contracts, and rate-limiting policies for AI agents",
+  "version": "1.0.2",
+  "description": "Polite web scraping protocols, RSS ingestion contracts, and rate-limiting policies for AI agents — https://nexus.abburi.info",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -22,10 +22,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sabburi1994/nexus.git",
+    "url": "git+https://github.com/sabburi1994/nexus.git",
     "directory": "packages/scraper"
   },
-  "homepage": "https://github.com/sabburi1994/nexus#readme",
+  "homepage": "https://nexus.abburi.info",
   "bugs": "https://github.com/sabburi1994/nexus/issues",
   "author": "Sai Nikhil Abburi",
   "license": "Apache-2.0",

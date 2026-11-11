@@ -6,6 +6,7 @@ import ast
 import logging
 from pathlib import Path
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger("nexus.brownfield.analyzer")
@@ -149,7 +150,7 @@ class AstDependencyMapper:
 
         all_affected = direct_dependents | indirect_dependents
         affected_tests = [f for f in all_affected if "test" in f]
-        
+
         affected_routes: list[str] = []
         for file_path in [target_normalized] + list(all_affected):
             for sym in self.symbols_map.get(file_path, []):

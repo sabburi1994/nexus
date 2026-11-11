@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
 from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus

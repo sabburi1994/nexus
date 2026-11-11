@@ -1,6 +1,8 @@
 # Nexus: Orchestrator-Native AI Agentic Framework
 
 <p align="center">
+  <a href="https://nexus.abburi.info"><img src="https://img.shields.io/badge/website-nexus.abburi.info-bd513d" alt="Website" /></a>
+  <a href="https://nexus.abburi.info/#simulator"><img src="https://img.shields.io/badge/live%20simulator-interactive-172a2e" alt="Live Simulator" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/pypi/v/nexus-agent-framework?color=0284c7&label=PyPI%20package" alt="PyPI version" /></a>
   <a href="https://www.npmjs.com/org/nexus-agent-framework"><img src="https://img.shields.io/badge/npm-%40nexus--agent--framework-cb3837?logo=npm" alt="npm org" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python" alt="Python Versions" /></a>
@@ -9,6 +11,10 @@
 </p>
 
 > **Nexus** is an autonomous AI agentic software engineering framework that transforms requirements into production-ready full-stack applications. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and connects natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
+>
+> - **Platform Website & Docs**: [nexus.abburi.info](https://nexus.abburi.info)
+> - **Live Stage 1–3 Simulator**: [nexus.abburi.info/#simulator](https://nexus.abburi.info/#simulator)
+> - **Brownfield AST Explorer**: [nexus.abburi.info/#brownfield](https://nexus.abburi.info/#brownfield)
 
 ---
 
@@ -64,11 +70,11 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 | Package | Registry | Version | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.1.1` | Core orchestrator, 7 specialist agents, CLI (`dream`, `mcp`, `ui`), cost tracker |
-| **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.2` | Telemetry schemas, agent audit chains, and architectural contracts |
-| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.1` | Hardened security headers, zero-leak credential sanitizer, correlation tracing |
-| **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.1` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
-| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `0.1.1` | React design system (`StatCard`, `AiBadge`, `MetricTrend`, `TraceViewer`) |
+| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.2.0` | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
+| **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
+| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Hardened security headers, zero-leak credential sanitizer, correlation tracing |
+| **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
+| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `0.2.0` | Institutional paper React design system (`NexusHeader`, `StatCard`, `TraceViewer`, `HealingLoopPanel`, `BlastRadiusCard`, `RoiScorecard`, `CommandBlock`) |
 
 ---
 

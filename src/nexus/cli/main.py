@@ -295,12 +295,14 @@ def refactor_cmd(task: str, path: Path, target: str | None = None, apply_patches
 
     print(f"\n[BLAST RADIUS ANALYSIS: {blast.risk_tier} RISK]")
     print(f"  Target                : {blast.target}")
-    print(f"  Direct Dependents     : {len(blast.direct_dependents)} files ({', '.join(blast.direct_dependents[:3]) if blast.direct_dependents else 'None'})")
+    print(
+        f"  Direct Dependents     : {len(blast.direct_dependents)} files ({', '.join(blast.direct_dependents[:3]) if blast.direct_dependents else 'None'})"
+    )
     print(f"  Indirect Dependents   : {len(blast.indirect_dependents)} files")
     print(f"  Impacted API Routes   : {len(blast.affected_routes)}")
     print(f"  Impacted Test Suites  : {len(blast.affected_tests)}")
 
-    print(f"\n[REFACTOR PLAN]")
+    print("\n[REFACTOR PLAN]")
     print(f"  Verification Strategy : {plan.verification_strategy}")
     print(f"  Estimated Risk        : {plan.estimated_risk}")
     print(f"  Patches Synthesized   : {len(plan.patches)} files")
@@ -390,7 +392,9 @@ def main() -> None:
         "audit",
         help="Run security, architectural, and test health audit on an existing codebase.",
     )
-    audit_parser.add_argument("path", nargs="?", default=".", help="Root directory to audit (default: current directory)")
+    audit_parser.add_argument(
+        "path", nargs="?", default=".", help="Root directory to audit (default: current directory)"
+    )
     audit_parser.add_argument("--json", action="store_true", help="Output full JSON report")
 
     # refactor (Stage 2)
@@ -409,7 +413,9 @@ def main() -> None:
         help="Calculate engineering velocity, DORA acceleration, and enterprise ROI telemetry.",
     )
     metrics_parser.add_argument("path", nargs="?", default=".", help="Target directory (default: current directory)")
-    metrics_parser.add_argument("--hourly-rate", type=float, default=85.0, help="Engineer hourly cost benchmark (default: $85/hr)")
+    metrics_parser.add_argument(
+        "--hourly-rate", type=float, default=85.0, help="Engineer hourly cost benchmark (default: $85/hr)"
+    )
     metrics_parser.add_argument("--json", action="store_true", help="Output full JSON telemetry")
 
     args = parser.parse_args()

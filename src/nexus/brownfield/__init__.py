@@ -6,8 +6,8 @@ from nexus.brownfield.analyzer import (
     SymbolDefinition,
 )
 from nexus.brownfield.auditor import (
-    CodebaseAuditReport,
     CodebaseAuditor,
+    CodebaseAuditReport,
     SecurityFinding,
 )
 from nexus.brownfield.refactor import (

@@ -2,6 +2,9 @@
 
 > **Ethical web scraping protocols, RSS ingestion contracts, and rate-limiting policies for autonomous agents.**
 
+- **Website & Platform Portal**: [nexus.abburi.info](https://nexus.abburi.info)
+- **Documentation**: [nexus.abburi.info/#docs](https://nexus.abburi.info/#docs)
+
 [![npm version](https://img.shields.io/npm/v/@nexus-agent-framework/scraper.svg)](https://www.npmjs.com/package/@nexus-agent-framework/scraper)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -36,4 +39,4 @@ const policy = {
 
 ## License
 
-Licensed under the Apache 2.0 License. Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).
+Licensed under the Apache 2.0 License. Platform portal & docs at [nexus.abburi.info](https://nexus.abburi.info). Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).
