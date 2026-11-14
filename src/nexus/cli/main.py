@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 from nexus import __version__
 from nexus.ai.client import GeminiClient, find_gcp_project, get_gcp_access_token
+from nexus.teams.it_pack.platform_templates import (
+    python_package_name,
+    render_backend_pyproject,
+    render_backend_requirements,
+    render_dockerfile,
+    render_dockerignore,
+)
 
 
 def check_ai_cmd(model: str = "gemini-3.8-flash", project: str | None = None) -> int:
@@ -118,67 +126,112 @@ def run_doctor_cmd() -> int:
     return 0 if all_ok else 1
 
 
+_APP_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,39}$")
+
+
+def _scaffold_main_py(app_name: str) -> str:
+    return f'''"""{app_name} service entry point."""
+
+from functools import lru_cache
+
+from fastapi import Depends
+from nexus.ai import GeminiClient
+from nexus.api import create_nexus_app
+
+app, db = create_nexus_app(
+    title="{app_name}",
+    description="{app_name} service powered by the Nexus Framework",
+)
+
+
+@lru_cache(maxsize=1)
+def get_ai_client() -> GeminiClient:
+    """Create the Gemini client on first use, not at import time."""
+    return GeminiClient()
+
+
+@app.get("/api/ai/ask")
+def ask_ai(prompt: str, ai_client: GeminiClient = Depends(get_ai_client)) -> dict[str, str]:
+    resp = ai_client.generate(prompt)
+    return {{"response": resp.text, "model": resp.model}}
+'''
+
+
+def _scaffold_test_py(app_name: str, package: str) -> str:
+    return f'''"""Smoke tests for the {app_name} service (no model calls)."""
+
+from fastapi.testclient import TestClient
+
+from {package}.main import app, get_ai_client
+
+
+class _FakeResponse:
+    text = "pong"
+    model = "fake-model"
+
+
+class _FakeClient:
+    def generate(self, prompt: str) -> _FakeResponse:
+        return _FakeResponse()
+
+
+def test_health() -> None:
+    with TestClient(app) as client:
+        resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"
+
+
+def test_ask_uses_the_ai_client() -> None:
+    app.dependency_overrides[get_ai_client] = _FakeClient
+    try:
+        with TestClient(app) as client:
+            resp = client.get("/api/ai/ask", params={{"prompt": "ping"}})
+    finally:
+        app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    assert resp.json() == {{"response": "pong", "model": "fake-model"}}
+'''
+
+
 def scaffold_new_app(app_name: str, output_dir: Path) -> Path:
-    """Scaffold a new microservice/app powered by the Nexus Framework."""
+    """Scaffold a new microservice/app powered by the Nexus Framework.
+
+    ``app_name`` becomes the directory name; it must start with a letter and contain only
+    letters, digits, ``_`` and ``-`` (at most 40 characters). The Python package is the
+    lower case name with ``-`` replaced by ``_``. The container files come from the same
+    templates as the IT squad's generated backends.
+    """
+    if not _APP_NAME.match(app_name):
+        raise ValueError(
+            f"Invalid app name {app_name!r}: start with a letter and use only letters, digits, '_' "
+            "and '-' (at most 40 characters)."
+        )
     target = output_dir / app_name
     if target.exists():
         raise FileExistsError(f"Target path {target} already exists.")
 
+    package = python_package_name(app_name)
     print(f"Scaffolding new Nexus application: {app_name}...")
 
-    # Create directories
-    (target / "src" / app_name).mkdir(parents=True, exist_ok=True)
-    (target / "tests").mkdir(parents=True, exist_ok=True)
+    (target / "src" / package).mkdir(parents=True)
+    (target / "tests").mkdir()
 
-    # Write pyproject.toml
-    pyproject_content = f"""[project]
-name = "{app_name}"
-version = "0.1.0"
-description = "{app_name} microservice powered by Nexus Framework"
-requires-python = ">=3.11"
-dependencies = [
-    "nexus-agent-framework>={__version__}",
-    "uvicorn>=0.30.0",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-"""
-    (target / "pyproject.toml").write_text(pyproject_content, encoding="utf-8")
-
-    # Write main app file
-    main_py_content = f"""\"\"\"{app_name} main service application entry point.\"\"\"
-from nexus.api import create_nexus_app
-from nexus.ai import GeminiClient
-
-app = create_nexus_app(
-    title="{app_name}",
-    description="{app_name} service powered by Nexus Framework & Gemini 3.8",
-)
-
-ai_client = GeminiClient()
-
-@app.get("/api/ai/ask")
-async def ask_ai(prompt: str) -> dict[str, str]:
-    resp = ai_client.generate(prompt)
-    return {{"response": resp.text, "model": resp.model}}
-"""
-    (target / "src" / app_name / "main.py").write_text(main_py_content, encoding="utf-8")
-    (target / "src" / app_name / "__init__.py").write_text("", encoding="utf-8")
-
-    # Write Dockerfile
-    dockerfile_content = """FROM python:3.12-slim
-WORKDIR /app
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir uvicorn fastapi httpx pydantic nexus-agent-framework
-COPY . .
-EXPOSE 8080
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
-"""
-    (target / "Dockerfile").write_text(dockerfile_content, encoding="utf-8")
+    files = {
+        "pyproject.toml": render_backend_pyproject(app_name, app_name, wheel_package=package),
+        "requirements.txt": render_backend_requirements(),
+        "Dockerfile": render_dockerfile(f"{package}.main:app"),
+        ".dockerignore": render_dockerignore(),
+        f"src/{package}/__init__.py": "",
+        f"src/{package}/main.py": _scaffold_main_py(app_name),
+        "tests/test_main.py": _scaffold_test_py(app_name, package),
+    }
+    for rel, content in files.items():
+        (target / rel).write_text(content, encoding="utf-8")
 
     print(f"Application created successfully at {target}!")
+    print(f"  cd {target}")
+    print('  pip install -e ".[dev]" && pytest')
     return target
 
 
@@ -486,7 +539,11 @@ def main() -> None:
     if args.command == "check-ai":
         sys.exit(check_ai_cmd(model=args.model, project=args.project))
     elif args.command == "new":
-        scaffold_new_app(args.name, Path(args.output_dir))
+        try:
+            scaffold_new_app(args.name, Path(args.output_dir))
+        except (ValueError, FileExistsError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(2)
     elif args.command == "mcp":
         run_mcp_server()
     elif args.command == "doctor":
