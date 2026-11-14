@@ -1,7 +1,9 @@
 """Example: Programmatically invoking the Nexus 7-specialist IT Squad."""
+
 from __future__ import annotations
 
 from pathlib import Path
+
 from nexus.teams.it_pack.team import NexusITTeam
 
 

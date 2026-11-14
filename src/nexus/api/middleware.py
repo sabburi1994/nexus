@@ -9,6 +9,8 @@ from collections.abc import Awaitable, Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from nexus import __version__
+
 
 class NexusTelemetryMiddleware(BaseHTTPMiddleware):
     """Injects telemetry, timing, and Nexus correlation headers on every response."""
@@ -28,6 +30,6 @@ class NexusTelemetryMiddleware(BaseHTTPMiddleware):
         duration = time.perf_counter() - start_time
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Nexus-Correlation-ID"] = request_id
-        response.headers["X-Nexus-Framework-Version"] = "0.1.0"
+        response.headers["X-Nexus-Framework-Version"] = __version__
         response.headers["X-Process-Time"] = f"{duration * 1000.0:.2f}ms"
         return response

@@ -1,0 +1,11 @@
+# Cloud Build recipe used by ../deploy.ps1 and ../deploy.sh.
+# Runs as the dedicated build service account; logs go to Cloud Logging only.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "--pull", "-t", "${_IMAGE}", "."]
+images:
+  - "${_IMAGE}"
+options:
+  logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _IMAGE: ""

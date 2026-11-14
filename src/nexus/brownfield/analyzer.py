@@ -58,7 +58,10 @@ class AstDependencyMapper:
         py_files = list(self.root_dir.rglob("*.py"))
         for py_path in py_files:
             rel_str = str(py_path.relative_to(self.root_dir)).replace("\\", "/")
-            if any(part.startswith(".") or part in ("__pycache__", "venv", ".venv") for part in py_path.parts):
+            if any(
+                part.startswith(".") or part in ("__pycache__", "venv", ".venv")
+                for part in py_path.relative_to(self.root_dir).parts
+            ):
                 continue
             self._analyze_python_file(py_path, rel_str)
 

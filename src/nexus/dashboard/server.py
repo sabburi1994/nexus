@@ -5,27 +5,26 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from nexus import __version__
+from nexus.api.app import configure_cors
 from nexus.dashboard.telemetry import event_bus
 
 
-def create_dashboard_app() -> FastAPI:
-    """Build the FastAPI localhost observability visualizer."""
+def create_dashboard_app(cors_origins: list[str] | None = None) -> FastAPI:
+    """Build the FastAPI localhost observability visualizer.
+
+    The bundled UI is served from the same origin, so CORS stays closed by default.
+    Pass ``cors_origins`` only if a separate front end must read the telemetry API.
+    """
     app = FastAPI(
         title="Nexus Telemetry Visualizer",
         description="Real-time Observability & Progress Visualizer for External AI Orchestrators",
         version=__version__,
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    configure_cors(app, cors_origins)
 
     @app.get("/api/status")
     async def get_status() -> dict[str, Any]:

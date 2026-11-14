@@ -1,6 +1,6 @@
 {
   "name": "nexus-showcase-web",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Official documentation, interactive Stage 1-3 simulator, AST analyzer, and telemetry workbench for Nexus Agent Framework (https://nexus.abburi.info)",

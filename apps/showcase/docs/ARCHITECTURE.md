@@ -7,8 +7,8 @@ Nexus Showcase is a reference full-stack application built upon the **Nexus AI A
 flowchart LR
     Browser["User Browser"] --> FE["React SPA (@nexus/ui)"]
     FE --> BE["FastAPI Backend (nexus-framework)"]
-    BE --> Vertex["GCP Vertex AI (Gemini 3.8 Flash)"]
-    BE --> DB[("PostgreSQL (NexusEntity)")]
+    BE -. visitor's own key only .-> Gemini["Gemini API (BYOK)"]
+    BE --> Mem[("Bounded in-memory stores")]
 ```
 
 ## Consumed Monorepo Packages
@@ -18,6 +18,11 @@ flowchart LR
 - **`nexus-framework`**: `create_nexus_app` factory, `GeminiClient`, and `NexusEntity` persistence
 
 ## Infrastructure
-- **Module**: `infra/terraform/modules/nexus_cloud_run`
-- **IAM**: `roles/aiplatform.user` granted via `infra/terraform/modules/nexus_app`
-- **Cloud Target**: Serverless auto-scaling Cloud Run container in `europe-west1`
+- **Project**: a dedicated Google Cloud project that hosts nothing else (`project_id` has no default).
+- **Terraform**: `apps/showcase/infra/terraform`, using `infra/terraform/modules/nexus_app` and `nexus_cloud_run`.
+- **IAM**: runtime account `nexus-showcase-run` with no project roles (no server side model calls);
+  build account `nexus-showcase-build` may push only to the app's own Artifact Registry repository.
+- **Cloud Run**: `europe-west1`, min 0, max 2, 512Mi, CPU only during requests, non-root container.
+- **Abuse controls**: per IP rate limits on scan, simulate, brownfield and download routes; scan
+  reports are visible only to the visitor who created them; credentials are redacted from logs.
+- **Rollout**: see [`../ROLLOUT.md`](../ROLLOUT.md).

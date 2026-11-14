@@ -1,0 +1,40 @@
+# Local hooks (GitHub Actions is off for this repository).
+#   pip install pre-commit && pre-commit install
+#   pre-commit run --all-files
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      # Scans staged changes only (gitleaks git --pre-commit --staged).
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+        exclude: ^(apps/showcase/frontend/tsconfig\.json|packages/.*/tsconfig\.json|tsconfig\.base\.json)$
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # mypy runs from the developer's environment so it sees the real dependencies
+  # (pip install -e ".[dev]"); strict settings come from pyproject.toml.
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (strict, src and tests)
+        entry: python -m mypy src tests
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^(src|tests)/

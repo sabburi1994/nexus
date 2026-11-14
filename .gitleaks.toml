@@ -1,0 +1,7 @@
+# Extends the default gitleaks rules. Only exact, obviously fake demo values are allowlisted.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Dummy Google API key shown in the showcase telemetry redaction demo (frontend source and built bundle)"
+regexes = ['''AIzaSyDummyTestKey123456789012345678901''']

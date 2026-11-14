@@ -57,14 +57,50 @@ class NexusApp(FastAPI):
         yield self.db
 
 
+def configure_cors(
+    app: FastAPI,
+    origins: list[str] | None,
+    allow_credentials: bool | None = None,
+) -> None:
+    """Attach CORS middleware with safe defaults.
+
+    * No origins: nothing is added (same-origin only).
+    * Wildcard ``"*"``: allowed, but never with credentials.
+    * Explicit origins: credentials allowed unless ``allow_credentials`` is False.
+    """
+    allowed = [o.strip() for o in (origins or []) if o and o.strip()]
+    if not allowed:
+        if allow_credentials:
+            raise ValueError("CORS credentials require explicit cors_origins.")
+        return
+    wildcard = "*" in allowed
+    if wildcard and allow_credentials:
+        raise ValueError("CORS credentials cannot be combined with the '*' origin; list explicit origins.")
+    credentials = (not wildcard) if allow_credentials is None else (allow_credentials and not wildcard)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"] if wildcard else allowed,
+        allow_credentials=credentials,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
+
 def create_nexus_app(
     title: str = "Nexus Application",
     description: str = "Application built on the Nexus Framework",
     version: str = "0.1.0",
     cors_origins: list[str] | None = None,
     include_health: bool = True,
+    cors_allow_credentials: bool | None = None,
 ) -> NexusApp:
-    """Build and configure a production-ready FastAPI app."""
+    """Build and configure a production-ready FastAPI app.
+
+    CORS is closed by default: with no ``cors_origins`` no CORS headers are sent, so only
+    same-origin browsers can call the API. Pass explicit origins (for example
+    ``["https://app.example.com"]``) to open it. Credentials (cookies, auth headers) are
+    allowed only for explicit origins; combining them with ``"*"`` raises ``ValueError``.
+    """
     app = NexusApp(
         title=title,
         description=description,
@@ -73,15 +109,8 @@ def create_nexus_app(
         redoc_url=None,
     )
 
-    # CORS
-    allowed_origins = cors_origins or ["*"]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # CORS: closed unless origins are configured explicitly.
+    configure_cors(app, cors_origins, cors_allow_credentials)
 
     # Telemetry
     app.add_middleware(NexusTelemetryMiddleware)

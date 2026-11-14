@@ -1,10 +1,9 @@
 """Quickstart Example: Creating an autonomous agent with Nexus and Gemini 3.8 Flash."""
+
 from __future__ import annotations
 
-import os
-from nexus.ai.client import GeminiClient
-from nexus.agents.base import BaseAgent, AgentContext
-from nexus.tools import tool, ToolPermission
+from nexus.agents.base import BaseAgent
+from nexus.tools import ToolPermission, tool
 
 
 # 1. Define custom tools with permissions

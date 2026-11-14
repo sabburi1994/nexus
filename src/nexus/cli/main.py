@@ -9,12 +9,12 @@ from pathlib import Path
 from typing import Any
 
 from nexus import __version__
-from nexus.ai.client import GeminiClient, get_gcp_access_token, get_gcp_project
+from nexus.ai.client import GeminiClient, find_gcp_project, get_gcp_access_token
 
 
 def check_ai_cmd(model: str = "gemini-3.8-flash", project: str | None = None) -> int:
     """Verify connectivity to Google Cloud Vertex AI and Gemini 3.8 Flash."""
-    project_id = project or get_gcp_project()
+    project_id = project or find_gcp_project()
     token = get_gcp_access_token()
 
     print(f"--- Checking Nexus AI Connection ---\nProject: {project_id}\nModel: {model}")
@@ -25,7 +25,7 @@ def check_ai_cmd(model: str = "gemini-3.8-flash", project: str | None = None) ->
         return 1
 
     if token:
-        print(f"Acquired GCP Bearer Token: {token[:12]}... (cached)")
+        print("Acquired GCP bearer token (cached).")
 
     try:
         client = GeminiClient(project_id=project_id, default_model=model)
@@ -83,10 +83,10 @@ def run_doctor_cmd() -> int:
         print("  [INFO] Terraform CLI: Not found in PATH (DevOps agent can generate IaC without local CLI)")
 
     # 4. Google Cloud ADC & Project
-    project_id = get_gcp_project()
+    project_id = find_gcp_project()
     token = get_gcp_access_token()
     if token:
-        print(f"  [PASS] Google Cloud ADC: Authenticated (Token: {token[:12]}..., Project: {project_id})")
+        print(f"  [PASS] Google Cloud ADC: Authenticated (Project: {project_id or 'not set; export GCP_PROJECT_ID'})")
     elif os.getenv("GEMINI_API_KEY"):
         print("  [PASS] Gemini API Key: Configured in environment")
     else:
