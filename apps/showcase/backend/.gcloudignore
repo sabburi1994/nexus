@@ -1,7 +1,24 @@
+# Upload filter for gcloud builds submit (this folder is the Cloud Build context).
+.gcloudignore
 .git
 .gitignore
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 tests/
+
+# Local secret files never leave this machine.
+.env
+.env.*
+**/.env
+**/.env.*
+**/.env*
+!.env.example
+!**/.env.example
+*.pem
+**/*.pem
+*.key
+**/*.key

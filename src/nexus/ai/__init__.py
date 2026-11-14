@@ -3,6 +3,8 @@
 from nexus.ai.client import (
     GeminiClient,
     GeminiResponse,
+    NexusConfigurationError,
+    find_gcp_project,
     get_gcp_access_token,
     get_gcp_project,
 )
@@ -12,7 +14,9 @@ __all__ = [
     "DEFAULT_MODEL",
     "GeminiClient",
     "GeminiResponse",
+    "NexusConfigurationError",
     "calculate_cost_usd",
+    "find_gcp_project",
     "get_gcp_access_token",
     "get_gcp_project",
 ]

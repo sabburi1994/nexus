@@ -25,7 +25,7 @@ class AnalysisReport(NexusEntity):
 
 class ScanRequest(BaseModel):
     target: str = Field(..., min_length=2, max_length=240, description="Entity or macro indicator to analyze")
-    sector: str = Field("Macro", description="Economic sector or asset class")
+    sector: str = Field("Macro", max_length=60, description="Economic sector or asset class")
 
 
 class ScanResponse(BaseModel):

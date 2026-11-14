@@ -22,9 +22,9 @@ def test_health_and_framework_status() -> None:
     assert fh.status_code == 200
     info = fh.json()
     assert info["website"] == "https://nexus.abburi.info"
-    assert info["tests_passed"] == 32
+    assert info["tests_passed"] == 53
     assert info["pypi_live_version"] == "0.1.1"
-    assert info["pypi_staged_version"] == "0.2.0"
+    assert info["pypi_staged_version"] == "0.3.0"
     assert "github.com/sabburi1994/nexus/actions" in info["ci_status_url"]
 
 
@@ -40,7 +40,7 @@ def test_scan_and_list_reports() -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["target"] == "Semiconductor Supply Chain"
-    assert data["model"] == "gemini-3.8-flash"
+    assert data["model"] == "deterministic-baseline"
 
     resp_list = client.get("/api/v1/reports")
     assert resp_list.status_code == 200

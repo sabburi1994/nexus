@@ -72,7 +72,8 @@ class CodebaseAuditor:
             if path.is_dir():
                 continue
             if any(
-                p.startswith(".") or p in ("__pycache__", "node_modules", "venv", ".venv", "dist") for p in path.parts
+                p.startswith(".") or p in ("__pycache__", "node_modules", "venv", ".venv", "dist")
+                for p in path.relative_to(self.root_dir).parts
             ):
                 continue
 

@@ -46,3 +46,14 @@ def test_dashboard_api_endpoints() -> None:
     assert ui_resp.status_code == 200
     assert "Nexus Squad Visualizer" in ui_resp.text
     assert "EventSource" in ui_resp.text
+
+
+def test_dashboard_cors_closed_by_default() -> None:
+    """The telemetry API must not be readable cross-origin unless origins are configured."""
+    client = TestClient(create_dashboard_app())
+    resp = client.get("/api/events", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in resp.headers
+
+    opened = TestClient(create_dashboard_app(cors_origins=["http://localhost:5173"]))
+    ok = opened.get("/api/events", headers={"Origin": "http://localhost:5173"})
+    assert ok.headers["access-control-allow-origin"] == "http://localhost:5173"

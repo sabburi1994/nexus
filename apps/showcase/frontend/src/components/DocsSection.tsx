@@ -98,10 +98,10 @@ export const DocsSection: React.FC<Props> = ({ activeTopic, onSelectTopic }) => 
             </div>
 
             <CommandBlock
-              title="Install Core Framework & Verify Environment (v0.2.0 Stage 1–3 on main)"
+              title="Install Core Framework & Verify Environment (v0.3.0 Stage 1–3 on main)"
               language="bash"
               code={`pip install "git+https://github.com/sabburi1994/nexus.git"
-# Or from PyPI once v0.2.0 is promoted (latest PyPI baseline: 0.1.1):
+# Or from PyPI once v0.3.0 is released (latest PyPI baseline: 0.1.1):
 pip install nexus-agent-framework
 nexus --version
 nexus doctor`}
@@ -341,17 +341,17 @@ const cid = generateCorrelationId();`}
               <div className="rounded border border-[#d6cec0] bg-[#f8f4ec] p-3 text-xs">
                 <Cpu size={14} className="text-[#bd513d]" />
                 <p className="mt-1 font-semibold text-[#172a2e]">Strict TypeScript</p>
-                <p className="mt-0.5 text-[#5c6a67]">Compiled via tsc -p across all 4 packages in CI.</p>
+                <p className="mt-0.5 text-[#5c6a67]">Compiled via tsc -p across all 4 packages.</p>
               </div>
               <div className="rounded border border-[#d6cec0] bg-[#f8f4ec] p-3 text-xs">
                 <Wrench size={14} className="text-[#263aa8]" />
                 <p className="mt-1 font-semibold text-[#172a2e]">Ruff + Mypy Strict</p>
-                <p className="mt-0.5 text-[#5c6a67]">Zero-warning Python type checks across src/ and tests/.</p>
+                <p className="mt-0.5 text-[#5c6a67]">Run locally on every commit through pre-commit hooks.</p>
               </div>
               <div className="rounded border border-[#d6cec0] bg-[#f8f4ec] p-3 text-xs">
                 <Terminal size={14} className="text-[#0f7657]" />
                 <p className="mt-1 font-semibold text-[#172a2e]">Cloud Run Container</p>
-                <p className="mt-0.5 text-[#5c6a67]">Vite bundle + wheel deployed cleanly on finhub-510316.</p>
+                <p className="mt-0.5 text-[#5c6a67]">Vite bundle + wheel in a non-root container, in its own GCP project.</p>
               </div>
             </div>
           </>

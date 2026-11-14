@@ -4,7 +4,7 @@
       "command": "python",
       "args": ["-m", "nexus.cli.main", "mcp"],
       "env": {
-        "GCP_PROJECT_ID": "finhub-510316"
+        "GCP_PROJECT_ID": "your-gcp-project-id"
       }
     }
   }

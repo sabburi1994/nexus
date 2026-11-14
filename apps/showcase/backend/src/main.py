@@ -16,7 +16,8 @@ from collections import OrderedDict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from fastapi import Header, HTTPException
+from abuse_controls import BoundedReportStore, install_log_redaction, rate_limit, visitor_id
+from fastapi import Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from models import (
@@ -36,18 +37,31 @@ from nexus.ai.pricing import GEMINI_3_8_FLASH_INPUT_PER_M, GEMINI_3_8_FLASH_OUTP
 from nexus.api import create_nexus_app
 from nexus.brownfield import AstDependencyMapper, BrownfieldRefactorer, CodebaseAuditor
 from nexus.metrics.roi import DoraMetrics, EnterpriseRoiReport, RoiCalculator
-from nexus.security import GuardrailManager, SecurityViolationError, check_prompt_injection, sanitize_text
+from nexus.security import (
+    GuardrailManager,
+    SecurityViolationError,
+    check_prompt_injection,
+    count_redactions,
+    sanitize_text,
+)
 from nexus.teams.it_pack.team import NexusITTeam
 
+install_log_redaction()
+
+# The UI is served from this same origin, so CORS stays closed (library default).
 app, db = create_nexus_app(
     title="Nexus Showcase API",
     description="Orchestrator-Native AI Agentic Framework Reference Application & Documentation Portal (https://nexus.abburi.info)",
     version=__version__,
 )
 
-gemini = GeminiClient(default_model="gemini-3.8-flash")
+# No server side model calls: the showcase runs the deterministic provider unless a visitor
+# brings their own Gemini key (X-Gemini-API-Key, used for that request only, never stored).
+_BYOK_MODEL = "gemini-3.8-flash"
+_DETERMINISTIC_MODEL = "deterministic-baseline"
 guardrail = GuardrailManager()
-_REPORTS_STORE: dict[str, dict[str, Any]] = {}
+# Bounded, and each visitor only ever sees their own scan reports.
+_REPORTS_STORE = BoundedReportStore(max_total=500, max_per_visitor=20)
 _WORKSPACE_ZIPS: OrderedDict[str, tuple[str, bytes]] = OrderedDict()
 _MAX_ZIP_CACHE = 16
 _SRC_DIR = Path(__file__).resolve().parent
@@ -386,14 +400,22 @@ async def framework_health() -> dict[str, Any]:
 
 
 @app.get("/api/v1/reports")
-async def list_reports() -> list[dict[str, Any]]:
-    """Return cached scan reports created via /api/v1/scan."""
-    return list(_REPORTS_STORE.values())
+async def list_reports(request: Request) -> list[dict[str, Any]]:
+    """Return the scan reports this visitor created via /api/v1/scan (never other visitors')."""
+    return _REPORTS_STORE.for_owner(visitor_id(request))
 
 
-@app.post("/api/v1/scan", response_model=ScanResponse)
-async def scan_target(req: ScanRequest) -> ScanResponse:
-    """Analyze an economic or technical target using GuardrailManager + GeminiClient."""
+@app.post(
+    "/api/v1/scan",
+    response_model=ScanResponse,
+    dependencies=[Depends(rate_limit("scan"))],
+)
+async def scan_target(
+    req: ScanRequest,
+    request: Request,
+    x_gemini_api_key: str | None = Header(default=None, alias="X-Gemini-API-Key"),
+) -> ScanResponse:
+    """Analyze a target with GuardrailManager plus a deterministic baseline, or the visitor's own Gemini key."""
     try:
         clean_target = guardrail.inspect_input(req.target)
     except SecurityViolationError as exc:
@@ -404,16 +426,25 @@ async def scan_target(req: ScanRequest) -> ScanResponse:
         f"You are an expert systems and economic analyst. Analyze '{clean_target}' in sector '{req.sector}'. "
         "Provide a 2-sentence executive summary covering structural risks and momentum."
     )
-    try:
-        res = gemini.generate(prompt)
+    byok_key = (x_gemini_api_key or "").strip()
+    if byok_key:
+        try:
+            res = GeminiClient(api_key=byok_key, default_model=_BYOK_MODEL).generate(prompt)
+        except Exception as exc:
+            msg = sanitize_text(re.sub(r"key=[A-Za-z0-9_-]+", "key=[REDACTED]", str(exc))).replace(
+                byok_key, "[REDACTED]"
+            )
+            raise HTTPException(status_code=400, detail=f"Live Gemini BYOK scan failed: {msg[:260]}") from exc
         summary_text = res.text.strip()
         tokens = res.input_tokens + res.output_tokens
-    except Exception:
+        model_used = _BYOK_MODEL
+    else:
         summary_text = (
             f"Deterministic baseline analysis for {clean_target} ({req.sector}) "
             "indicates steady structural capacity with moderate supply-chain sensitivity."
         )
         tokens = 48
+        model_used = _DETERMINISTIC_MODEL
 
     sentiment = 78.5
     risk = "low" if "steady" in summary_text.lower() or "growth" in summary_text.lower() else "medium"
@@ -424,14 +455,14 @@ async def scan_target(req: ScanRequest) -> ScanResponse:
         sentiment_score=sentiment,
         risk_level=risk,
         summary=summary_text,
-        model="gemini-3.8-flash",
+        model=model_used,
         tokens_used=tokens,
     )
-    _REPORTS_STORE[report_id] = result.model_dump()
+    _REPORTS_STORE.add(visitor_id(request), report_id, result.model_dump())
     return result
 
 
-@app.post("/api/v1/simulate")
+@app.post("/api/v1/simulate", dependencies=[Depends(rate_limit("simulate"))])
 async def simulate_pipeline(
     req: SimulationRequest,
     x_gemini_api_key: str | None = Header(default=None, alias="X-Gemini-API-Key"),
@@ -556,7 +587,7 @@ async def simulate_pipeline(
     }
 
 
-@app.get("/api/v1/simulate/{run_id}/download")
+@app.get("/api/v1/simulate/{run_id}/download", dependencies=[Depends(rate_limit("download"))])
 async def download_simulated_workspace(run_id: str) -> Response:
     """Download the real synthesized project directory as a ZIP archive."""
     entry = _WORKSPACE_ZIPS.get(run_id)
@@ -583,14 +614,14 @@ def _inspect_source_payload(req: BrownfieldInspectRequest, provider: ShowcaseSqu
     return _inspect_directory(_SAMPLE_BROWNFIELD_DIR, req.target_file, req.refactor_task, provider)
 
 
-@app.post("/api/v1/brownfield/inspect")
+@app.post("/api/v1/brownfield/inspect", dependencies=[Depends(rate_limit("brownfield"))])
 async def brownfield_inspect(req: BrownfieldInspectRequest) -> dict[str, Any]:
     """Run live CodebaseAuditor, AstDependencyMapper, and BrownfieldRefactorer on real files."""
     provider = ShowcaseSquadProvider(idea=req.refactor_task, simulate_healing=False)
     return _inspect_source_payload(req, provider)
 
 
-@app.post("/api/v1/brownfield/apply-preview")
+@app.post("/api/v1/brownfield/apply-preview", dependencies=[Depends(rate_limit("brownfield"))])
 async def brownfield_apply_preview(req: BrownfieldApplyRequest) -> dict[str, Any]:
     """Apply Stage 2 security remediations to an isolated copy and re-run AST + CodebaseAuditor."""
     provider = ShowcaseSquadProvider(idea=req.refactor_task, simulate_healing=False)
@@ -724,16 +755,7 @@ async def guardrail_inspect(req: GuardrailInspectRequest) -> dict[str, Any]:
     """Execute live Nexus prompt-injection detection and secret/PII scrubbing."""
     inj = check_prompt_injection(req.payload)
     scrubbed = sanitize_text(req.payload)
-    redactions = sum(
-        scrubbed.count(marker)
-        for marker in (
-            "[REDACTED_API_KEY]",
-            "[REDACTED_GITHUB_TOKEN]",
-            "[REDACTED_GOOGLE_API_KEY]",
-            "[REDACTED_OAUTH_TOKEN]",
-            "[REDACTED_EMAIL]",
-        )
-    )
+    redactions = count_redactions(scrubbed)
 
     blocked = not inj.is_safe
     verdict = (

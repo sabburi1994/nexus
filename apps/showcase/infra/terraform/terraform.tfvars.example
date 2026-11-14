@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (git ignored) and fill in.
+project_id  = "your-showcase-project-id"
+region      = "europe-west1"
+image_tag   = "git-sha-of-the-built-image"
+domain_name = "your.domain.example"

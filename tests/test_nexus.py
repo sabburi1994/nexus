@@ -45,6 +45,36 @@ def test_nexus_api_factory() -> None:
     assert "X-Process-Time" in resp.headers
 
 
+def test_nexus_api_cors_closed_by_default() -> None:
+    """With no origins configured no CORS headers are emitted."""
+    client = TestClient(create_nexus_app(title="TestApp"))
+    resp = client.get("/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in resp.headers
+    pre = client.options(
+        "/health",
+        headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "GET"},
+    )
+    assert "access-control-allow-origin" not in pre.headers
+
+
+def test_nexus_api_cors_explicit_origins_allow_credentials() -> None:
+    client = TestClient(create_nexus_app(title="TestApp", cors_origins=["https://app.example.com"]))
+    ok = client.get("/health", headers={"Origin": "https://app.example.com"})
+    assert ok.headers["access-control-allow-origin"] == "https://app.example.com"
+    assert ok.headers["access-control-allow-credentials"] == "true"
+    other = client.get("/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in other.headers
+
+
+def test_nexus_api_cors_wildcard_never_sends_credentials() -> None:
+    client = TestClient(create_nexus_app(title="TestApp", cors_origins=["*"]))
+    resp = client.get("/health", headers={"Origin": "https://any.example"})
+    assert resp.headers["access-control-allow-origin"] == "*"
+    assert "access-control-allow-credentials" not in resp.headers
+    with pytest.raises(ValueError):
+        create_nexus_app(title="TestApp", cors_origins=["*"], cors_allow_credentials=True)
+
+
 class ConcreteEntity(NexusEntity):
     __tablename__ = "test_entities"
 
@@ -64,7 +94,7 @@ class SampleExtract(BaseModel):
 
 def test_gemini_client_mock_generate(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify GeminiClient generates response properly."""
-    client = GeminiClient(project_id="finhub-510316")
+    client = GeminiClient(project_id="example-project")
 
     class MockResponse:
         status_code = 200
@@ -142,5 +172,41 @@ def test_gemini_client_explicit_api_key_precedence() -> None:
     client = GeminiClient(api_key="AIza-test-explicit-key")
     url, headers = client._build_url_and_headers("gemini-3.8-flash")
     assert "generativelanguage.googleapis.com" in url
-    assert "key=AIza-test-explicit-key" in url
-    assert headers == {"Content-Type": "application/json"}
+    # The key must travel in a header, never in the URL (URLs end up in logs and tracebacks).
+    assert "AIza-test-explicit-key" not in url
+    assert headers == {"Content-Type": "application/json", "x-goog-api-key": "AIza-test-explicit-key"}
+
+
+def test_get_gcp_project_raises_when_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No project configured must raise a clear configuration error, never fall back to a hard coded project."""
+    from nexus.ai import NexusConfigurationError, get_gcp_project
+
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.setattr("nexus.ai.client.shutil.which", lambda name: None)
+    with pytest.raises(NexusConfigurationError, match="GCP_PROJECT_ID"):
+        get_gcp_project()
+
+
+def test_get_gcp_project_reads_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    from nexus.ai import get_gcp_project
+
+    monkeypatch.setenv("GCP_PROJECT_ID", "example-project")
+    assert get_gcp_project() == "example-project"
+
+
+def test_vertex_path_without_project_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A Vertex AI call with a token but no project and no API key fails with a configuration error."""
+    from nexus.ai import NexusConfigurationError
+    from nexus.ai import client as ai_client
+
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.setattr("nexus.ai.client.shutil.which", lambda name: None)
+    monkeypatch.setattr(ai_client, "get_gcp_access_token", lambda: "ya29.test-token")
+    client = GeminiClient()
+    assert client.project_id is None
+    with pytest.raises(NexusConfigurationError):
+        client._build_url_and_headers("gemini-3.8-flash")

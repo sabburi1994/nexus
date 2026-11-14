@@ -25,11 +25,18 @@ _TOKEN_TTL_SECONDS = 40 * 60
 T = TypeVar("T", bound=BaseModel)
 
 
-def get_gcp_project() -> str:
-    """Resolve the active Google Cloud project ID."""
+class NexusConfigurationError(RuntimeError):
+    """Raised when required Nexus runtime configuration (such as the GCP project) is missing."""
+
+
+def find_gcp_project() -> str | None:
+    """Resolve the active Google Cloud project ID, or return None when none is configured.
+
+    Looks at ``GCP_PROJECT_ID``, then ``GOOGLE_CLOUD_PROJECT``, then ``gcloud config get-value project``.
+    """
     proj = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT")
     if proj:
-        return proj
+        return proj.strip()
     gcloud_bin = shutil.which("gcloud") or shutil.which("gcloud.cmd")
     if gcloud_bin:
         try:
@@ -45,7 +52,22 @@ def get_gcp_project() -> str:
                 return val
         except Exception:
             pass
-    return "finhub-510316"
+    return None
+
+
+def get_gcp_project() -> str:
+    """Resolve the active Google Cloud project ID.
+
+    Raises:
+        NexusConfigurationError: when no project is configured. Nexus never guesses a project.
+    """
+    proj = find_gcp_project()
+    if not proj:
+        raise NexusConfigurationError(
+            "No Google Cloud project configured. Set GCP_PROJECT_ID (or GOOGLE_CLOUD_PROJECT), "
+            "run 'gcloud config set project <PROJECT_ID>', or pass project_id explicitly."
+        )
+    return proj
 
 
 def get_gcp_access_token() -> str | None:
@@ -133,7 +155,8 @@ class GeminiClient:
         api_key: str | None = None,
         default_model: str = DEFAULT_MODEL,
     ) -> None:
-        self.project_id = project_id or get_gcp_project()
+        # Resolved lazily: a BYOK / API key client never needs a project.
+        self.project_id: str | None = project_id or find_gcp_project()
         self.location = location
         self._explicit_api_key = api_key
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -158,17 +181,28 @@ class GeminiClient:
                 time.sleep(2.0)
         raise RuntimeError("HTTP request failed after max retries")
 
+    @staticmethod
+    def _api_key_endpoint(model: str, api_key: str) -> tuple[str, dict[str, str]]:
+        # The key travels in a header, never in the URL, so it cannot leak through
+        # HTTP client logs, proxies or exception messages that echo the request URL.
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        return url, {"Content-Type": "application/json", "x-goog-api-key": api_key}
+
     def _build_url_and_headers(self, model: str) -> tuple[str, dict[str, str]]:
         # An explicitly provided BYOK key takes precedence over ambient Cloud Run IAM metadata.
         if self._explicit_api_key:
-            url = (
-                f"https://generativelanguage.googleapis.com/v1beta/models/"
-                f"{model}:generateContent?key={self._explicit_api_key}"
-            )
-            return url, {"Content-Type": "application/json"}
+            return self._api_key_endpoint(model, self._explicit_api_key)
 
         token = get_gcp_access_token()
+        if token and not self.project_id and self.api_key:
+            # No project for Vertex AI, but an API key is available: use the Generative Language API.
+            return self._api_key_endpoint(model, self.api_key)
         if token:
+            if not self.project_id:
+                raise NexusConfigurationError(
+                    "Vertex AI needs a Google Cloud project. Set GCP_PROJECT_ID (or GOOGLE_CLOUD_PROJECT), "
+                    "pass project_id to GeminiClient, or set GEMINI_API_KEY to use the Gemini API instead."
+                )
             # Vertex AI global or regional publisher endpoint
             if self.location == "global":
                 url = (
@@ -188,9 +222,7 @@ class GeminiClient:
 
         if self.api_key:
             # Direct Google Generative Language API
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
-            headers = {"Content-Type": "application/json"}
-            return url, headers
+            return self._api_key_endpoint(model, self.api_key)
 
         raise RuntimeError(
             "No Google Cloud authentication found. Provide GCP IAM credentials, run "

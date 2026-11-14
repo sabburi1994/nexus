@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/components/astdependencygraph.tsx","./src/components/brownfieldsection.tsx","./src/components/docssection.tsx","./src/components/overviewsection.tsx","./src/components/packagessection.tsx","./src/components/simulatorsection.tsx","./src/components/telemetrysection.tsx"],"version":"5.9.3"}

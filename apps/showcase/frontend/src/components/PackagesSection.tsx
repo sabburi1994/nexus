@@ -41,7 +41,7 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
   ];
 
   const livePypi = health?.pypi_live_version ?? "0.1.1";
-  const stagedVersion = health?.pypi_staged_version ?? health?.version ?? "0.2.0";
+  const stagedVersion = health?.pypi_staged_version ?? health?.version ?? "0.3.0";
 
   return (
     <div className="space-y-6">
@@ -102,7 +102,7 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
               title="Python Install (Stage 1–3 from GitHub main or PyPI)"
               language="bash"
               code={`pip install "git+https://github.com/sabburi1994/nexus.git"
-# PyPI registry baseline (promote wheel v0.2.0 via twine upload):
+# PyPI registry baseline (v0.3.0 is published by the release workflow via trusted publishing):
 pip install nexus-agent-framework`}
             />
           </div>

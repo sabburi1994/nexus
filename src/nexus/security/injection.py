@@ -1,4 +1,11 @@
-"""Nexus Security: Prompt injection and jailbreak detection."""
+"""Nexus Security: best effort prompt injection and jailbreak detection.
+
+``check_prompt_injection`` matches a short list of well known jailbreak phrasings with regular
+expressions. It is a cheap first filter, not a defence: paraphrases, other languages, encodings,
+indirect injection through retrieved documents or tool output, and multi turn attacks all pass.
+Treat every model input and output as untrusted, give agents least privilege tools, and require
+human approval for critical actions (see ``GuardrailManager``).
+"""
 
 from __future__ import annotations
 
@@ -24,7 +31,10 @@ class InjectionCheckResult(NamedTuple):
 
 
 def check_prompt_injection(prompt: str) -> InjectionCheckResult:
-    """Analyze a prompt for malicious jailbreak or injection patterns."""
+    """Best effort check of a prompt against known jailbreak phrasings.
+
+    ``is_safe=True`` only means no known pattern matched; it does not mean the prompt is safe.
+    """
     for pattern in INJECTION_PATTERNS:
         match = pattern.search(prompt)
         if match:

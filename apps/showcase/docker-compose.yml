@@ -1,25 +1,17 @@
-version: "3.8"
-
+# Local run of the showcase (API plus the prebuilt UI in backend/src/static).
+# Build the framework wheel into backend/wheels first, for example:
+#   python -m build --wheel --outdir apps/showcase/backend/wheels .
+# GCP_PROJECT_ID is optional locally: without it /api/v1/scan returns its deterministic fallback.
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8000:8080"
     environment:
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-finhub-510316}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-}
       - GEMINI_MODEL=gemini-3.8-flash
     volumes:
-      - ./backend/src:/app/src
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+      - ./backend/src:/app/src:ro
     restart: unless-stopped

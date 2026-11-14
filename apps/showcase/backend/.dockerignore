@@ -1,0 +1,8 @@
+tests/
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+.coverage
+.env
+.env.*
+cloudbuild.yaml

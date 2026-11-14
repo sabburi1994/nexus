@@ -7,10 +7,10 @@
   <a href="https://www.npmjs.com/org/nexus-agent-framework"><img src="https://img.shields.io/badge/npm-%40nexus--agent--framework-cb3837?logo=npm" alt="npm org" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python" alt="Python Versions" /></a>
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-10b981.svg" alt="License" /></a>
-  <a href="https://github.com/sabburi1994/nexus/actions"><img src="https://img.shields.io/badge/tests-30%2F30%20passed-emerald" alt="Tests" /></a>
+  <a href="#-verification--testing"><img src="https://img.shields.io/badge/tests-run%20locally-lightgrey" alt="Tests: run locally" /></a>
 </p>
 
-> **Nexus** is an autonomous AI agentic software engineering framework that transforms requirements into production-ready full-stack applications. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and connects natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
+> **Nexus** is an autonomous AI agentic software engineering framework that turns requirements into runnable full-stack application scaffolds that you then review, test and harden. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and connects natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
 >
 > - **Platform Website & Docs**: [nexus.abburi.info](https://nexus.abburi.info)
 > - **Live Stage 1–3 Simulator**: [nexus.abburi.info/#simulator](https://nexus.abburi.info/#simulator)
@@ -60,7 +60,7 @@ flowchart TD
 4. **UI/UX Designer (`UiDesignerAgent`)**: Produces responsive design tokens and Tailwind component structures utilizing `@nexus-agent-framework/ui`.
 5. **Full-Stack Engineer (`FullStackEngineerAgent`)**: Implements clean FastAPI REST endpoints, Pydantic validation schemas, SQLAlchemy ORM entities, and React UI components.
 6. **DevOps Engineer (`DevopsEngineerAgent`)**: Generates production Infrastructure as Code (Terraform `main.tf`, `variables.tf`), container definitions (`Dockerfile`, `docker-compose.yml`), and CI/CD pipelines.
-7. **QA & Security Engineer (`QaEngineerAgent`)**: Executes pre-flight security scans (injection sanitization, CORS, credential checks) and delivers an executable `pytest` suite with 100% pre-flight clearance.
+7. **QA & Security Engineer (`QaEngineerAgent`)**: Executes pre-flight security scans (injection sanitization, CORS, credential checks) and delivers an executable `pytest` suite for the generated workspace.
 
 ---
 
@@ -70,9 +70,9 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 | Package | Registry | Version | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.2.0` | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
+| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.3.0` in this repo (PyPI currently serves `0.1.1`) | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
 | **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
-| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Hardened security headers, zero-leak credential sanitizer, correlation tracing |
+| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Security headers, best effort credential sanitizer, correlation tracing |
 | **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
 | **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `0.2.0` | Institutional paper React design system (`NexusHeader`, `StatCard`, `TraceViewer`, `HealingLoopPanel`, `BlastRadiusCard`, `RoiScorecard`, `CommandBlock`) |
 
@@ -126,7 +126,7 @@ Stories: 4 user stories defined
 Cloud Target: GCP (Cloud Run Serverless)
 Data Schema: PostgreSQL 16 (4 tables)
 UI Component: WatchDashboard.tsx
-QA Preflight: PASS (Test suite generated with 100% pre-flight clearance)
+QA Preflight: PASS (generated test suite passed)
 ```
 
 ---
@@ -148,7 +148,7 @@ nexus ui
 
 ## 🔄 Stage 1: Closed-Loop Self-Healing
 
-Nexus eliminates "throw-it-over-the-fence" code generation. When the QA Engineer detects failing unit tests or runtime syntax bugs, it automatically triggers a direct feedback loop back to the Full-Stack Engineer with exact traceback diagnostics and failure assertions:
+Nexus avoids "throw-it-over-the-fence" code generation. When the QA Engineer detects failing unit tests or runtime syntax bugs, it automatically triggers a direct feedback loop back to the Full-Stack Engineer with exact traceback diagnostics and failure assertions:
 
 ```mermaid
 sequenceDiagram
@@ -157,13 +157,13 @@ sequenceDiagram
     participant FS as Full-Stack Engineer Agent
     QA->>Runner: Execute test suite on generated workspace
     alt Tests Pass
-        Runner-->>QA: All tests green (100% preflight clearance)
+        Runner-->>QA: All generated tests green
     else Tests Fail
         Runner-->>QA: Capture stacktrace & failed assertions
         QA->>FS: Dispatch healing prompt with exact error context
         FS->>FS: Synthesize surgical code patch
         FS->>Runner: Re-run test suite (Loop up to max_attempts)
-        Runner-->>QA: Tests verified green
+        Runner-->>QA: Re-run results (stops after max_attempts)
     end
 ```
 
@@ -180,18 +180,18 @@ nexus audit ./existing-repo
 ```
 
 ### 2. AST Blast-Radius Mapping & Surgical Refactoring: `nexus refactor`
-Before touching a line of code, Nexus builds an Abstract Syntax Tree (AST) import graph across all files, classes, functions, and FastAPI routes to calculate the exact blast radius:
+Before touching a line of code, Nexus builds an Abstract Syntax Tree (AST) import graph across Python files, classes, functions, and FastAPI routes to estimate the blast radius (static imports only: dynamic imports, reflection and non Python consumers are not seen):
 ```bash
 nexus refactor "Migrate database pool to PostgreSQL asyncpg" --target src/db/session.py --apply
 ```
 - **Blast Radius Analysis**: Identifies all direct dependents, indirect dependents, and affected REST endpoints.
-- **Surgical Patching**: Emits targeted, contract-preserving diffs without blowing away surrounding enterprise logic.
+- **Surgical Patching**: Emits targeted diffs that aim to preserve existing contracts; review every diff before applying it.
 
 ---
 
 ## 📊 Stage 3: Team Telemetry & Enterprise ROI: `nexus metrics`
 
-Quantify the exact dollar return on investment (ROI) and DORA velocity acceleration delivered by Nexus across your team:
+Estimate return on investment (ROI) and DORA style velocity figures for a workspace. The numbers come from heuristics (lines of code, an hourly rate you supply, fixed DORA multipliers), not from measuring your team, so treat them as illustrative:
 
 ```bash
 nexus metrics ./my-project --hourly-rate 95
@@ -228,35 +228,45 @@ nexus metrics ./my-project --hourly-rate 95
 
 ## 🛡️ Built-in Cost & Security Guardrails
 
-- **Hard Budget Caps**: Strict `max_budget_usd` ceilings per execution context.
-- **Cost-Optimized Model Tiering**: Ultra-fast, highly economical token profile with Gemini 3.8 Flash.
-- **Jailbreak Defense**: Pre-flight filters detecting and neutralizing prompt injection attempts.
-- **Zero-Leak Secret Scrubbing**: Automated redaction of API keys (`sk-...`, `ghp-...`, private keys) from all logs and telemetry streams.
+- **Budget Caps**: `max_budget_usd` ceilings per execution context.
+- **Cost-Optimized Model Tiering**: Economical token profile with Gemini 3.8 Flash.
+- **Prompt Injection Filter (best effort)**: `check_prompt_injection` matches a short list of known jailbreak phrasings. Paraphrases, other languages, encodings and indirect injection (through documents or tool output) get through, so it is a first filter, not a defence on its own. Treat model input and output as untrusted and keep critical tools behind approval (`GuardrailManager`).
+- **Secret Scrubbing (best effort)**: `sanitize_text` redacts known credential formats before text reaches a model or a log: OpenAI style `sk-...`, Anthropic `sk-ant-...`, AWS access key ids (`AKIA...`, `ASIA...`), Google API keys (`AIza...`), Google OAuth client secrets (`GOCSPX-...`), Slack tokens (`xoxb-`, `xoxp-`, ...), GitHub tokens, Google OAuth bearer tokens, PEM private key blocks, and email addresses. Unknown formats, passwords and encoded secrets are not detected.
+- **Closed CORS by default**: `create_nexus_app()` and the `nexus ui` dashboard send no CORS headers unless you pass explicit `cors_origins`; credentials are only allowed with explicit origins, never with `"*"`.
+- **No implicit cloud project**: `GeminiClient` uses `GCP_PROJECT_ID`, `GOOGLE_CLOUD_PROJECT` or your gcloud default, and raises `NexusConfigurationError` when Vertex AI is needed and none is set. API keys go in the `x-goog-api-key` header, never in URLs.
 - **Deterministic Mock Engine**: Run the entire IT pack and test suite locally for \$0.00 using `MockProvider`.
 
 ---
 
 ## 🧪 Verification & Testing
 
-Nexus includes automated unit tests covering all agents, telemetry contracts, and CLI commands:
+Nexus has unit tests for the agents, security helpers, API factory, telemetry contracts and CLI. There is no hosted CI at the moment, so the test badge links here: run the suites yourself.
 
 ```bash
 git clone https://github.com/sabburi1994/nexus.git
 cd nexus
-pytest -o pythonpath=src tests/
+pip install -e ".[dev]"
+python -m pytest -o pythonpath=src tests/
+python -m ruff check src tests
+python -m mypy src
 ```
-```text
-tests/test_agentic.py ........                                           [ 26%]
-tests/test_brownfield.py ....                                            [ 40%]
-tests/test_dashboard.py ..                                               [ 46%]
-tests/test_it_pack.py ..                                                 [ 53%]
-tests/test_nexus.py ......                                               [ 73%]
-tests/test_orchestrator.py ..                                            [ 80%]
-tests/test_roi_metrics.py ...                                            [ 90%]
-tests/test_self_healing.py ...                                           [100%]
 
-======================== 30 passed in 2.27s ========================
+The showcase API has its own suite: `cd apps/showcase/backend && python -m pytest tests/`.
+
+### Local hooks
+Commits are checked locally with [pre-commit](https://pre-commit.com/): gitleaks on staged changes, ruff (lint and format) and mypy.
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
 ```
+
+### Releases
+`.github/workflows/release.yml` publishes to PyPI and npm with OIDC trusted publishing (no long lived tokens). GitHub Actions is currently disabled for this repository, so nothing publishes automatically.
+
+### Showcase deployment
+The `nexus.abburi.info` showcase runs in its own Google Cloud project with a dedicated runtime service account and Artifact Registry repository. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](infra/terraform/modules/README.md).
 
 ---
 
