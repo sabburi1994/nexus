@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from nexus import __version__
 from nexus.api.middleware import NexusTelemetryMiddleware
+from nexus.api.security_headers import NexusSecurityHeadersMiddleware, SecurityHeadersConfig
 
 
 class InMemoryDbSession:
@@ -93,6 +94,7 @@ def create_nexus_app(
     cors_origins: list[str] | None = None,
     include_health: bool = True,
     cors_allow_credentials: bool | None = None,
+    security_headers: SecurityHeadersConfig | bool = False,
 ) -> NexusApp:
     """Build and configure a production-ready FastAPI app.
 
@@ -100,6 +102,10 @@ def create_nexus_app(
     same-origin browsers can call the API. Pass explicit origins (for example
     ``["https://app.example.com"]``) to open it. Credentials (cookies, auth headers) are
     allowed only for explicit origins; combining them with ``"*"`` raises ``ValueError``.
+
+    ``security_headers=True`` adds CSP, HSTS, nosniff, ``X-Frame-Options: DENY``, a same-origin
+    referrer policy and a restrictive permissions policy (see ``SecurityHeadersConfig``); pass a
+    ``SecurityHeadersConfig`` to tune the policy or the static asset cache rules.
     """
     app = NexusApp(
         title=title,
@@ -115,9 +121,14 @@ def create_nexus_app(
     # Telemetry
     app.add_middleware(NexusTelemetryMiddleware)
 
-    if include_health:
+    # Security headers (added last, so they also cover responses produced by inner middleware).
+    if security_headers:
+        config = security_headers if isinstance(security_headers, SecurityHeadersConfig) else SecurityHeadersConfig()
+        app.add_middleware(NexusSecurityHeadersMiddleware, config=config)
 
-        @app.get("/health", tags=["system"])
+    if include_health:
+        # HEAD as well as GET: uptime checkers and load balancers often probe with HEAD.
+        @app.api_route("/health", methods=["GET", "HEAD"], tags=["system"])
         async def health_check() -> dict[str, Any]:
             return {
                 "status": "ok",
@@ -128,7 +139,7 @@ def create_nexus_app(
                 "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             }
 
-        @app.get("/ready", tags=["system"])
+        @app.api_route("/ready", methods=["GET", "HEAD"], tags=["system"])
         async def readiness_check() -> dict[str, str]:
             return {"status": "ready"}
 

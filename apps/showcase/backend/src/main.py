@@ -34,7 +34,8 @@ from showcase_provider import ByokGeminiProviderError, ByokGeminiShowcaseProvide
 from nexus import __version__
 from nexus.ai import GeminiClient
 from nexus.ai.pricing import GEMINI_3_8_FLASH_INPUT_PER_M, GEMINI_3_8_FLASH_OUTPUT_PER_M, calculate_cost_usd
-from nexus.api import create_nexus_app
+from nexus.api import SecurityHeadersConfig, create_nexus_app
+from nexus.api.security_headers import DEFAULT_CSP
 from nexus.brownfield import AstDependencyMapper, BrownfieldRefactorer, CodebaseAuditor
 from nexus.metrics.roi import DoraMetrics, EnterpriseRoiReport, RoiCalculator
 from nexus.security import (
@@ -49,10 +50,23 @@ from nexus.teams.it_pack.team import NexusITTeam
 install_log_redaction()
 
 # The UI is served from this same origin, so CORS stays closed (library default).
+# Security headers through Nexus's own middleware. The UI needs exactly one relaxation of the
+# default policy: Google Fonts (stylesheet from fonts.googleapis.com, font files from fonts.gstatic.com).
+# Content hashed /assets/* are cached for a year; index.html (and every HTML response) is no-cache.
+SHOWCASE_CSP = DEFAULT_CSP.replace(
+    "style-src 'self' 'unsafe-inline';",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
+)
+SHOWCASE_SECURITY_HEADERS = SecurityHeadersConfig(
+    content_security_policy=SHOWCASE_CSP,
+    immutable_prefixes=("/assets/",),
+)
+
 app, db = create_nexus_app(
     title="Nexus Showcase API",
     description="Orchestrator-Native AI Agentic Framework Reference Application & Documentation Portal (https://nexus.abburi.info)",
     version=__version__,
+    security_headers=SHOWCASE_SECURITY_HEADERS,
 )
 
 # No server side model calls: the showcase runs the deterministic provider unless a visitor

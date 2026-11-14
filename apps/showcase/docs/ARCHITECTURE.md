@@ -27,4 +27,7 @@ flowchart LR
 - **Cloud Run**: `europe-west1`, min 0, max 2, 512Mi, CPU only during requests, non-root container.
 - **Abuse controls**: per IP rate limits on scan, simulate, brownfield and download routes; scan
   reports are visible only to the visitor who created them; credentials are redacted from logs.
+- **Security headers**: served through `NexusSecurityHeadersMiddleware`: CSP (only Google Fonts added to
+  the default policy), HSTS, nosniff, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`;
+  hashed `/assets/*` are cached immutably, HTML is `no-cache`.
 - **Rollout**: see [`../ROLLOUT.md`](../ROLLOUT.md).
