@@ -1,9 +1,12 @@
 /**
- * Nexus showcase, alone in its own Google Cloud project.
+ * Nexus showcase on Cloud Run. Runs in a dedicated project or alongside other apps in an
+ * existing one: every resource is named after var.service_name and every grant is scoped to
+ * the showcase's own resources, so nothing here reaches the host project's other apps.
  *
  *   * runtime service account (nexus_app module) with NO project roles: the showcase makes no
  *     server side model calls (visitors may bring their own Gemini key, sent per request);
- *   * build service account for Cloud Build, allowed to push to this app's repository only;
+ *   * build service account for Cloud Build, allowed to push to this app's repository and read
+ *     its own source staging bucket only;
  *   * a dedicated Artifact Registry Docker repository with a cleanup policy;
  *   * the Cloud Run service (nexus_cloud_run module): min 0, max 2, 512Mi, CPU only during requests;
  *   * optionally the custom domain mapping.
@@ -27,6 +30,7 @@ provider "google" {
 }
 
 # 1. APIs and runtime identity (no Vertex AI, no Secret Manager, no compute default account).
+# In an existing project the APIs are usually on already; disable_on_destroy = false leaves them on.
 module "nexus_base" {
   source             = "../../../../infra/terraform/modules/nexus_app"
   project_id         = var.project_id
@@ -39,6 +43,7 @@ module "nexus_base" {
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
     "logging.googleapis.com",
+    "storage.googleapis.com",
   ]
 }
 
@@ -58,18 +63,20 @@ resource "google_artifact_registry_repository" "images" {
     }
   }
 
+  # Keep the 10 most recent versions; delete untagged images after 14 days.
   cleanup_policies {
-    id     = "delete-old"
+    id     = "delete-untagged"
     action = "DELETE"
     condition {
-      older_than = "2592000s"
+      tag_state  = "UNTAGGED"
+      older_than = "1209600s"
     }
   }
 
   depends_on = [module.nexus_base]
 }
 
-# 3. Build identity for Cloud Build: push to this repository, write logs, read the uploaded source.
+# 3. Build identity for Cloud Build: push to this repository, write logs, read its own uploaded source.
 resource "google_service_account" "build" {
   project      = var.project_id
   account_id   = "${var.service_name}-build"
@@ -90,11 +97,34 @@ resource "google_project_iam_member" "build_logs" {
   member  = "serviceAccount:${google_service_account.build.email}"
 }
 
-# gcloud builds submit uploads the source tarball to gs://<project>_cloudbuild; the build reads it back.
-resource "google_project_iam_member" "build_source_read" {
-  project = var.project_id
-  role    = "roles/storage.objectViewer"
-  member  = "serviceAccount:${google_service_account.build.email}"
+# Dedicated staging bucket for build sources (gcloud builds submit --gcs-source-staging-dir).
+# The build account reads only this bucket, never the host project's other buckets.
+resource "google_storage_bucket" "build_source" {
+  project                     = var.project_id
+  name                        = "${var.project_id}-${var.service_name}-build-src"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = true
+
+  lifecycle_rule {
+    condition {
+      age = 7
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = {
+    app = var.service_name
+  }
+}
+
+resource "google_storage_bucket_iam_member" "build_source_read" {
+  bucket = google_storage_bucket.build_source.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.build.email}"
 }
 
 # 4. The public Cloud Run service.
@@ -164,6 +194,11 @@ output "runtime_service_account" {
 output "build_service_account" {
   description = "Pass to gcloud builds submit --service-account"
   value       = google_service_account.build.email
+}
+
+output "build_source_bucket" {
+  description = "Pass as gcloud builds submit --gcs-source-staging-dir=gs://<bucket>/source"
+  value       = google_storage_bucket.build_source.name
 }
 
 output "image_repository" {

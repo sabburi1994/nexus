@@ -1,13 +1,14 @@
-# Showcase rollout: move to a dedicated Google Cloud project
+# Showcase rollout
 
-Moves the public showcase (`nexus-showcase` on Cloud Run, domain `nexus.abburi.info`) out of the
-project it shares with another app into a project of its own, managed by Terraform
-(`apps/showcase/infra/terraform`). After the move:
+Moves the public showcase (`nexus-showcase` on Cloud Run, domain `nexus.abburi.info`) onto the
+Terraform configuration in `apps/showcase/infra/terraform`. After the move:
 
 * the runtime service account `nexus-showcase-run` has **no project roles** (the showcase makes no
   server side model calls; visitors may bring their own Gemini key per request);
 * Cloud Build runs as `nexus-showcase-build`, which can push only to the app's own Artifact Registry
-  repository `nexus-showcase`;
+  repository `nexus-showcase` and read only its own source staging bucket
+  `<project>-nexus-showcase-build-src` (sources are deleted after 7 days);
+* the registry keeps the 10 most recent image versions and deletes untagged images after 14 days;
 * Cloud Run: min 0, max 2 instances, 1 CPU, 512Mi, CPU only during requests, startup CPU boost,
   `/health` startup and liveness probes, deletion protection on.
 
@@ -18,6 +19,24 @@ merged commit** (the image tag is the git SHA). Terraform keeps its state locall
 Prerequisites: `gcloud` signed in as the owner, `gcloud auth application-default login` done
 (Terraform uses ADC), Terraform 1.5 or newer, Python with `pip install build`.
 
+## Hosting options
+
+The project is a Terraform variable (`project_id`, no default). Both options are supported:
+
+* **Dedicated project (preferred).** Nothing else shares its IAM, quotas or billing view.
+  Follow every step below.
+* **Existing project.** Use this when a new project is not possible, for example when the billing
+  account has reached its limit of linked projects (`gcloud billing projects link` then fails with a
+  quota error; the limit can be raised through a billing support request, or another project
+  unlinked). Skip steps 1 and 2. Everything the configuration creates is named after the service
+  and every grant is scoped to the showcase's own service accounts, repository and bucket, so it
+  does not touch the host project's other apps. Two things to know:
+  * the deploy scripts refuse a project that already runs other Cloud Run services unless you pass
+    `-SharedProject` (PowerShell) or `SHARED_PROJECT=1` (bash), as a guard against a wrong project id;
+  * `nexus_app` enables a few APIs (Cloud Run, Secret Manager, Artifact Registry, Cloud Build,
+    Logging, Storage) with `disable_on_destroy = false`, so a later destroy never switches off APIs
+    the host project's other apps rely on.
+
 ## 0. Variables
 
 ```powershell
@@ -25,7 +44,7 @@ $OldProject = "<project id that runs nexus-showcase today>"   # from the hand-ov
 $Region     = "europe-west1"
 $Domain     = "nexus.abburi.info"
 $Service    = "nexus-showcase"
-$Project    = "nexus-showcase-$(Get-Random -Minimum 100000 -Maximum 1000000)"
+$Project    = "nexus-showcase-$(Get-Random -Minimum 100000 -Maximum 1000000)"   # or the existing host project id
 $Tf         = "apps/showcase/infra/terraform"
 $Tag        = (git rev-parse --short=12 HEAD).Trim()
 "Project: $Project  Tag: $Tag"
@@ -34,7 +53,12 @@ git status --porcelain   # must print nothing
 
 Write `$Project` down: every later step and every later deploy needs it.
 
-## 1. Create the project and link billing
+## 1. Create the project and link billing (dedicated project only)
+
+If the link fails with a quota error, the billing account has reached its limit of linked
+projects: either free a slot (unlink a project that no longer needs billing), ask Google Cloud
+billing support for a higher limit, or delete the empty project and use an existing one (see
+"Hosting options").
 
 ```powershell
 gcloud projects create $Project --name "Nexus showcase"
@@ -43,7 +67,7 @@ gcloud billing projects link $Project --billing-account $Billing
 gcloud billing projects describe $Project --format "value(billingEnabled)"   # expect True
 ```
 
-## 2. Enable the APIs Terraform itself needs
+## 2. Enable the APIs Terraform itself needs (dedicated project only)
 
 Terraform enables the app APIs (Cloud Run, Artifact Registry, Cloud Build, Logging, Secret Manager).
 It needs these first:
@@ -65,7 +89,8 @@ terraform -chdir=$Tf apply -var "project_id=$Project" -var "image_tag=bootstrap"
   -target google_service_account.build `
   -target google_artifact_registry_repository_iam_member.build_push `
   -target google_project_iam_member.build_logs `
-  -target google_project_iam_member.build_source_read
+  -target google_storage_bucket.build_source `
+  -target google_storage_bucket_iam_member.build_source_read
 ```
 
 Give IAM a minute or two to propagate before the build.
@@ -80,6 +105,7 @@ gcloud builds submit apps/showcase/backend `
   --project $Project --region $Region `
   --config apps/showcase/backend/cloudbuild.yaml `
   --substitutions "_IMAGE=$Image" `
+  --gcs-source-staging-dir "gs://$Project-$Service-build-src/source" `
   --service-account "projects/$Project/serviceAccounts/$Service-build@$Project.iam.gserviceaccount.com"
 gcloud artifacts docker images list "$Region-docker.pkg.dev/$Project/nexus-showcase" --include-tags
 ```
@@ -182,8 +208,20 @@ longer needs any rights for the showcase.
 From a clean checkout at the commit to ship:
 
 ```powershell
-./apps/showcase/deploy.ps1 -ProjectId $Project -DomainName $Domain
+./apps/showcase/deploy.ps1 -ProjectId $Project -DomainName $Domain                  # dedicated project
+./apps/showcase/deploy.ps1 -ProjectId $Project -DomainName $Domain -SharedProject   # existing project
 ```
 
-It refuses to run in a project that hosts other Cloud Run services, builds with Cloud Build as the
-build account, tags the image with the git SHA and applies Terraform with that tag.
+It builds with Cloud Build as the build account (sources staged in the showcase's own bucket), tags
+the image with the git SHA and applies Terraform with that tag. Without `-SharedProject` it refuses
+a project that runs other Cloud Run services.
+
+## Upgrading a deployment made before the source bucket existed
+
+Deployments applied from the first version of this configuration granted the build account
+`roles/storage.objectViewer` on the whole project and used Cloud Build's default staging bucket.
+The next `terraform apply` (any routine deploy) replaces that grant with read access on the new
+`<project>-nexus-showcase-build-src` bucket only, and switches the registry cleanup to "keep 10,
+delete untagged after 14 days". Review the plan: expect the project level `storage.objectViewer`
+member to be destroyed, the bucket and its IAM member created, and the repository updated in place.
+No change to the Cloud Run service or the domain mapping is expected.
