@@ -162,6 +162,8 @@ class GeminiClient:
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.default_model = default_model
         self._http = httpx.Client(timeout=httpx.Timeout(180.0, connect=30.0, read=180.0))
+        # (input_tokens, output_tokens, cost_usd, model) of the latest structured() call.
+        self.last_structured_usage: tuple[int, int, float, str] | None = None
 
     def _post(
         self,
@@ -319,6 +321,12 @@ class GeminiClient:
             raise RuntimeError(f"Gemini structured output failed {resp.status_code}: {resp.text}")
 
         data = resp.json()
+        usage = data.get("usageMetadata", {})
+        inp = int(usage.get("promptTokenCount", 0))
+        # Thinking tokens are billed as output, so count them for spend tracking.
+        out = int(usage.get("candidatesTokenCount", 0)) + int(usage.get("thoughtsTokenCount", 0))
+        self.last_structured_usage = (inp, out, calculate_cost_usd(inp, out, chosen_model), chosen_model)
+
         candidates = data.get("candidates", [])
         if not candidates:
             raise RuntimeError(f"No candidates returned in structured output: {data}")

@@ -10,7 +10,7 @@
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/tests-run%20locally-lightgrey" alt="Tests: run locally" /></a>
 </p>
 
-> **Nexus** is an autonomous AI agentic software engineering framework that turns requirements into runnable full-stack application scaffolds that you then review, test and harden. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and connects natively with **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
+> **Nexus** is an autonomous AI agentic software engineering framework that turns requirements into runnable full-stack application scaffolds that you then review, test and harden. It provisions a full virtual IT department (BA, Solution Architect, Data Architect, UI Designer, Full-Stack Engineer, DevOps, and QA) and offers read only audit, blast radius, guardrail and ROI tools to **Claude Code, Cursor, Codex, and Gemini** via the Model Context Protocol (MCP).
 >
 > - **Platform Website & Docs**: [nexus.abburi.info](https://nexus.abburi.info)
 > - **Live Stage 1–3 Simulator**: [nexus.abburi.info/#simulator](https://nexus.abburi.info/#simulator)
@@ -49,7 +49,7 @@ flowchart TD
     DA --> Design["4. UI/UX Designer<br/>(Design Tokens & Component Specs)"]
     Design & DA --> FS["5. Full-Stack Engineer<br/>(React UI + FastAPI Backend)"]
     SA & DA --> DevOps["6. DevOps Engineer<br/>(Terraform IaC for target cloud)"]
-    FS & DevOps --> QA["7. QA & Security Engineer<br/>(Preflight Guardrails & Test Suite)"]
+    FS & DevOps --> QA["7. QA & Security Engineer<br/>(Test Suite, run for real, & Security Review)"]
     QA --> Repo["Delivered Application Workspace<br/>(Runnable Full-Stack Project on Disk)"]
 ```
 
@@ -59,8 +59,8 @@ flowchart TD
 3. **Data Architect (`DataArchitectAgent`)**: Normalizes relational schemas, foreign keys, indexes, and emits PostgreSQL SQL DDL (`docs/DATA_ARCHITECTURE.md`).
 4. **UI/UX Designer (`UiDesignerAgent`)**: Produces responsive design tokens and Tailwind component structures utilizing `@nexus-agent-framework/ui`.
 5. **Full-Stack Engineer (`FullStackEngineerAgent`)**: Implements clean FastAPI REST endpoints, Pydantic validation schemas, SQLAlchemy ORM entities, and React UI components.
-6. **DevOps Engineer (`DevopsEngineerAgent`)**: Generates production Infrastructure as Code (Terraform `main.tf`, `variables.tf`), container definitions (`Dockerfile`, `docker-compose.yml`), and CI/CD pipelines.
-7. **QA & Security Engineer (`QaEngineerAgent`)**: Executes pre-flight security scans (injection sanitization, CORS, credential checks) and delivers an executable `pytest` suite for the generated workspace.
+6. **DevOps Engineer (`DevopsEngineerAgent`)**: Decides the app specific inputs (`docker-compose.yml`, whether the backend calls Vertex AI, which runtime secrets it reads). The files that encode platform policy are rendered from fixed templates, not written by the model: Terraform that calls the [`nexus_app` and `nexus_cloud_run` modules](infra/terraform/modules/README.md) (scale to zero, max 2 instances, CPU billed per request, image tag required, Secret Manager access per secret, Vertex AI granted only when needed), a `backend/Dockerfile` that runs as a non root user on port 8080, and a local `scripts/deploy.sh` that builds, tags the image with the git SHA and applies Terraform. No CI workflow is generated.
+7. **QA & Security Engineer (`QaEngineerAgent`)**: Reviews the code for security issues and writes a `pytest` suite for the generated backend. When the workspace is written to disk, Nexus runs that suite for real (see [Stage 1](#-stage-1-closed-loop-self-healing)); the QA gate passes only if the tests pass and the review passes.
 
 ---
 
@@ -70,7 +70,7 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 | Package | Registry | Version | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.3.1` in this repo (PyPI currently serves `0.1.1`) | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
+| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.3.2` in this repo (PyPI currently serves `0.1.1`) | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
 | **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
 | **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Security headers, best effort credential sanitizer, correlation tracing |
 | **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
@@ -80,7 +80,7 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 ## 🔌 Orchestrator-Native: Claude Code, Cursor & Gemini Integration
 
-Nexus exposes its entire agent runtime and tooling to AI code editors via the **Model Context Protocol (MCP)**:
+Nexus exposes a set of read only tools to AI code editors via the **Model Context Protocol (MCP)**:
 
 ```bash
 # Launch Nexus as an MCP server
@@ -101,7 +101,17 @@ nexus mcp
   }
 }
 ```
-Claude Code and Cursor gain native access to all 7 specialist agents, architectural tools, and database schema generators directly within your prompt session.
+The server registers five tools, all read only:
+
+| Tool | What it does |
+| :--- | :--- |
+| `nexus_check_ai` | Checks Vertex AI / Gemini connectivity (one small model call) |
+| `nexus_audit` | Runs `CodebaseAuditor` on a directory |
+| `nexus_blast_radius` | Static import graph and dependents of a module |
+| `nexus_guardrail` | Prompt injection check and credential scrubbing for a piece of text |
+| `nexus_roi` | The heuristic ROI estimate of `nexus metrics` |
+
+The IT squad agents are **not** exposed over MCP; run them with `nexus dream` or `NexusITTeam` from Python.
 
 ---
 
@@ -112,6 +122,10 @@ Generate complete, runnable applications from natural language:
 ```bash
 nexus dream "I want an app that tracks second-hand luxury watches in Europe with price alerts"
 ```
+
+Options: `--output-dir`, `--max-budget-usd` (spend cap for the whole run, default `1.00`), `--test-timeout`
+(seconds per generated test run, default `120`) and `--no-run-tests` (skip executing the generated suite).
+Example output:
 
 ```text
 --- Nexus Core IT Squad Activated ---
@@ -126,7 +140,8 @@ Stories: 4 user stories defined
 Cloud Target: GCP (Cloud Run Serverless)
 Data Schema: PostgreSQL 16 (4 tables)
 UI Component: WatchDashboard.tsx
-QA Preflight: PASS (generated test suite passed)
+QA Gate: PASS (generated tests passed (4 passed, 0 failed, 0 errors, exit 0))
+Model spend: $0.0213 of $1.00 budget
 ```
 
 ---
@@ -148,24 +163,29 @@ nexus ui
 
 ## 🔄 Stage 1: Closed-Loop Self-Healing
 
-Nexus avoids "throw-it-over-the-fence" code generation. When the QA Engineer detects failing unit tests or runtime syntax bugs, it automatically triggers a direct feedback loop back to the Full-Stack Engineer with exact traceback diagnostics and failure assertions:
+When `build_from_idea` writes the workspace to disk (`output_dir`, which `nexus dream` always sets), Nexus runs the generated `pytest` suite for real: `python -m pytest tests` in the generated `backend/` folder, in a subprocess with a timeout (default 120 s). A failing run triggers the healing loop, and the diagnosis is given the actual pytest output:
 
 ```mermaid
 sequenceDiagram
-    participant QA as QA Specialist Agent
-    participant Runner as Pytest Runner
+    participant QA as QA Engineer Agent
+    participant Runner as Pytest subprocess
+    participant Healer as Healer
     participant FS as Full-Stack Engineer Agent
-    QA->>Runner: Execute test suite on generated workspace
-    alt Tests Pass
-        Runner-->>QA: All generated tests green
-    else Tests Fail
-        Runner-->>QA: Capture stacktrace & failed assertions
-        QA->>FS: Dispatch healing prompt with exact error context
-        FS->>FS: Synthesize surgical code patch
-        FS->>Runner: Re-run test suite (Loop up to max_attempts)
-        Runner-->>QA: Re-run results (stops after max_attempts)
+    QA->>Runner: Write workspace, run generated suite
+    alt Tests pass and security review passes
+        Runner-->>QA: Gate passed, no healing
+    else Tests fail, time out or collect nothing
+        Runner-->>Healer: Real pytest output
+        Healer->>FS: Diagnosis from the failure
+        FS->>QA: Patched code
+        QA->>Runner: Regenerate suite, rewrite workspace, run again
+        Note over Runner: Up to max_healing_cycles (default 3), then FAIL_MAX_CYCLES_EXCEEDED
     end
 ```
+
+* The result is in `DeliveredProject.test_run`, `DeliveredProject.qa_passed` and `healing_report` (each attempt keeps its own test run).
+* Without an output directory, or with `run_generated_tests=False` / `--no-run-tests`, nothing is executed and the gate is QA's self reported `passed_preflight` only.
+* **This executes model generated code on your machine.** The subprocess gets a reduced environment (no cloud credentials or API keys from your shell) and a timeout, but it is not a sandbox. Turn execution off wherever someone else controls the idea or the model output; the public showcase does.
 
 ---
 
@@ -191,7 +211,7 @@ nexus refactor "Migrate database pool to PostgreSQL asyncpg" --target src/db/ses
 
 ## 📊 Stage 3: Team Telemetry & Enterprise ROI: `nexus metrics`
 
-Estimate return on investment (ROI) and DORA style velocity figures for a workspace. The numbers come from heuristics (lines of code, an hourly rate you supply, fixed DORA multipliers), not from measuring your team, so treat them as illustrative:
+Estimate return on investment (ROI) and DORA style velocity figures for a workspace. **Every figure is a heuristic estimate**: hours saved, token spend, the DORA values (deployment frequency, lead time, change failure rate, MTTR) and the security counts are derived from file counts, lines of code, an hourly rate you supply and fixed multipliers. Nothing is measured from your deployments, incidents or model bills, so treat the output as illustrative:
 
 ```bash
 nexus metrics ./my-project --hourly-rate 95
@@ -228,7 +248,7 @@ nexus metrics ./my-project --hourly-rate 95
 
 ## 🛡️ Built-in Cost & Security Guardrails
 
-- **Budget Caps**: `max_budget_usd` ceilings per execution context.
+- **Budget Caps**: `max_budget_usd` ceilings per execution context. A whole squad run is capped too: `NexusITTeam(max_budget_usd=1.00)` (default) or `nexus dream --max-budget-usd`; the run stops with `BudgetExceededError` after the call that crosses the cap. Calls count when the provider reports usage (`VertexAIProvider` does; `MockProvider` reports $0).
 - **Cost-Optimized Model Tiering**: Economical token profile with Gemini 3.8 Flash.
 - **Prompt Injection Filter (best effort)**: `check_prompt_injection` matches a short list of known jailbreak phrasings. Paraphrases, other languages, encodings and indirect injection (through documents or tool output) get through, so it is a first filter, not a defence on its own. Treat model input and output as untrusted and keep critical tools behind approval (`GuardrailManager`).
 - **Secret Scrubbing (best effort)**: `sanitize_text` redacts known credential formats before text reaches a model or a log: OpenAI style `sk-...`, Anthropic `sk-ant-...`, AWS access key ids (`AKIA...`, `ASIA...`), Google API keys (`AIza...`), Google OAuth client secrets (`GOCSPX-...`), Slack tokens (`xoxb-`, `xoxp-`, ...), GitHub tokens, Google OAuth bearer tokens, PEM private key blocks, and email addresses. Unknown formats, passwords and encoded secrets are not detected.

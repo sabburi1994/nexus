@@ -7,10 +7,15 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from nexus.agents.context import AgentContext
 from nexus.dashboard.telemetry import AgentEvent, EventType, event_bus
-from nexus.maintenance.healing_loop import ClosedLoopHealer, SelfHealingReport
+from nexus.maintenance.healing_loop import ClosedLoopHealer, SelfHealingReport, TestRunner, qa_gate_passed
 from nexus.providers.base import BaseModelProvider
+from nexus.providers.budget import BudgetedProvider
 from nexus.providers.vertex import VertexAIProvider
+from nexus.qa import runner as qa_runner
+from nexus.qa.runner import DEFAULT_TEST_TIMEOUT_S, TestRunResult
+from nexus.teams.it_pack import platform_templates as tpl
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
 from nexus.teams.it_pack.data_architect import DataArchitectAgent, DataArchitecture
 from nexus.teams.it_pack.designer import UiDesignerAgent, UiSpecification
@@ -23,6 +28,9 @@ from nexus.teams.it_pack.solution_architect import (
 )
 
 logger = logging.getLogger("nexus.teams.it_pack")
+
+DEFAULT_SQUAD_BUDGET_USD = 1.00
+"""Spend cap for one ``build_from_idea`` run (all agents and healing cycles together)."""
 
 
 class DeliveredProject(BaseModel):
@@ -37,6 +45,10 @@ class DeliveredProject(BaseModel):
     qa: QaSpecification
     output_path: str | None = None
     healing_report: SelfHealingReport | None = None
+    test_run: TestRunResult | None = None
+    qa_passed: bool = False
+    cost_usd: float = 0.0
+    budget_usd: float = DEFAULT_SQUAD_BUDGET_USD
 
 
 class NexusITTeam:
@@ -50,18 +62,39 @@ class NexusITTeam:
     - DevOps Engineer (Terraform / IaC)
     - QA & Security Engineer
     - Closed-Loop Self-Healer
+
+    Every model call of a run is recorded in an ``AgentContext``; the run stops with
+    ``BudgetExceededError`` once it spends more than ``max_budget_usd``.
+
+    When ``build_from_idea`` writes the workspace to disk and ``run_generated_tests`` is on,
+    the generated pytest suite is executed for real (subprocess, timeout) and the result is
+    the QA gate that drives self-healing. That runs model generated code on this machine:
+    turn it off when the idea or the model output can be steered by someone you do not trust.
+    One team instance runs one build at a time.
     """
 
-    def __init__(self, provider: BaseModelProvider | None = None) -> None:
+    def __init__(
+        self,
+        provider: BaseModelProvider | None = None,
+        max_budget_usd: float = DEFAULT_SQUAD_BUDGET_USD,
+        run_generated_tests: bool = True,
+        test_timeout_s: float = DEFAULT_TEST_TIMEOUT_S,
+    ) -> None:
         self.provider = provider or VertexAIProvider()
-        self.ba = BusinessAnalystAgent(self.provider)
-        self.solution_architect = SolutionArchitectAgent(self.provider)
-        self.data_architect = DataArchitectAgent(self.provider)
-        self.designer = UiDesignerAgent(self.provider)
-        self.fullstack = FullStackEngineerAgent(self.provider)
-        self.devops = DevopsEngineerAgent(self.provider)
-        self.qa = QaEngineerAgent(self.provider)
-        self.healer = ClosedLoopHealer(self.provider)
+        self.max_budget_usd = max_budget_usd
+        self.run_generated_tests = run_generated_tests
+        self.test_timeout_s = test_timeout_s
+        self.context = AgentContext(max_budget_usd=max_budget_usd)
+        # Agents talk to the budgeted wrapper so every call counts against the cap.
+        self._budgeted = BudgetedProvider(self.provider, self.context)
+        self.ba = BusinessAnalystAgent(self._budgeted)
+        self.solution_architect = SolutionArchitectAgent(self._budgeted)
+        self.data_architect = DataArchitectAgent(self._budgeted)
+        self.designer = UiDesignerAgent(self._budgeted)
+        self.fullstack = FullStackEngineerAgent(self._budgeted)
+        self.devops = DevopsEngineerAgent(self._budgeted)
+        self.qa = QaEngineerAgent(self._budgeted)
+        self.healer = ClosedLoopHealer(self._budgeted)
 
     def build_from_idea(
         self,
@@ -70,8 +103,19 @@ class NexusITTeam:
         output_dir: Path | None = None,
         enable_self_healing: bool = True,
         max_healing_cycles: int = 3,
+        run_generated_tests: bool | None = None,
     ) -> DeliveredProject:
-        """Run the end-to-end squad workflow from idea to deployed architecture."""
+        """Run the end-to-end squad workflow from idea to deployed architecture.
+
+        ``run_generated_tests`` overrides the team default for this run. Real test execution
+        needs ``output_dir``: without a workspace on disk QA falls back to its self reported
+        ``passed_preflight``.
+        """
+        # Fresh spend ledger per run.
+        self.context = AgentContext(max_budget_usd=self.max_budget_usd)
+        self._budgeted.context = self.context
+        run_tests = self.run_generated_tests if run_generated_tests is None else run_generated_tests
+
         # 1. Business Analyst
         event_bus.emit(
             AgentEvent(
@@ -218,7 +262,7 @@ class NexusITTeam:
             AgentEvent(
                 EventType.STEP_COMPLETED,
                 "DevOps Engineer",
-                "Terraform modules, Dockerfile & CI/CD workflow ready.",
+                "Terraform (platform modules), Dockerfile & deploy script ready.",
             )
         )
 
@@ -239,16 +283,31 @@ class NexusITTeam:
                 {"snippet": qa.test_suite_code[:120]},
             )
         )
+        # Real QA gate: write the workspace and run the generated suite.
+        app_dir = output_dir / tpl.service_slug(proposal.app_name) if output_dir else None
+        test_runner: TestRunner | None = None
+        test_run: TestRunResult | None = None
+        if app_dir is not None and run_tests:
+            workspace = app_dir
+
+            def write_and_test(fs: FullStackSpecification, q: QaSpecification) -> TestRunResult:
+                self._write_to_disk(workspace, proposal, solution, data_arch, ui, fs, devops, q)
+                return qa_runner.run_generated_tests(workspace / "backend", timeout_s=self.test_timeout_s)
+
+            test_runner = write_and_test
+            test_run = test_runner(fullstack, qa)
+
         event_bus.emit(
             AgentEvent(
                 EventType.STEP_COMPLETED,
                 "QA & Security Engineer",
-                f"Preflight clearance: {'PASSED' if qa.passed_preflight else 'WARN'}",
+                f"Preflight clearance: {'PASSED' if qa_gate_passed(qa, test_run) else 'WARN'}"
+                + (f" ({test_run.summary})" if test_run is not None else " (self reported, tests not executed)"),
             )
         )
 
         healing_report: SelfHealingReport | None = None
-        if enable_self_healing and not qa.passed_preflight:
+        if enable_self_healing and not qa_gate_passed(qa, test_run):
             self.healer.max_healing_cycles = max_healing_cycles
             fullstack, qa, healing_report = self.healer.run_healing_loop(
                 proposal=proposal,
@@ -257,11 +316,13 @@ class NexusITTeam:
                 qa=qa,
                 fullstack_agent=self.fullstack,
                 qa_agent=self.qa,
+                test_runner=test_runner,
+                initial_test_run=test_run,
             )
+            test_run = healing_report.final_test_run
 
         saved_path = None
-        if output_dir:
-            app_dir = output_dir / proposal.app_name
+        if app_dir is not None:
             saved_path = str(self._write_to_disk(app_dir, proposal, solution, data_arch, ui, fullstack, devops, qa))
             event_bus.emit(
                 AgentEvent(
@@ -289,9 +350,12 @@ class NexusITTeam:
             qa=qa,
             output_path=saved_path,
             healing_report=healing_report,
+            test_run=test_run,
+            qa_passed=qa_gate_passed(qa, test_run),
+            cost_usd=self.context.accumulated_cost_usd,
+            budget_usd=self.max_budget_usd,
         )
 
-    @staticmethod
     @staticmethod
     def _sanitize_python(code: str) -> str:
         """Ensure Python code is syntactically valid and repair common LLM syntax/MRO patterns."""
@@ -340,9 +404,9 @@ class NexusITTeam:
         frontend_dir = app_dir / "frontend" / "src"
         infra_dir = app_dir / "infra" / "terraform"
         docs_dir = app_dir / "docs"
-        github_dir = app_dir / ".github" / "workflows"
+        scripts_dir = app_dir / "scripts"
 
-        for d in (backend_dir, test_dir, frontend_dir, infra_dir, docs_dir, github_dir):
+        for d in (backend_dir, test_dir, frontend_dir, infra_dir, docs_dir, scripts_dir):
             d.mkdir(parents=True, exist_ok=True)
 
         # 1. Documentation
@@ -366,32 +430,9 @@ class NexusITTeam:
         # 2. Frontend
         (frontend_dir / "App.tsx").write_text(fullstack.frontend_app_tsx, encoding="utf-8")
         (frontend_dir / "api.ts").write_text(fullstack.frontend_api_client_ts, encoding="utf-8")
-        frontend_pkg = f"""{{
-  "name": "{proposal.app_name}-web",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {{
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  }},
-  "dependencies": {{
-    "@nexus/ui": "workspace:*",
-    "@nexus/contracts": "workspace:*",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  }},
-  "devDependencies": {{
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.4.5",
-    "vite": "^5.3.1"
-  }}
-}}
-"""
-        (app_dir / "frontend" / "package.json").write_text(frontend_pkg, encoding="utf-8")
+        (app_dir / "frontend" / "package.json").write_text(
+            tpl.render_frontend_package_json(proposal.app_name), encoding="utf-8"
+        )
 
         # 3. Backend
         (backend_dir / "main.py").write_text(self._sanitize_python(fullstack.backend_main_py), encoding="utf-8")
@@ -404,38 +445,24 @@ class NexusITTeam:
         (test_dir / "test_api.py").write_text(self._sanitize_python(qa.test_suite_code), encoding="utf-8")
         (test_dir / "__init__.py").write_text("", encoding="utf-8")
 
-        # 5. Infrastructure as Code (Terraform)
+        # 5. Container, Infrastructure as Code (Terraform) and deploy script
+        backend_root = app_dir / "backend"
+        (backend_root / "Dockerfile").write_text(devops.dockerfile or tpl.render_dockerfile(), encoding="utf-8")
+        (backend_root / ".dockerignore").write_text(tpl.render_dockerignore(), encoding="utf-8")
+        (backend_root / "requirements.txt").write_text(tpl.render_backend_requirements(), encoding="utf-8")
         (infra_dir / "main.tf").write_text(devops.terraform_main_tf, encoding="utf-8")
         (infra_dir / "variables.tf").write_text(devops.terraform_variables_tf, encoding="utf-8")
         (app_dir / "docker-compose.yml").write_text(devops.docker_compose_yml, encoding="utf-8")
-        (github_dir / "deploy.yml").write_text(devops.ci_cd_workflow_yml, encoding="utf-8")
+        deploy_script = scripts_dir / "deploy.sh"
+        # newline="\n": the script keeps LF line endings even when generated on Windows.
+        deploy_script.write_text(
+            devops.deploy_script_sh or tpl.render_deploy_script(proposal.app_name), encoding="utf-8", newline="\n"
+        )
+        deploy_script.chmod(0o755)
 
         # 6. pyproject.toml
-        pyproject_content = f"""[project]
-name = "{proposal.app_name}"
-version = "0.1.0"
-description = "{proposal.title} powered by Nexus Platform Framework"
-requires-python = ">=3.11"
-dependencies = [
-    "nexus-framework>=0.1.0",
-    "uvicorn>=0.30.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "httpx>=0.27.0",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-asyncio_mode = "auto"
-"""
-        (app_dir / "backend" / "pyproject.toml").write_text(pyproject_content, encoding="utf-8")
+        (backend_root / "pyproject.toml").write_text(
+            tpl.render_backend_pyproject(proposal.app_name, proposal.title), encoding="utf-8"
+        )
 
         return app_dir

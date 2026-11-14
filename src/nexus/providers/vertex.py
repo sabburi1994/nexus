@@ -8,7 +8,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 
 from nexus.ai.client import GeminiClient
-from nexus.providers.base import BaseModelProvider, ModelResponse
+from nexus.providers.base import BaseModelProvider, ModelResponse, ProviderUsage
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -63,12 +63,18 @@ class VertexAIProvider(BaseModelProvider):
         system_instruction: str | None = None,
         model: str | None = None,
     ) -> T:
-        return self._client.structured(
+        self.last_usage = None
+        self._client.last_structured_usage = None
+        result = self._client.structured(
             prompt=prompt,
             response_model=response_model,
             system_instruction=system_instruction,
             model=model,
         )
+        if self._client.last_structured_usage is not None:
+            inp, out, cost, used_model = self._client.last_structured_usage
+            self.last_usage = ProviderUsage(inp, out, cost, used_model)
+        return result
 
     def converse(
         self,

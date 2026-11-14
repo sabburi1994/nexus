@@ -20,7 +20,7 @@ class UiSpecification(BaseModel):
 class UiDesignerAgent:
     """
     UI/UX Designer Agent in the Nexus Core IT Pack.
-    Translates proposals into working frontend React components using the @nexus/ui design system.
+    Translates proposals into working frontend React components using the @nexus-agent-framework/ui design system.
     """
 
     def __init__(self, provider: BaseModelProvider) -> None:
