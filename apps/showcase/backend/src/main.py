@@ -514,7 +514,9 @@ async def simulate_pipeline(
             simulate_healing=req.simulate_healing,
         )
     )
-    team = NexusITTeam(provider=provider)
+    # Never execute generated code on this public server: the idea (and, with BYOK, the model
+    # output) is visitor controlled. The QA gate therefore stays self reported here.
+    team = NexusITTeam(provider=provider, run_generated_tests=False)
 
     t0 = time.perf_counter()
     with tempfile.TemporaryDirectory(prefix="nexus_sim_") as tmp:

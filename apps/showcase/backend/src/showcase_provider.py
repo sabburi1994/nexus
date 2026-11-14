@@ -14,7 +14,7 @@ from nexus.ai.pricing import calculate_cost_usd
 from nexus.brownfield.analyzer import BlastRadiusResult
 from nexus.brownfield.refactor import FilePatch, RefactorPlan
 from nexus.maintenance.healer import DiagnosisResult
-from nexus.providers.base import BaseModelProvider, ModelResponse
+from nexus.providers.base import BaseModelProvider, ModelResponse, ProviderUsage
 from nexus.teams.it_pack.ba import ProductProposal
 from nexus.teams.it_pack.data_architect import DataArchitecture
 from nexus.teams.it_pack.designer import UiSpecification
@@ -90,6 +90,8 @@ class ShowcaseSquadProvider(BaseModelProvider):
         in_tok = max(120, len(prompt.split()) * 4 + 90)
         out_tok = max(140, len(output_text.split()) * 2 + 120)
         cost = calculate_cost_usd(in_tok, out_tok, model="gemini-3.8-flash")
+        # Deterministic runs make no model call, so nothing counts against the squad budget.
+        self.last_usage = ProviderUsage(in_tok, out_tok, 0.0, self.name)
         now = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=len(self.calls) * 2)
         self.calls.append(
             {
@@ -462,48 +464,9 @@ export async function createServiceRecord(payload: RecordPayload) {{
         )
 
     def _build_devops(self) -> DevopsSpecification:
+        # Terraform, Dockerfile and deploy script are rendered by the DevOps agent from the
+        # platform templates; the model side only supplies the compose file and the flags.
         slug = self._slug
-        tf_main = f"""terraform {{
-  required_version = ">= 1.5.0"
-  required_providers {{
-    google = {{
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }}
-  }}
-}}
-
-resource "google_cloud_run_v2_service" "{slug.replace("-", "_")}" {{
-  name     = "{slug}"
-  location = var.gcp_region
-  ingress  = "INGRESS_TRAFFIC_ALL"
-
-  template {{
-    scaling {{
-      min_instance_count = 0
-      max_instance_count = 5
-    }}
-    containers {{
-      image = "europe-west1-docker.pkg.dev/${{var.gcp_project_id}}/nexus/{slug}:latest"
-      resources {{
-        limits = {{
-          cpu    = "1000m"
-          memory = "512Mi"
-        }}
-      }}
-    }}
-  }}
-}}
-"""
-        tf_vars = """variable "gcp_project_id" {
-  type = string
-}
-
-variable "gcp_region" {
-  type    = string
-  default = "europe-west1"
-}
-"""
         compose = f"""services:
   api:
     build: ./backend
@@ -512,23 +475,11 @@ variable "gcp_region" {
     environment:
       - SERVICE_NAME={slug}
 """
-        ci = """name: Deploy Nexus Service
-on:
-  push:
-    branches: [main]
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pytest backend/tests/
-"""
         return DevopsSpecification(
             cloud_target=self.target_cloud,
-            terraform_main_tf=tf_main,
-            terraform_variables_tf=tf_vars,
             docker_compose_yml=compose,
-            ci_cd_workflow_yml=ci,
+            needs_vertex_ai=True,
+            runtime_secrets=[],
         )
 
     def _build_qa(self, passed: bool) -> QaSpecification:
@@ -624,4 +575,7 @@ class ByokGeminiShowcaseProvider(ShowcaseSquadProvider):
             artifact_preview="workspace/generated",
             status="error" if isinstance(result, QaSpecification) and not result.passed_preflight else "completed",
         )
+        if self._client.last_structured_usage is not None:
+            inp, out, real_cost, used_model = self._client.last_structured_usage
+            self.last_usage = ProviderUsage(inp, out, real_cost, used_model)
         return result

@@ -5,17 +5,17 @@ Nexus Showcase is a reference full-stack application built upon the **Nexus AI A
 
 ```mermaid
 flowchart LR
-    Browser["User Browser"] --> FE["React SPA (@nexus/ui)"]
-    FE --> BE["FastAPI Backend (nexus-framework)"]
+    Browser["User Browser"] --> FE["React SPA (@nexus-agent-framework/ui)"]
+    FE --> BE["FastAPI Backend (nexus-agent-framework)"]
     BE -. visitor's own key only .-> Gemini["Gemini API (BYOK)"]
     BE --> Mem[("Bounded in-memory stores")]
 ```
 
 ## Consumed Monorepo Packages
-- **`@nexus/ui`**: `NexusHeader`, `AiBadge`, `StatCard`, `TraceViewer`, `SecurityShieldBadge`
-- **`@nexus/contracts`**: Universal agent telemetry and spec schema definitions
-- **`@nexus/middleware`**: Production security headers and zero-leak credential sanitizer
-- **`nexus-framework`**: `create_nexus_app` factory, `GeminiClient`, and `NexusEntity` persistence
+- **`@nexus-agent-framework/ui`**: `NexusHeader`, `AiBadge`, `StatCard`, `TraceViewer`, `SecurityShieldBadge`
+- **`@nexus-agent-framework/contracts`**: Universal agent telemetry and spec schema definitions
+- **`@nexus-agent-framework/middleware`**: Production security headers and zero-leak credential sanitizer
+- **`nexus-agent-framework`**: `create_nexus_app` factory, `GeminiClient`, and `NexusEntity` persistence
 
 ## Infrastructure
 - **Project**: `project_id` (no default). A dedicated project is preferred; an existing project is

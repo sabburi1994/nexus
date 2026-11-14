@@ -7,7 +7,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from nexus.providers.base import BaseModelProvider, ModelResponse
+from nexus.providers.base import BaseModelProvider, ModelResponse, ProviderUsage
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -52,6 +52,7 @@ class MockProvider(BaseModelProvider):
         model: str | None = None,
     ) -> T:
         self.history.append(prompt)
+        self.last_usage = ProviderUsage(len(prompt.split()), 0, 0.0, "mock-agent-0.1")
         if self.structured_mock:
             if isinstance(self.structured_mock, response_model):
                 return self.structured_mock

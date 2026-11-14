@@ -24,7 +24,7 @@ def test_health_and_framework_status() -> None:
     assert info["website"] == "https://nexus.abburi.info"
     assert info["tests_passed"] == 61
     assert info["pypi_live_version"] == "0.1.1"
-    assert info["pypi_staged_version"] == "0.3.1"
+    assert info["pypi_staged_version"] == "0.3.2"
     assert "github.com/sabburi1994/nexus/actions" in info["ci_status_url"]
 
 
@@ -63,7 +63,9 @@ def test_real_it_squad_simulation_and_healing() -> None:
     assert body["healing_report"]["totalAttempts"] >= 1
     assert body["roi_report"]["roiMultiplier"] > 1.0
     assert "fastapi" in body["artifacts"]["backend_main_py"].lower()
-    assert "google_cloud_run_v2_service" in body["artifacts"]["terraform_main_tf"]
+    terraform = body["artifacts"]["terraform_main_tf"]
+    assert "nexus_cloud_run?ref=" in terraform
+    assert "max_instances         = 2" in terraform
     assert body["execution_mode"] == "deterministic"
     assert body["actual_api_cost_usd"] == 0.0
     assert body["projected_gemini_cost_usd"] > 0.0

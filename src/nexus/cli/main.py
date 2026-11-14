@@ -137,7 +137,7 @@ version = "0.1.0"
 description = "{app_name} microservice powered by Nexus Framework"
 requires-python = ">=3.11"
 dependencies = [
-    "nexus-framework>=0.1.0",
+    "nexus-agent-framework>={__version__}",
     "uvicorn>=0.30.0",
 ]
 
@@ -171,7 +171,7 @@ async def ask_ai(prompt: str) -> dict[str, str]:
     dockerfile_content = """FROM python:3.12-slim
 WORKDIR /app
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir uvicorn fastapi httpx pydantic nexus-framework
+RUN pip install --no-cache-dir uvicorn fastapi httpx pydantic nexus-agent-framework
 COPY . .
 EXPOSE 8080
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
@@ -239,15 +239,26 @@ def run_mcp_server() -> None:
     build_mcp_server().run_stdio()
 
 
-def dream_cmd(idea: str, output_dir: Path) -> None:
+def dream_cmd(
+    idea: str,
+    output_dir: Path,
+    run_tests: bool = True,
+    max_budget_usd: float | None = None,
+    test_timeout_s: float | None = None,
+) -> None:
     """Run the Nexus Core IT Pack to convert an idea into a complete software project."""
-    from nexus.teams.it_pack.team import NexusITTeam
+    from nexus.qa.runner import DEFAULT_TEST_TIMEOUT_S
+    from nexus.teams.it_pack.team import DEFAULT_SQUAD_BUDGET_USD, NexusITTeam
 
     print("--- Nexus Core IT Squad Activated ---")
     print(f'Goal: "{idea}"')
     print("Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer\n")
 
-    team = NexusITTeam()
+    team = NexusITTeam(
+        max_budget_usd=DEFAULT_SQUAD_BUDGET_USD if max_budget_usd is None else max_budget_usd,
+        run_generated_tests=run_tests,
+        test_timeout_s=DEFAULT_TEST_TIMEOUT_S if test_timeout_s is None else test_timeout_s,
+    )
     project = team.build_from_idea(idea, output_dir=output_dir)
 
     print("\n=== Project Delivered! ===")
@@ -258,7 +269,9 @@ def dream_cmd(idea: str, output_dir: Path) -> None:
     print(f"Cloud Target: {project.solution.cloud_provider.upper()} ({project.solution.compute_pattern})")
     print(f"Data Schema: {project.data_architecture.database_engine} ({len(project.data_architecture.tables)} tables)")
     print(f"UI Component: {project.ui.component_name}.tsx")
-    print(f"QA Preflight: {'PASS' if project.qa.passed_preflight else 'WARN'}")
+    tests = project.test_run.summary if project.test_run is not None else "generated tests not executed"
+    print(f"QA Gate: {'PASS' if project.qa_passed else 'FAIL'} ({tests})")
+    print(f"Model spend: ${project.cost_usd:.4f} of ${project.budget_usd:.2f} budget")
 
 
 def run_dashboard_cmd(host: str = "127.0.0.1", port: int = 8000, open_browser: bool = True) -> None:
@@ -412,6 +425,17 @@ def main() -> None:
     )
     dream_parser.add_argument("idea", help="Raw description of the app you want to build")
     dream_parser.add_argument("--output-dir", default=".", help="Directory where project will be saved")
+    dream_parser.add_argument(
+        "--no-run-tests",
+        action="store_true",
+        help="Do not execute the generated pytest suite (QA falls back to its self reported verdict)",
+    )
+    dream_parser.add_argument(
+        "--max-budget-usd", type=float, default=None, help="Spend cap for the whole squad run (default 1.00)"
+    )
+    dream_parser.add_argument(
+        "--test-timeout", type=float, default=None, help="Seconds allowed for one generated test run (default 120)"
+    )
 
     # dashboard / ui
     dash_parser = subparsers.add_parser(
@@ -468,7 +492,13 @@ def main() -> None:
     elif args.command == "doctor":
         sys.exit(run_doctor_cmd())
     elif args.command == "dream":
-        dream_cmd(args.idea, Path(args.output_dir))
+        dream_cmd(
+            args.idea,
+            Path(args.output_dir),
+            run_tests=not args.no_run_tests,
+            max_budget_usd=args.max_budget_usd,
+            test_timeout_s=args.test_timeout,
+        )
     elif args.command in ("dashboard", "ui"):
         run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)
     elif args.command == "audit":

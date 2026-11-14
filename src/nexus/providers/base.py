@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
@@ -34,8 +35,25 @@ class ModelResponse:
         return f"<ModelResponse model={self.model} cost=${self.cost_usd:.6f}>"
 
 
+@dataclass(frozen=True)
+class ProviderUsage:
+    """Tokens and cost of one model call (used for spend caps)."""
+
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    model: str
+
+
 class BaseModelProvider(ABC):
-    """Abstract model provider interface for Nexus Agents."""
+    """Abstract model provider interface for Nexus Agents.
+
+    ``generate`` and ``converse`` report usage on their ``ModelResponse``. ``structured``
+    returns the parsed model only, so providers that can report its usage set
+    ``last_usage`` during the call; spend caps (``BudgetedProvider``) read it.
+    """
+
+    last_usage: ProviderUsage | None = None
 
     @property
     @abstractmethod

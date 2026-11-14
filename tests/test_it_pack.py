@@ -77,7 +77,7 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
         terraform_main_tf='resource "google_cloud_run_service" "api" {}',
         terraform_variables_tf='variable "project_id" {}',
         docker_compose_yml="version: '3.8'\nservices:\n  db:\n    image: postgres:16",
-        ci_cd_workflow_yml="name: Deploy\non: [push]",
+        deploy_script_sh="#!/usr/bin/env bash\necho deploy",
     )
     mock_qa = QaSpecification(
         test_suite_code="def test_health(): assert True",
@@ -123,3 +123,6 @@ def test_it_team_build_from_idea(tmp_path: Path) -> None:
     assert (app_path / "backend" / "tests" / "test_api.py").exists()
     assert (app_path / "infra" / "terraform" / "main.tf").exists()
     assert (app_path / "docker-compose.yml").exists()
+    assert (app_path / "backend" / "Dockerfile").exists()
+    assert (app_path / "scripts" / "deploy.sh").exists()
+    assert not (app_path / ".github").exists()
