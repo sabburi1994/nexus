@@ -266,7 +266,7 @@ pre-commit run --all-files
 `.github/workflows/release.yml` publishes to PyPI and npm with OIDC trusted publishing (no long lived tokens). GitHub Actions is currently disabled for this repository, so nothing publishes automatically.
 
 ### Showcase deployment
-The `nexus.abburi.info` showcase runs in its own Google Cloud project with a dedicated runtime service account and Artifact Registry repository. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](infra/terraform/modules/README.md).
+The `nexus.abburi.info` showcase runs on Cloud Run with its own runtime service account (no project roles), build service account and Artifact Registry repository. The project is a Terraform variable: a dedicated project is preferred, and hosting it in an existing project is supported because every grant is scoped to the showcase's own resources. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](infra/terraform/modules/README.md).
 
 ---
 

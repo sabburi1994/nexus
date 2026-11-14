@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Build the Nexus showcase image and roll it out with Terraform, in its own dedicated project.
+# Build the Nexus showcase image and roll it out with Terraform, in a dedicated or an existing project.
 #
 # Terraform is the only path for infrastructure. This script builds the framework wheel, builds and
 # pushes the image with Cloud Build (as the build service account) tagged with the git SHA, then runs
 # terraform apply in infra/terraform with that tag. First time set up is described in ROLLOUT.md.
 #
 # Usage: ./deploy.sh <project-id> [domain-name]
-# Optional environment: REGION, SERVICE, REPOSITORY, TAG, AUTO_APPROVE=1
+# Optional environment: REGION, SERVICE, REPOSITORY, TAG, AUTO_APPROVE=1,
+#   SHARED_PROJECT=1 (required when the project already runs other Cloud Run services)
 set -euo pipefail
 
 if [[ $# -lt 1 || -z "${1:-}" ]]; then
@@ -28,10 +29,11 @@ BACKEND_DIR="$SCRIPT_DIR/backend"
 WHEELS_DIR="$BACKEND_DIR/wheels"
 TF_DIR="$SCRIPT_DIR/infra/terraform"
 
-# Guard: the showcase must live alone in its project. Refuse if other Cloud Run services exist there.
+# Guard against deploying into the wrong project by accident: an existing project that runs other
+# Cloud Run services is supported, but only with SHARED_PROJECT=1.
 OTHERS="$(gcloud run services list --project "$PROJECT_ID" --region "$REGION" --format 'value(metadata.name)' 2>/dev/null | grep -vx "$SERVICE" || true)"
-if [[ -n "$OTHERS" ]]; then
-    echo "Project $PROJECT_ID already runs other Cloud Run services: $OTHERS. Use a dedicated project." >&2
+if [[ -n "$OTHERS" && "${SHARED_PROJECT:-0}" != "1" ]]; then
+    echo "Project $PROJECT_ID also runs: $OTHERS. Set SHARED_PROJECT=1 if hosting the showcase there is intended." >&2
     exit 1
 fi
 
@@ -55,6 +57,7 @@ gcloud builds submit "$BACKEND_DIR" \
     --region "$REGION" \
     --config "$BACKEND_DIR/cloudbuild.yaml" \
     --substitutions "_IMAGE=$IMAGE" \
+    --gcs-source-staging-dir "gs://${PROJECT_ID}-${SERVICE}-build-src/source" \
     --service-account "projects/$PROJECT_ID/serviceAccounts/$BUILD_SA"
 
 echo "==> terraform apply (image tag $TAG)"

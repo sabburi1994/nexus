@@ -1,6 +1,6 @@
 variable "project_id" {
   type        = string
-  description = "Dedicated Google Cloud project for the Nexus showcase. Must not be shared with any other app; there is deliberately no default."
+  description = "Google Cloud project that hosts the showcase: a dedicated project (preferred) or an existing one. There is deliberately no default."
 
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))

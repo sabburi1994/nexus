@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Build the Nexus showcase image and roll it out with Terraform, in its own dedicated project.
+  Build the Nexus showcase image and roll it out with Terraform, in a dedicated or an existing project.
 
 .DESCRIPTION
   Terraform is the only path for infrastructure. This script:
@@ -11,6 +11,9 @@
 
 .EXAMPLE
   ./deploy.ps1 -ProjectId nexus-showcase-123456 -DomainName nexus.example.com
+
+.EXAMPLE
+  ./deploy.ps1 -ProjectId existing-app-project -SharedProject   # host project already runs other services
 #>
 param(
     [Parameter(Mandatory = $true)][string]$ProjectId,
@@ -19,7 +22,8 @@ param(
     [string]$Repository = "nexus-showcase",
     [string]$DomainName = "",
     [string]$Tag = "",
-    [switch]$AutoApprove
+    [switch]$AutoApprove,
+    [switch]$SharedProject
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,13 +46,14 @@ $backendDir = Join-Path $PSScriptRoot "backend"
 $wheelsDir = Join-Path $backendDir "wheels"
 $tfDir = Join-Path $PSScriptRoot "infra\terraform"
 
-# Guard: the showcase must live alone in its project. Refuse if other Cloud Run services exist there.
+# Guard against deploying into the wrong project by accident: an existing project that runs other
+# Cloud Run services is supported, but only when -SharedProject says so explicitly.
 $ErrorActionPreference = "Continue"
 $existing = @(gcloud run services list --project $ProjectId --region $Region --format "value(metadata.name)" 2>$null |
     Where-Object { $_ -is [string] -and $_ -and $_ -ne $Service })
 $ErrorActionPreference = "Stop"
-if ($existing.Count -gt 0) {
-    throw "Project $ProjectId already runs other Cloud Run services ($($existing -join ', ')). Use a dedicated project."
+if ($existing.Count -gt 0 -and -not $SharedProject) {
+    throw "Project $ProjectId also runs: $($existing -join ', '). Pass -SharedProject if hosting the showcase there is intended."
 }
 
 if (-not $Tag) {
@@ -70,6 +75,7 @@ Invoke-Checked "Cloud Build" {
         --region $Region `
         --config (Join-Path $backendDir "cloudbuild.yaml") `
         --substitutions "_IMAGE=$image" `
+        --gcs-source-staging-dir "gs://$ProjectId-$Service-build-src/source" `
         --service-account "projects/$ProjectId/serviceAccounts/$buildSa"
 }
 

@@ -18,10 +18,12 @@ flowchart LR
 - **`nexus-framework`**: `create_nexus_app` factory, `GeminiClient`, and `NexusEntity` persistence
 
 ## Infrastructure
-- **Project**: a dedicated Google Cloud project that hosts nothing else (`project_id` has no default).
+- **Project**: `project_id` (no default). A dedicated project is preferred; an existing project is
+  supported, since every grant is scoped to the showcase's own service accounts, repository and bucket.
 - **Terraform**: `apps/showcase/infra/terraform`, using `infra/terraform/modules/nexus_app` and `nexus_cloud_run`.
 - **IAM**: runtime account `nexus-showcase-run` with no project roles (no server side model calls);
-  build account `nexus-showcase-build` may push only to the app's own Artifact Registry repository.
+  build account `nexus-showcase-build` may push only to the app's own Artifact Registry repository and
+  read only its own source staging bucket.
 - **Cloud Run**: `europe-west1`, min 0, max 2, 512Mi, CPU only during requests, non-root container.
 - **Abuse controls**: per IP rate limits on scan, simulate, brownfield and download routes; scan
   reports are visible only to the visitor who created them; credentials are redacted from logs.
