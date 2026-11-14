@@ -66,6 +66,11 @@ def service_slug(app_name: str) -> str:
     return slug[:_SLUG_MAX].rstrip("-")
 
 
+def python_package_name(app_name: str) -> str:
+    """Importable Python package name for an app (the service slug with underscores)."""
+    return service_slug(app_name).replace("-", "_")
+
+
 def runtime_account_id(app_name: str) -> str:
     """Runtime service account id: 6 to 30 characters, starts with a letter."""
     return f"{service_slug(app_name)[:22].rstrip('-')}-run-sa"
@@ -86,8 +91,12 @@ def secret_id_for(app_name: str, env_name: str) -> str:
     return f"{service_slug(app_name)}-{env_name.lower().replace('_', '-')}"
 
 
-def render_backend_pyproject(app_name: str, title: str) -> str:
-    """``backend/pyproject.toml`` for a generated app."""
+def render_backend_pyproject(app_name: str, title: str, wheel_package: str | None = None) -> str:
+    """``backend/pyproject.toml`` for a generated app.
+
+    ``wheel_package`` (a package under ``src/``) adds a hatchling build backend, so the project
+    can also be installed with ``pip install -e .``.
+    """
     deps = "\n".join(f'    "{d}",' for d in backend_runtime_dependencies())
     dev = "\n".join(f'    "{d}",' for d in backend_dev_dependencies())
     safe_title = title.replace("\\", "").replace('"', "'")
@@ -109,6 +118,17 @@ dev = [
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+""" + (_hatch_build_section(wheel_package) if wheel_package else "")
+
+
+def _hatch_build_section(package: str) -> str:
+    return f"""
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{package}"]
 """
 
 
@@ -117,8 +137,12 @@ def render_backend_requirements() -> str:
     return "\n".join(backend_runtime_dependencies()) + "\n"
 
 
-def render_dockerfile() -> str:
-    """``backend/Dockerfile``: slim Python image, non root runtime user, port 8080."""
+def render_dockerfile(app_module: str = "main:app") -> str:
+    """``backend/Dockerfile``: slim Python image, non root runtime user, port 8080.
+
+    ``app_module`` is the uvicorn target, resolved against ``src/`` (``main:app`` for
+    ``src/main.py``, ``my_app.main:app`` for ``src/my_app/main.py``).
+    """
     return f"""FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \\
@@ -141,7 +165,7 @@ USER 10001:10001
 
 EXPOSE {CONTAINER_PORT}
 
-CMD ["uvicorn", "main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "{CONTAINER_PORT}"]
+CMD ["uvicorn", "{app_module}", "--app-dir", "src", "--host", "0.0.0.0", "--port", "{CONTAINER_PORT}"]
 """
 
 
