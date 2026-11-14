@@ -1,13 +1,19 @@
 """Pytest suite for Nexus Showcase & Documentation Portal API."""
 
 import io
+import json
 import zipfile
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 
 client = TestClient(app)
+
+_MANIFEST = json.loads(
+    (Path(__file__).resolve().parents[1] / "src" / "verification_manifest.json").read_text(encoding="utf-8")
+)
 
 
 def test_health_and_framework_status() -> None:
@@ -22,7 +28,7 @@ def test_health_and_framework_status() -> None:
     assert fh.status_code == 200
     info = fh.json()
     assert info["website"] == "https://nexus.abburi.info"
-    assert info["tests_passed"] == 61
+    assert info["tests_passed"] == _MANIFEST["suites"]["core_pytest"]["passed"]
     assert info["pypi_live_version"] == "0.1.1"
     assert info["pypi_staged_version"] == "0.3.2"
     assert "github.com/sabburi1994/nexus/actions" in info["ci_status_url"]
