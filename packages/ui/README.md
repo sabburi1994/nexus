@@ -1,77 +1,64 @@
 # @nexus-agent-framework/ui
 
-> **Shared React component library and institutional paper-and-ink design system for AI agent observability and Stage 1–3 workflows.**
+The shared React kit for the Nexus platform apps (React 18). Accessible, mobile first at 390 px, themed
+by `@nexus-agent-framework/tokens`, styled with one plain CSS file: no runtime scripts or fonts from a
+CDN, no inline style attributes, so it works under each app's strict Content Security Policy.
 
-- **Live Reference Implementation**: [nexus.abburi.info](https://nexus.abburi.info)
-- **Interactive Simulator & Docs**: [nexus.abburi.info/#simulator](https://nexus.abburi.info/#simulator)
+The gallery at `nexus.abburi.info/#gallery` shows every component in every app theme, light and dark.
 
-[![npm version](https://img.shields.io/npm/v/@nexus-agent-framework/ui.svg)](https://www.npmjs.com/package/@nexus-agent-framework/ui)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+## Install
 
-## Overview
-
-`@nexus-agent-framework/ui` powers the Nexus Showcase Portal (`https://nexus.abburi.info`) and generated Nexus web applications with an institutional editorial palette (`paper` default theme, optional `dark` mode):
-- **`NexusHeader`**: Sticky editorial masthead with workspace navigation items, live model badge, and budget spend tracker.
-- **`StatCard`**: High-contrast KPI card with tabular numerals and delta badges.
-- **`AiBadge`**: Active model status and thinking level chip.
-- **`TraceViewer`**: Numbered vertical agent execution timeline displaying tokens, USD cost, and artifact previews.
-- **`SecurityShieldBadge`**: Real-time prompt injection & secret scrubbing status pill.
-- **`HealingLoopPanel`**: Stage 1 visualizer for closed-loop QA → patch → retest iterations.
-- **`BlastRadiusCard`**: Stage 2 AST dependency impact, affected FastAPI routes, and regression test view.
-- **`RoiScorecard`**: Stage 3 DORA velocity and financial return scorecard.
-- **`CommandBlock`**: Ruled terminal/code snippet card with copy-to-clipboard support.
-
-## Installation
+Distributed as tarballs at a git tag (see `releases/README.md` in the repository):
 
 ```bash
-npm install @nexus-agent-framework/ui
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-ui-1.0.0.tgz
 ```
-
-### Peer Dependencies
-Ensure `react` and `react-dom` (`>=18.0.0`) and `tailwindcss` (`>=3.0.0`) are installed in your host project.
-
-## Quickstart
 
 ```tsx
-import React from "react";
-import {
-  NexusHeader,
-  StatCard,
-  AiBadge,
-  TraceViewer,
-  SecurityShieldBadge,
-  HealingLoopPanel,
-  BlastRadiusCard,
-  RoiScorecard,
-  CommandBlock,
-} from "@nexus-agent-framework/ui";
-
-export function AppDashboard() {
-  return (
-    <div className="min-h-screen bg-[#f5f1e8] text-[#172a2e]">
-      <NexusHeader
-        appName="WatchHub"
-        tagline="Verified European luxury watch index"
-        activeModel="Gemini 3.8 Flash"
-        budgetSpentUsd={0.0042}
-        budgetCapUsd={1.0}
-      />
-      <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <div className="flex flex-wrap gap-3">
-          <SecurityShieldBadge injectionsBlocked={3} piiScrubbed={12} />
-          <AiBadge model="Gemini 3.8 Flash" status="active" thinkingLevel="medium" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <StatCard title="Active Listings" value="1,420" trend="up" trendValue="+14%" />
-          <StatCard title="Scrape Latency" value="184ms" trend="down" trendValue="-22ms" />
-          <StatCard title="Inference Cost" value="$0.0031" subtitle="98% under budget" accent="emerald" />
-        </div>
-      </main>
-    </div>
-  );
-}
+import "@nexus-agent-framework/tokens/themes/finhub.css"; // or tokens.css for all themes
+import "@nexus-agent-framework/ui/styles.css";
+import { AppShell, Button, Card, Stat, Table, ToastProvider } from "@nexus-agent-framework/ui";
 ```
 
-## License
+```html
+<html data-nx-theme="finhub">
+```
 
-Licensed under the Apache 2.0 License. Live platform & documentation at [nexus.abburi.info](https://nexus.abburi.info). Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).
+## Components
+
+| Component | Notes |
+| :--- | :--- |
+| `Button` | `primary`, `secondary`, `quiet`, `danger`; 40 px (`size="sm"` 32 px); `loading` sets aria-busy |
+| `IconButton` | `label` is required and becomes the accessible name |
+| `Input`, `Select`, `Textarea` | visible label, `hint`, `error` (aria-invalid and aria-describedby); `numeric` inputs right align |
+| `Checkbox`, `RadioGroup`, `Switch` | native inputs; radios in a fieldset with a legend; the switch has role="switch" |
+| `Card` | hairline border, faint shadow; optional topic `accent`, `actions`, `footer`, `flush` body for tables |
+| `Table` | typed columns, right aligned tabular numbers, sticky header, focusable scroll region, skeleton loading, empty row, keyboard row activation |
+| `Sheet` | side panel on wide screens, bottom sheet on phones (native dialog) |
+| `Dialog` | modal decision; Escape and backdrop close; focus returns to the trigger |
+| `Tabs` | WAI-ARIA tabs: arrows, Home, End; one tab in the tab order |
+| `AppShell` | side rail from 768 px, bottom bar of up to five spaces on phones, skip link, aria-current |
+| `ToastProvider`, `useToast` | polite and assertive live regions; pauses on hover and focus; danger stays until dismissed |
+| `SkeletonRows` | placeholder rows instead of spinners |
+| `EmptyState`, `ErrorState` | the error state is announced and offers a retry |
+| `Badge` | status and topic tones; keep the text meaningful (colour is never the only signal) |
+| `Stat` | one number with its label, tabular figures |
+| `LineChart` | thin SVG line, optional comparison series and a labelled floor line, screen reader data table |
+
+## Showcase components
+
+`AiBadge`, `TraceViewer`, `NexusHeader`, `HealingLoopPanel`, `BlastRadiusCard`, `RoiScorecard`,
+`CommandBlock` and `StatCard` (the Nexus showcase's own look) moved to a separate entry point so apps do
+not pull them in:
+
+```tsx
+import { TraceViewer } from "@nexus-agent-framework/ui/showcase";
+```
+
+They still need Tailwind in the consuming app, as before.
+
+## Rules the kit follows
+
+No gradients, glows, glassmorphism or backdrop blur, sparkle icons or emoji. Visible focus on every
+control. Reduced motion turns animations and transitions off. Tests: Vitest and Testing Library for
+behaviour and keyboard, axe-core (offline) for accessibility, and policy checks for the rules above.

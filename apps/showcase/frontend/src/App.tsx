@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { NexusHeader, type NexusNavItem } from "@nexus-agent-framework/ui";
+import { NexusHeader, type NexusNavItem } from "@nexus-agent-framework/ui/showcase";
 import { OverviewSection } from "./components/OverviewSection";
 import { SimulatorSection } from "./components/SimulatorSection";
 import { BrownfieldSection } from "./components/BrownfieldSection";

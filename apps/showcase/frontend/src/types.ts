@@ -7,7 +7,7 @@ import type {
   SelfHealingReportContract,
   SymbolDefinitionContract,
 } from "@nexus-agent-framework/contracts";
-import type { TraceStep } from "@nexus-agent-framework/ui";
+import type { TraceStep } from "@nexus-agent-framework/ui/showcase";
 
 export type WorkspaceTab = "overview" | "simulator" | "brownfield" | "telemetry" | "docs" | "packages";
 export type DocTopic = "quickstart" | "cli" | "mcp" | "orchestrators" | "python-sdk" | "packages";

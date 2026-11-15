@@ -1,6 +1,6 @@
 import React from "react";
 import { BookOpen, Cpu, Link2, Terminal, Wrench } from "lucide-react";
-import { CommandBlock } from "@nexus-agent-framework/ui";
+import { CommandBlock } from "@nexus-agent-framework/ui/showcase";
 import type { DocTopic } from "../types";
 
 const TOPICS: Array<{ id: DocTopic; title: string; subtitle: string }> = [
@@ -331,7 +331,7 @@ roi = RoiCalculator(hourly_rate=95.0).calculate_from_codebase("./repo")`}
               language="tsx"
               code={`import type { BlastRadiusContract, EnterpriseRoiContract } from "@nexus-agent-framework/contracts";
 import { scrubSensitiveData, generateCorrelationId } from "@nexus-agent-framework/middleware";
-import { NexusHeader, BlastRadiusCard, RoiScorecard, HealingLoopPanel } from "@nexus-agent-framework/ui";
+import { NexusHeader, BlastRadiusCard, RoiScorecard, HealingLoopPanel } from "@nexus-agent-framework/ui/showcase";
 
 const safePrompt = scrubSensitiveData(rawInput);
 const cid = generateCorrelationId();`}

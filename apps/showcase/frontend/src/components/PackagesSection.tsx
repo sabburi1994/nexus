@@ -1,7 +1,7 @@
 import React from "react";
 import { ExternalLink, Package } from "lucide-react";
 import { DEFAULT_NEXUS_SCRAPING_POLICY } from "@nexus-agent-framework/scraper";
-import { CommandBlock } from "@nexus-agent-framework/ui";
+import { CommandBlock } from "@nexus-agent-framework/ui/showcase";
 import type { FrameworkHealth } from "../types";
 
 interface Props {

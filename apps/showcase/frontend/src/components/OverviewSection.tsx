@@ -12,7 +12,7 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import { AiBadge, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui";
+import { AiBadge, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui/showcase";
 import type { DocTopic, FrameworkHealth, WorkspaceTab } from "../types";
 
 interface SpecialistInfo {

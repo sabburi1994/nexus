@@ -15,7 +15,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "build:packages": "tsc -p packages/contracts && tsc -p packages/middleware && tsc -p packages/scraper && tsc -p packages/ui",
+    "build:packages": "tsc -p packages/contracts && tsc -p packages/middleware && tsc -p packages/scraper && npm run build -w @nexus-agent-framework/tokens -w @nexus-agent-framework/ui",
+    "release:ui": "node scripts/release-ui.mjs",
     "test": "turbo run test",
     "lint": "turbo run lint"
   },

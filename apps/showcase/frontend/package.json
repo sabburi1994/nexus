@@ -6,7 +6,9 @@
   "description": "Official documentation, interactive Stage 1-3 simulator, AST analyzer, and telemetry workbench for Nexus Agent Framework (https://nexus.abburi.info)",
   "homepage": "https://nexus.abburi.info",
   "scripts": {
+    "predev": "npm run build -w @nexus-agent-framework/tokens -w @nexus-agent-framework/ui",
     "dev": "vite",
+    "prebuild": "npm run build -w @nexus-agent-framework/tokens -w @nexus-agent-framework/ui",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview"
@@ -15,6 +17,7 @@
     "@nexus-agent-framework/contracts": "*",
     "@nexus-agent-framework/middleware": "*",
     "@nexus-agent-framework/scraper": "*",
+    "@nexus-agent-framework/tokens": "*",
     "@nexus-agent-framework/ui": "*",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",

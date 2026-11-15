@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AlertOctagon, CheckCircle2, FileCode2, GitFork, RefreshCw, ShieldAlert, Wand2 } from "lucide-react";
-import { BlastRadiusCard, CommandBlock, StatCard } from "@nexus-agent-framework/ui";
+import { BlastRadiusCard, CommandBlock, StatCard } from "@nexus-agent-framework/ui/showcase";
 import { AstDependencyGraph } from "./AstDependencyGraph";
 import type { BrownfieldApplyPreviewResponse, BrownfieldInspectResponse } from "../types";
 

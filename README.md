@@ -74,7 +74,8 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 | **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
 | **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Security headers, best effort credential sanitizer, correlation tracing |
 | **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
-| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `0.2.0` | Institutional paper React design system (`NexusHeader`, `StatCard`, `TraceViewer`, `HealingLoopPanel`, `BlastRadiusCard`, `RoiScorecard`, `CommandBlock`) |
+| **[`@nexus-agent-framework/ui`](packages/ui/README.md)** | tarball at tag `ui-v1.0.0` ([`releases/`](releases/README.md)); npm still serves `0.2.0` | `1.0.0`: shared React kit for the platform apps (Button, form fields, Card, Table, Sheet, Dialog, Tabs, AppShell, Toast, SkeletonRows, EmptyState, ErrorState, Badge, Stat, LineChart); the showcase components moved to `@nexus-agent-framework/ui/showcase` |
+| **[`@nexus-agent-framework/tokens`](packages/tokens/README.md)** | tarball at tag `ui-v1.0.0` ([`releases/`](releases/README.md)) | `1.0.0`: design tokens as CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested |
 
 ---
 

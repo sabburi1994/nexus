@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ShieldCheck, Sliders, Terminal } from "lucide-react";
 import { NEXUS_SECURITY_HEADERS, scrubSensitiveData } from "@nexus-agent-framework/middleware";
-import { CommandBlock, RoiScorecard, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui";
+import { CommandBlock, RoiScorecard, SecurityShieldBadge, StatCard } from "@nexus-agent-framework/ui/showcase";
 import type { GuardrailInspectResponse, RoiApiResponse } from "../types";
 
 interface Props {
