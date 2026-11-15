@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import logging
+import uuid
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -12,6 +14,10 @@ from fastapi.responses import JSONResponse
 from nexus import __version__
 from nexus.api.middleware import NexusTelemetryMiddleware
 from nexus.api.security_headers import NexusSecurityHeadersMiddleware, SecurityHeadersConfig
+
+logger = logging.getLogger("nexus.api")
+
+INTERNAL_ERROR_MESSAGE = "An internal error occurred. Quote the request id when reporting it."
 
 
 class InMemoryDbSession:
@@ -144,16 +150,28 @@ def create_nexus_app(
             return {"status": "ready"}
 
     # Standard global exception handler
+    # Unhandled errors: the client gets a generic message and the request id, never the exception
+    # text (which can carry SQL, file paths, secrets or upstream responses). The full exception is
+    # logged server side under the same request id.
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        req_id = getattr(request.state, "request_id", "unknown")
+        req_id = str(getattr(request.state, "request_id", "") or f"nex-{uuid.uuid4().hex[:12]}")
+        logger.error(
+            "Unhandled %s on %s %s (request_id=%s)",
+            type(exc).__name__,
+            request.method,
+            request.url.path,
+            req_id,
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
         return JSONResponse(
             status_code=500,
             content={
                 "error": "internal_server_error",
-                "message": str(exc),
+                "message": INTERNAL_ERROR_MESSAGE,
                 "request_id": req_id,
             },
+            headers={"X-Request-ID": req_id},
         )
 
     return app
