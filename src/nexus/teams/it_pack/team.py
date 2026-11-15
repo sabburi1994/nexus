@@ -17,6 +17,7 @@ from nexus.qa import runner as qa_runner
 from nexus.qa.runner import DEFAULT_TEST_TIMEOUT_S, TestRunResult
 from nexus.teams.it_pack import platform_templates as tpl
 from nexus.teams.it_pack.ba import BusinessAnalystAgent, ProductProposal
+from nexus.teams.it_pack.code_normalizer import normalize_python, normalize_source
 from nexus.teams.it_pack.data_architect import DataArchitectAgent, DataArchitecture
 from nexus.teams.it_pack.designer import UiDesignerAgent, UiSpecification
 from nexus.teams.it_pack.devops import DevopsEngineerAgent, DevopsSpecification
@@ -358,34 +359,8 @@ class NexusITTeam:
 
     @staticmethod
     def _sanitize_python(code: str) -> str:
-        """Ensure Python code is syntactically valid and repair common LLM syntax/MRO patterns."""
-        import ast
-        import re
-
-        # Normalize redundant Base in MRO: class Foo(Base, NexusEntity) -> class Foo(NexusEntity)
-        code = re.sub(
-            r"class\s+([A-Za-z0-9_]+)\s*\(\s*Base\s*,\s*NexusEntity\s*\):",
-            r"class \1(NexusEntity):",
-            code,
-        )
-
-        try:
-            ast.parse(code)
-            return code
-        except SyntaxError:
-
-            def fix_fstring(m: re.Match[str]) -> str:
-                inner = m.group(1)
-                if r"\"" in inner or r"\'" in inner or "{" in inner:
-                    return f'"{inner}"'
-                return m.group(0)
-
-            sanitized = re.sub(r'f"([^"]+)"', fix_fstring, code)
-            try:
-                ast.parse(sanitized)
-                return sanitized
-            except SyntaxError:
-                return code
+        """Clean a model supplied Python file (fences, prose, escapes, imports); see ``code_normalizer``."""
+        return normalize_python(code)
 
     def _write_to_disk(
         self,
@@ -428,8 +403,8 @@ class NexusITTeam:
         (docs_dir / "preview_mockup.html").write_text(proposal.wireframe_preview_html, encoding="utf-8")
 
         # 2. Frontend
-        (frontend_dir / "App.tsx").write_text(fullstack.frontend_app_tsx, encoding="utf-8")
-        (frontend_dir / "api.ts").write_text(fullstack.frontend_api_client_ts, encoding="utf-8")
+        (frontend_dir / "App.tsx").write_text(normalize_source(fullstack.frontend_app_tsx), encoding="utf-8")
+        (frontend_dir / "api.ts").write_text(normalize_source(fullstack.frontend_api_client_ts), encoding="utf-8")
         (app_dir / "frontend" / "package.json").write_text(
             tpl.render_frontend_package_json(proposal.app_name), encoding="utf-8"
         )
@@ -447,16 +422,20 @@ class NexusITTeam:
 
         # 5. Container, Infrastructure as Code (Terraform) and deploy script
         backend_root = app_dir / "backend"
-        (backend_root / "Dockerfile").write_text(devops.dockerfile or tpl.render_dockerfile(), encoding="utf-8")
+        (backend_root / "Dockerfile").write_text(
+            normalize_source(devops.dockerfile) or tpl.render_dockerfile(), encoding="utf-8"
+        )
         (backend_root / ".dockerignore").write_text(tpl.render_dockerignore(), encoding="utf-8")
         (backend_root / "requirements.txt").write_text(tpl.render_backend_requirements(), encoding="utf-8")
-        (infra_dir / "main.tf").write_text(devops.terraform_main_tf, encoding="utf-8")
-        (infra_dir / "variables.tf").write_text(devops.terraform_variables_tf, encoding="utf-8")
-        (app_dir / "docker-compose.yml").write_text(devops.docker_compose_yml, encoding="utf-8")
+        (infra_dir / "main.tf").write_text(normalize_source(devops.terraform_main_tf), encoding="utf-8")
+        (infra_dir / "variables.tf").write_text(normalize_source(devops.terraform_variables_tf), encoding="utf-8")
+        (app_dir / "docker-compose.yml").write_text(normalize_source(devops.docker_compose_yml), encoding="utf-8")
         deploy_script = scripts_dir / "deploy.sh"
         # newline="\n": the script keeps LF line endings even when generated on Windows.
         deploy_script.write_text(
-            devops.deploy_script_sh or tpl.render_deploy_script(proposal.app_name), encoding="utf-8", newline="\n"
+            normalize_source(devops.deploy_script_sh) or tpl.render_deploy_script(proposal.app_name),
+            encoding="utf-8",
+            newline="\n",
         )
         deploy_script.chmod(0o755)
 
