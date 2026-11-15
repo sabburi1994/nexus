@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexus-agent-framework"
-version = "0.3.5"
+version = "0.4.0"
 description = "Autonomous Agentic Software Engineering Framework & Virtual IT Squad powered by Google Gemini and MCP — https://nexus.abburi.info"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -61,12 +61,18 @@ Issues = "https://github.com/sabburi1994/nexus/issues"
 Changelog = "https://github.com/sabburi1994/nexus/releases"
 
 [project.optional-dependencies]
+# Verify Google signed OIDC ID tokens (nexus.api.oidc): Cloud Scheduler and service account callers.
+oidc = [
+    "PyJWT[crypto]>=2.8.0",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-mock>=3.14.0",
     "mypy>=1.10.0",
     "ruff>=0.4.0",
+    "PyJWT[crypto]>=2.8.0",
+    "aiosqlite>=0.20.0",
 ]
 
 [project.scripts]
