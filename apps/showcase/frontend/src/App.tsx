@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { NexusHeader, type NexusNavItem } from "@nexus-agent-framework/ui/showcase";
 import { OverviewSection } from "./components/OverviewSection";
 import { SimulatorSection } from "./components/SimulatorSection";
@@ -7,6 +7,9 @@ import { TelemetrySection } from "./components/TelemetrySection";
 import { DocsSection } from "./components/DocsSection";
 import { PackagesSection } from "./components/PackagesSection";
 import type { DocTopic, FrameworkHealth, SimulationResponse, WorkspaceTab } from "./types";
+
+// The design system gallery (and the kit CSS) loads only when that tab is opened.
+const GallerySection = lazy(() => import("./components/GallerySection"));
 
 const VALID_DOC_TOPICS: readonly DocTopic[] = [
   "quickstart",
@@ -27,6 +30,7 @@ function parseHashRoute(hash: string): { tab: WorkspaceTab; docTopic: DocTopic }
   if (head === "telemetry" || head === "roi" || head === "guardrails") return { tab: "telemetry", docTopic };
   if (head === "docs" || head === "documentation") return { tab: "docs", docTopic };
   if (head === "packages" || head === "registry") return { tab: "packages", docTopic };
+  if (head === "gallery" || head === "design-system" || head === "ui") return { tab: "gallery", docTopic };
   return { tab: "overview", docTopic };
 }
 
@@ -48,7 +52,9 @@ export default function App() {
       setDocTopic(nextDocTopic);
     }
     const targetHash = tab === "docs" && (nextDocTopic || docTopic !== "quickstart") ? `#docs/${nextDocTopic ?? docTopic}` : `#${tab}`;
-    if (window.location.hash !== targetHash) {
+    // Keep the gallery's theme and mode when the gallery tab is reselected.
+    const keepGalleryRoute = tab === "gallery" && window.location.hash.startsWith("#gallery");
+    if (!keepGalleryRoute && window.location.hash !== targetHash) {
       window.location.hash = targetHash;
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -98,6 +104,7 @@ export default function App() {
     { id: "telemetry", label: "ROI & Guardrails", href: "#telemetry", active: activeTab === "telemetry" },
     { id: "docs", label: "Documentation", href: "#docs", active: activeTab === "docs" },
     { id: "packages", label: "Packages", href: "#packages", active: activeTab === "packages" },
+    { id: "gallery", label: "Design System", href: "#gallery", active: activeTab === "gallery" },
   ];
 
   return (
@@ -135,6 +142,11 @@ export default function App() {
         {activeTab === "telemetry" && <TelemetrySection onTelemetry={recordTelemetry} />}
         {activeTab === "docs" && <DocsSection activeTopic={docTopic} onSelectTopic={selectDocTopic} />}
         {activeTab === "packages" && <PackagesSection health={health} />}
+        {activeTab === "gallery" && (
+          <Suspense fallback={<p className="text-sm text-[#5c6a67]">Loading the design system gallery</p>}>
+            <GallerySection />
+          </Suspense>
+        )}
       </main>
 
       <footer className="border-t border-[#c9d1cf] bg-[#fffdf8]">
