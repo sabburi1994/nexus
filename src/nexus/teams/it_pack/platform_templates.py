@@ -22,7 +22,11 @@ from nexus import __version__
 FRAMEWORK_PACKAGE = "nexus-agent-framework"
 UI_PACKAGE = "@nexus-agent-framework/ui"
 CONTRACTS_PACKAGE = "@nexus-agent-framework/contracts"
-UI_VERSION_RANGE = "^0.2.0"
+# Generated apps install the UI package from the npm registry, so they pin the last version published
+# there. The 1.x kit in packages/ui is distributed as a tarball at a git tag (releases) and is
+# not on npm yet; generated apps keep the 0.2 showcase components until it is published.
+UI_PUBLISHED_VERSION = "0.2.0"
+UI_VERSION_RANGE = f"^{UI_PUBLISHED_VERSION}"
 CONTRACTS_VERSION_RANGE = "^1.0.3"
 
 MODULES_REPOSITORY = "git::https://github.com/sabburi1994/nexus.git//infra/terraform/modules"

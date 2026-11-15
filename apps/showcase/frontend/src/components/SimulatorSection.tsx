@@ -20,7 +20,7 @@ import {
   SecurityShieldBadge,
   StatCard,
   TraceViewer,
-} from "@nexus-agent-framework/ui";
+} from "@nexus-agent-framework/ui/showcase";
 import type { SimulationResponse } from "../types";
 
 const PRESET_PROMPTS = [

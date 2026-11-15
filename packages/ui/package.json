@@ -1,25 +1,42 @@
 {
   "name": "@nexus-agent-framework/ui",
-  "version": "0.2.0",
-  "description": "Shared React component library and institutional paper design system for AI agent observability, Stage 1-3 healing, blast radius, and ROI telemetry — https://nexus.abburi.info",
+  "version": "1.0.0",
+  "description": "Shared React component kit for the Nexus platform apps: accessible, mobile first, themed by @nexus-agent-framework/tokens, plain CSS that works under a strict CSP. The Nexus showcase components live in the ./showcase entry point.",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./showcase": {
+      "types": "./dist/showcase/index.d.ts",
+      "import": "./dist/showcase/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc -p tsconfig.build.json && node scripts/build-css.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src tests scripts",
+    "test": "vitest run"
   },
   "keywords": [
     "nexus",
     "ui",
     "react",
-    "tailwind",
-    "ai-agents",
-    "dashboard",
-    "observability",
-    "design-system"
+    "design-system",
+    "accessibility",
+    "components"
   ],
   "repository": {
     "type": "git",
@@ -34,7 +51,33 @@
     "access": "public"
   },
   "peerDependencies": {
+    "@nexus-agent-framework/tokens": "^1.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nexus-agent-framework/tokens": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@nexus-agent-framework/tokens": "^1.0.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.10",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "axe-core": "^4.14.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^31.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
   }
 }

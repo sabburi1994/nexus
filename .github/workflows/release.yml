@@ -97,14 +97,12 @@ jobs:
       - name: Install and build packages
         run: |
           npm ci
-          npx tsc -p packages/contracts
-          npx tsc -p packages/middleware
-          npx tsc -p packages/scraper
-          npx tsc -p packages/ui
+          npm run build -w @nexus-agent-framework/contracts -w @nexus-agent-framework/middleware -w @nexus-agent-framework/scraper
 
       - name: Publish packages whose version is not on npm yet
         run: |
-          for pkg in contracts middleware scraper ui; do
+          # tokens and ui 1.x are distributed as tarballs at ui-v* tags (releases/), not on npm for now.
+          for pkg in contracts middleware scraper; do
             name="$(node -p "require('./packages/$pkg/package.json').name")"
             version="$(node -p "require('./packages/$pkg/package.json').version")"
             if npm view "$name@$version" version >/dev/null 2>&1; then
