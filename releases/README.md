@@ -9,16 +9,16 @@ pushes the tag `ui-v<ui version>` on the merge commit.
 | `nexus-agent-framework-tokens-<version>.tgz` | `@nexus-agent-framework/tokens` (CSS variables, themes, Tailwind 3 and 4 presets) |
 | `nexus-agent-framework-ui-<version>.tgz` | `@nexus-agent-framework/ui` (React kit; needs the tokens package) |
 
-React apps (version 1.0.0, tag `ui-v1.0.0`):
+React apps (ui 1.0.1 with tokens 1.0.0, tag `ui-v1.0.1`):
 
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-ui-1.0.0.tgz
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-ui-1.0.1.tgz
 ```
 
 Tokens only (for example the Vue app):
 
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-tokens-1.0.0.tgz
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz
 ```
 
 npm records each URL with its integrity hash in `package-lock.json`, so installs are reproducible and

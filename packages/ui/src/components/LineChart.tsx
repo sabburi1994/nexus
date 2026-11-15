@@ -176,8 +176,11 @@ export function LineChart({
         ) : null}
       </figcaption>
       {dataTable ? (
-        <table id={descId} className="nx-visually-hidden">
-          <caption>{title}</caption>
+        // The clip goes on a wrapping div: a <table> cannot shrink to 1 px, so a visually hidden
+        // table still widens the page (428 px at a 390 px viewport before 1.0.1).
+        <div className="nx-visually-hidden nx-chart__data">
+          <table id={descId}>
+            <caption>{title}</caption>
           <thead>
             <tr>
               <th scope="col">Label</th>
@@ -194,7 +197,8 @@ export function LineChart({
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       ) : null}
     </figure>
   );

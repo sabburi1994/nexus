@@ -375,6 +375,8 @@
 
 /* Line chart */
 .nx-chart {
+  /* Containment: the visually hidden data table is positioned against the chart, never the page. */
+  position: relative;
   margin: 0;
   min-width: 0;
 }

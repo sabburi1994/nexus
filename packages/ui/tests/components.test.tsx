@@ -376,6 +376,19 @@ describe("LineChart", () => {
     expect(img.querySelector("polyline")?.getAttribute("points")?.split(" ")).toHaveLength(3);
   });
 
+  it("hides the data table inside a clipped div, never on the table itself (no page overflow)", () => {
+    render(<LineChart title="Balance" data={data} />);
+    const table = screen.getByRole("table", { name: "Balance" });
+    // A <table> cannot shrink to 1 px: the class on the table widened the page to 428 px at 390 px.
+    expect(table.classList.contains("nx-visually-hidden")).toBe(false);
+    const wrapper = table.parentElement;
+    expect(wrapper?.tagName).toBe("DIV");
+    expect(wrapper?.classList.contains("nx-visually-hidden")).toBe(true);
+    expect(wrapper?.closest("figure")?.classList.contains("nx-chart")).toBe(true);
+    // The table stays the chart's long description.
+    expect(screen.getByRole("img").getAttribute("aria-describedby")).toBe(table.id);
+  });
+
   it("puts the axis on round values that contain the data and the floor", () => {
     expect(niceRange([1515, 3420, 1000])).toEqual([0, 4000]);
     expect(niceRange([0.2, 0.9])).toEqual([0, 1]);

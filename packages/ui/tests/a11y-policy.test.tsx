@@ -138,6 +138,27 @@ describe("policy", () => {
     expect(container.ownerDocument.querySelectorAll("[style]")).toHaveLength(0);
   });
 
+  it("never puts the visually hidden clip on table layout elements (they cannot shrink to 1 px)", () => {
+    const { container } = render(<Everything />);
+    // A <caption> is taken out of the table layout when positioned, so a hidden caption is fine.
+    const offenders = container.ownerDocument.querySelectorAll(
+      "table.nx-visually-hidden, thead.nx-visually-hidden, tbody.nx-visually-hidden, tfoot.nx-visually-hidden, tr.nx-visually-hidden, th.nx-visually-hidden, td.nx-visually-hidden",
+    );
+    expect(offenders).toHaveLength(0);
+  });
+
+  it("keeps the clip rules and the chart containment in the stylesheet", () => {
+    const base = readFileSync(join(SRC, "styles", "base.css"), "utf8");
+    const start = base.indexOf(".nx-visually-hidden {");
+    const rule = base.slice(start, base.indexOf("}", start));
+    for (const decl of ["position: absolute", "width: 1px", "height: 1px", "overflow: hidden", "clip: rect(0, 0, 0, 0)", "white-space: nowrap"]) {
+      expect(rule, decl).toContain(decl);
+    }
+    const layout = readFileSync(join(SRC, "styles", "layout.css"), "utf8");
+    const chartStart = layout.indexOf(".nx-chart {");
+    expect(layout.slice(chartStart, layout.indexOf("}", chartStart))).toContain("position: relative");
+  });
+
   const files = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((d): string[] => (d.isDirectory() ? files(join(dir, d.name)) : [join(dir, d.name)]));
   const kitFiles = files(SRC).filter((f) => !f.includes(`${join("src", "showcase")}`));
