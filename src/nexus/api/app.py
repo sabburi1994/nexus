@@ -12,7 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from nexus import __version__
+from nexus.ai.spend import MonthlyBudgetExceeded, SpendLedgerUnavailable
 from nexus.api.middleware import NexusTelemetryMiddleware
+from nexus.api.ratelimit import RateLimitExceeded
 from nexus.api.security_headers import NexusSecurityHeadersMiddleware, SecurityHeadersConfig
 
 logger = logging.getLogger("nexus.api")
@@ -101,6 +103,9 @@ def create_nexus_app(
     include_health: bool = True,
     cors_allow_credentials: bool | None = None,
     security_headers: SecurityHeadersConfig | bool = False,
+    docs: bool = True,
+    health_path: str = "/health",
+    ready_path: str | None = "/ready",
 ) -> NexusApp:
     """Build and configure a production-ready FastAPI app.
 
@@ -112,13 +117,18 @@ def create_nexus_app(
     ``security_headers=True`` adds CSP, HSTS, nosniff, ``X-Frame-Options: DENY``, a same-origin
     referrer policy and a restrictive permissions policy (see ``SecurityHeadersConfig``); pass a
     ``SecurityHeadersConfig`` to tune the policy or the static asset cache rules.
+
+    ``docs=False`` removes ``/docs`` and ``/openapi.json`` (recommended for private apps).
+    ``health_path`` and ``ready_path`` keep an app's existing probe paths (``ready_path=None`` drops
+    the readiness route). See docs/ADOPTING.md for the error contract.
     """
     app = NexusApp(
         title=title,
         description=description,
         version=version,
-        docs_url="/docs",
+        docs_url="/docs" if docs else None,
         redoc_url=None,
+        openapi_url="/openapi.json" if docs else None,
     )
 
     # CORS: closed unless origins are configured explicitly.
@@ -134,7 +144,7 @@ def create_nexus_app(
 
     if include_health:
         # HEAD as well as GET: uptime checkers and load balancers often probe with HEAD.
-        @app.api_route("/health", methods=["GET", "HEAD"], tags=["system"])
+        @app.api_route(health_path, methods=["GET", "HEAD"], tags=["system"])
         async def health_check() -> dict[str, Any]:
             return {
                 "status": "ok",
@@ -145,9 +155,47 @@ def create_nexus_app(
                 "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             }
 
-        @app.api_route("/ready", methods=["GET", "HEAD"], tags=["system"])
-        async def readiness_check() -> dict[str, str]:
-            return {"status": "ready"}
+        if ready_path:
+
+            @app.api_route(ready_path, methods=["GET", "HEAD"], tags=["system"])
+            async def readiness_check() -> dict[str, str]:
+                return {"status": "ready"}
+
+    def _request_id(request: Request) -> str:
+        return str(getattr(request.state, "request_id", "") or f"nex-{uuid.uuid4().hex[:12]}")
+
+    def _error(request: Request, status: int, error: str, message: str, **extra: Any) -> JSONResponse:
+        req_id = _request_id(request)
+        headers = {"X-Request-ID": req_id}
+        if "retry_after" in extra:
+            headers["Retry-After"] = str(extra["retry_after"])
+        return JSONResponse(
+            status_code=status,
+            content={"error": error, "message": message, **extra, "request_id": req_id},
+            headers=headers,
+        )
+
+    # Nexus error contract for the kit's own exceptions (see docs/ADOPTING.md).
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limited_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        return _error(request, 429, "rate_limited", exc.message, retry_after=exc.retry_after)
+
+    @app.exception_handler(MonthlyBudgetExceeded)
+    async def ai_budget_handler(request: Request, exc: MonthlyBudgetExceeded) -> JSONResponse:
+        if isinstance(exc, SpendLedgerUnavailable):
+            return _error(
+                request,
+                503,
+                "ai_budget_unavailable",
+                "AI features are paused because the spend ledger cannot be read. Try again later.",
+            )
+        return _error(
+            request,
+            429,
+            "ai_budget_exhausted",
+            "The monthly AI budget is used up. AI features resume next month.",
+            month=exc.month,
+        )
 
     # Standard global exception handler
     # Unhandled errors: the client gets a generic message and the request id, never the exception
@@ -155,7 +203,7 @@ def create_nexus_app(
     # logged server side under the same request id.
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        req_id = str(getattr(request.state, "request_id", "") or f"nex-{uuid.uuid4().hex[:12]}")
+        req_id = _request_id(request)
         logger.error(
             "Unhandled %s on %s %s (request_id=%s)",
             type(exc).__name__,

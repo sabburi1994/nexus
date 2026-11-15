@@ -12,13 +12,16 @@ import logging
 import os
 import secrets
 import threading
-import time
-from collections import OrderedDict, deque
+from collections import OrderedDict
 from collections.abc import Callable
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 
+from nexus.api.ratelimit import RateLimitExceeded, SlidingWindowLimiter
+from nexus.api.ratelimit import client_ip as _nexus_client_ip
 from nexus.security import sanitize_text
+
+__all__ = ["RATE_LIMITERS", "TRUSTED_PROXY_HOPS", "SlidingWindowLimiter", "client_ip", "rate_limit", "visitor_id"]
 
 
 def _env_int(name: str, default: int) -> int:
@@ -26,35 +29,6 @@ def _env_int(name: str, default: int) -> int:
         return int(os.getenv(name, str(default)))
     except ValueError:
         return default
-
-
-class SlidingWindowLimiter:
-    """Sliding window counter keyed by caller, with a bounded number of tracked keys."""
-
-    def __init__(self, limit: int, window_seconds: float, max_keys: int = 10_000) -> None:
-        self.limit = limit
-        self.window = window_seconds
-        self.max_keys = max_keys
-        self._hits: OrderedDict[str, deque[float]] = OrderedDict()
-        self._lock = threading.Lock()
-
-    def hit(self, key: str, now: float | None = None) -> float | None:
-        """Record a request. Returns None when allowed, else seconds until a slot frees up."""
-        ts = time.monotonic() if now is None else now
-        with self._lock:
-            bucket = self._hits.get(key)
-            if bucket is None:
-                bucket = deque()
-                self._hits[key] = bucket
-            self._hits.move_to_end(key)
-            while bucket and ts - bucket[0] >= self.window:
-                bucket.popleft()
-            if len(bucket) >= self.limit:
-                return max(1.0, self.window - (ts - bucket[0]))
-            bucket.append(ts)
-            while len(self._hits) > self.max_keys:
-                self._hits.popitem(last=False)
-            return None
 
 
 # Number of trusted reverse proxies that append to X-Forwarded-For. Cloud Run's front end
@@ -68,11 +42,7 @@ _VISITOR_SALT = secrets.token_bytes(16)
 
 def client_ip(request: Request) -> str:
     """Best estimate of the caller's address, trusting only ``TRUSTED_PROXY_HOPS`` proxies."""
-    if TRUSTED_PROXY_HOPS > 0:
-        forwarded = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
-        if len(forwarded) >= TRUSTED_PROXY_HOPS:
-            return forwarded[-TRUSTED_PROXY_HOPS]
-    return request.client.host if request.client else "unknown"
+    return _nexus_client_ip(request, TRUSTED_PROXY_HOPS)
 
 
 def visitor_id(request: Request) -> str:
@@ -80,8 +50,8 @@ def visitor_id(request: Request) -> str:
     return hashlib.sha256(_VISITOR_SALT + client_ip(request).encode("utf-8")).hexdigest()[:16]
 
 
-# Per IP limits per instance. The showcase makes no server side model calls (only visitor
-# supplied keys), so these protect CPU and memory rather than model spend.
+# Per IP limits per instance (nexus.api.ratelimit). The showcase makes no server side model calls
+# (only visitor supplied keys), so these protect CPU and memory rather than model spend.
 RATE_LIMITERS: dict[str, SlidingWindowLimiter] = {
     "scan": SlidingWindowLimiter(_env_int("SHOWCASE_SCAN_PER_MINUTE", 5), 60.0),
     "simulate": SlidingWindowLimiter(_env_int("SHOWCASE_SIMULATE_PER_MINUTE", 6), 60.0),
@@ -90,25 +60,19 @@ RATE_LIMITERS: dict[str, SlidingWindowLimiter] = {
 }
 
 
-def _reject(retry_after: float) -> HTTPException:
-    return HTTPException(
-        status_code=429,
-        detail="Rate limit exceeded for this demo endpoint; please retry shortly.",
-        headers={"Retry-After": str(int(retry_after + 0.999))},
-    )
-
-
 def rate_limit(group: str, global_group: str | None = None) -> Callable[[Request], None]:
-    """FastAPI dependency enforcing the per IP limiter ``group`` (and an optional global one)."""
+    """FastAPI dependency enforcing the per IP limiter ``group`` (and an optional global one).
+
+    Limiters are looked up at request time so tests can swap them. A limited request raises
+    ``RateLimitExceeded``, which ``create_nexus_app`` renders as the Nexus 429 error body.
+    """
 
     def _dependency(request: Request) -> None:
         retry = RATE_LIMITERS[group].hit(client_ip(request))
-        if retry is not None:
-            raise _reject(retry)
-        if global_group is not None:
+        if retry is None and global_group is not None:
             retry = RATE_LIMITERS[global_group].hit("*")
-            if retry is not None:
-                raise _reject(retry)
+        if retry is not None:
+            raise RateLimitExceeded(retry, "Rate limit exceeded for this demo endpoint; please retry shortly.")
 
     return _dependency
 
