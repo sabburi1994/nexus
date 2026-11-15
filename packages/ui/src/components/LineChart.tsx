@@ -28,6 +28,34 @@ export interface LineChartProps {
 
 const PAD = { top: 16, right: 12, bottom: 28, left: 56 };
 
+/** Round step (1, 2, 2.5 or 5 times a power of ten) at least ``raw``. */
+function niceStep(raw: number): number {
+  if (!(raw > 0) || !Number.isFinite(raw)) return 1;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const fraction = raw / power;
+  const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+  return nice * power;
+}
+
+/** Axis range on round values with the data inside: two equal steps, so min, middle and max are round. */
+export function niceRange(values: number[]): [number, number] {
+  if (values.length === 0) return [0, 1];
+  let lo = Math.min(...values);
+  let hi = Math.max(...values);
+  if (lo === hi) {
+    lo -= Math.abs(lo) * 0.1 || 1;
+    hi += Math.abs(hi) * 0.1 || 1;
+  }
+  let step = niceStep((hi - lo) / 2);
+  for (let i = 0; i < 6; i++) {
+    const start = Math.floor(lo / step) * step;
+    if (start + 2 * step >= hi) return [start, start + 2 * step];
+    step = niceStep(step * 1.01);
+  }
+  const start = Math.floor(lo / step) * step;
+  return [start, start + 2 * step];
+}
+
 function useContainerWidth(fallback: number) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(fallback);
@@ -65,15 +93,7 @@ export function LineChart({
 
   const values = [...data.map((d) => d.value), ...(compare?.data.map((d) => d.value) ?? [])];
   if (floor) values.push(floor.value);
-  let min = values.length ? Math.min(...values) : 0;
-  let max = values.length ? Math.max(...values) : 1;
-  if (min === max) {
-    min -= 1;
-    max += 1;
-  }
-  const span = max - min;
-  min -= span * 0.08;
-  max += span * 0.08;
+  const [min, max] = niceRange(values);
 
   const innerW = Math.max(width - PAD.left - PAD.right, 10);
   const innerH = Math.max(height - PAD.top - PAD.bottom, 10);

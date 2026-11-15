@@ -35,7 +35,7 @@ export { AppShell } from "./components/AppShell.js";
 export type { AppShellProps, NavItem } from "./components/AppShell.js";
 export { ToastProvider, useToast } from "./components/Toast.js";
 export type { ToastOptions, ToastProviderProps, ToastTone } from "./components/Toast.js";
-export { LineChart } from "./components/LineChart.js";
+export { LineChart, niceRange } from "./components/LineChart.js";
 export type { ChartPoint, LineChartProps } from "./components/LineChart.js";
 export { VisuallyHidden } from "./components/VisuallyHidden.js";
 export { cx } from "./utils.js";

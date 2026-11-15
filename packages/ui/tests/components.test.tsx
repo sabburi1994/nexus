@@ -15,6 +15,7 @@ import {
   IconButton,
   Input,
   LineChart,
+  niceRange,
   RadioGroup,
   Select,
   Sheet,
@@ -373,6 +374,16 @@ describe("LineChart", () => {
     const table = screen.getByRole("table", { name: "Balance" });
     expect(within(table).getAllByRole("row")).toHaveLength(4);
     expect(img.querySelector("polyline")?.getAttribute("points")?.split(" ")).toHaveLength(3);
+  });
+
+  it("puts the axis on round values that contain the data and the floor", () => {
+    expect(niceRange([1515, 3420, 1000])).toEqual([0, 4000]);
+    expect(niceRange([0.2, 0.9])).toEqual([0, 1]);
+    expect(niceRange([-30, 45])).toEqual([-50, 50]);
+    expect(niceRange([5, 5])).toEqual([4.5, 5.5]); // flat series: the value sits on the middle gridline
+    const [lo, hi] = niceRange([2400, 1800, 1200, 1000]);
+    expect(lo).toBeLessThanOrEqual(1000);
+    expect(hi).toBeGreaterThanOrEqual(2400);
   });
 
   it("handles a single point and no data", () => {

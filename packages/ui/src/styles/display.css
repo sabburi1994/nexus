@@ -34,6 +34,8 @@
   min-width: 0;
 }
 .nx-card__title {
+  font-family: inherit;
+  letter-spacing: normal;
   margin: 0;
   font-size: var(--nx-font-size-lg);
   line-height: var(--nx-line-height-lg);
@@ -210,6 +212,8 @@
   height: 24px;
 }
 .nx-state__title {
+  font-family: inherit;
+  letter-spacing: normal;
   margin: 0;
   font-size: var(--nx-font-size-base);
   line-height: var(--nx-line-height-base);
