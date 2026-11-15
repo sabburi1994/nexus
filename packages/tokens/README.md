@@ -11,7 +11,7 @@ Themes: `base` (neutral), `finhub`, `tandempath`, `predictiveeconomics`, `comman
 Distributed as a tarball at a git tag (see `releases/README.md` in the repository):
 
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-tokens-1.0.0.tgz
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz
 ```
 
 ## Use

@@ -6,6 +6,7 @@
   box-sizing: border-box;
 }
 
+/* Use on block or inline elements. A <table> cannot shrink to 1 px: wrap it in a hidden div instead. */
 .nx-visually-hidden {
   position: absolute !important;
   width: 1px !important;

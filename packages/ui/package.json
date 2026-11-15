@@ -1,6 +1,6 @@
 {
   "name": "@nexus-agent-framework/ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared React component kit for the Nexus platform apps: accessible, mobile first, themed by @nexus-agent-framework/tokens, plain CSS that works under a strict CSP. The Nexus showcase components live in the ./showcase entry point.",
   "type": "module",
   "main": "./dist/index.js",

@@ -6,7 +6,7 @@
 // Apps install the tarballs straight from the tagged commit over HTTPS, so nothing is published
 // to npm and no git is needed inside Docker builds. The tag is ui-v<ui version>.
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -22,8 +22,16 @@ for (const name of packages) {
   run(["run", "test", "-w", `@nexus-agent-framework/${name}`], { NEXUS_RELEASE_PACKING: "1" });
 }
 
+// A released version is immutable: when the tarball for a package's current version already
+// exists it is kept as is (repacking on another machine changes bytes, for example line endings,
+// and with them the integrity hash apps recorded). Bump the version to ship a change.
 for (const name of packages) {
   const prefix = `nexus-agent-framework-${name}-`;
+  const current = `${prefix}${pkg(name).version}.tgz`;
+  if (existsSync(join(releases, current))) {
+    console.log(`kept ${current} (version unchanged)`);
+    continue;
+  }
   for (const old of readdirSync(releases).filter((f) => f.startsWith(prefix) && f.endsWith(".tgz"))) {
     rmSync(join(releases, old));
   }

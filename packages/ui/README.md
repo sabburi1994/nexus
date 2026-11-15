@@ -11,7 +11,7 @@ The gallery at `nexus.abburi.info/#gallery` shows every component in every app t
 Distributed as tarballs at a git tag (see `releases/README.md` in the repository):
 
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.0/releases/nexus-agent-framework-ui-1.0.0.tgz
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-ui-1.0.1.tgz
 ```
 
 ```tsx
@@ -62,3 +62,8 @@ They still need Tailwind in the consuming app, as before.
 No gradients, glows, glassmorphism or backdrop blur, sparkle icons or emoji. Visible focus on every
 control. Reduced motion turns animations and transitions off. Tests: Vitest and Testing Library for
 behaviour and keyboard, axe-core (offline) for accessibility, and policy checks for the rules above.
+
+## Changelog
+
+* **1.0.1**: `LineChart` no longer widens the page on phones. Its screen reader data table is now clipped inside a visually hidden `div` (a `<table>` cannot shrink to 1 px, so at a 390 px viewport the page scrolled to about 428 px), and `.nx-chart` is `position: relative`. Apps that worked around it with `.nx-chart { position: relative; overflow: hidden }` can drop the workaround.
+* **1.0.0**: first release of the kit.
