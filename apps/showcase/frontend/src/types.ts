@@ -9,7 +9,7 @@ import type {
 } from "@nexus-agent-framework/contracts";
 import type { TraceStep } from "@nexus-agent-framework/ui/showcase";
 
-export type WorkspaceTab = "overview" | "simulator" | "brownfield" | "telemetry" | "docs" | "packages";
+export type WorkspaceTab = "overview" | "simulator" | "brownfield" | "telemetry" | "docs" | "packages" | "gallery";
 export type DocTopic = "quickstart" | "cli" | "mcp" | "orchestrators" | "python-sdk" | "packages";
 
 export interface SuiteVerificationStat {
