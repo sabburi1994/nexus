@@ -116,7 +116,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
         <div className="editorial-card flex flex-col justify-between p-7 lg:col-span-8">
           <div>
             <p className="editorial-kicker">
-              Orchestrator-Native Agentic Framework · v{health?.version ?? "0.3.0"}
+              Orchestrator-Native Agentic Framework · v{health?.version ?? "0.4.0"}
             </p>
             <h1 className="mt-3 text-4xl font-normal leading-[1.08] tracking-tight text-[#172a2e] sm:text-5xl">
               Autonomous software squads, with{" "}
@@ -179,10 +179,10 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
                     className="inline-flex items-center gap-1 hover:underline"
                   >
                     <span>
-                      {health ? `${health.tests_passed}/${health.tests_total} CORE` : "32/32 CORE"} ·{" "}
+                      {health ? `${health.tests_passed}/${health.tests_total} CORE` : "CORE"} ·{" "}
                       {health?.suite_breakdown?.showcase_pytest
                         ? `${health.suite_breakdown.showcase_pytest.passed} API`
-                        : "9 API"}
+                        : "API"}
                     </span>
                     <ExternalLink size={10} />
                   </a>
@@ -191,7 +191,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
                 <dt className="text-[#5c6a67]">PyPI Release</dt>
                 <dd className="tabular-mono font-medium text-[#172a2e]">
-                  v{health?.pypi_live_version ?? "0.1.1"} live · v{health?.pypi_staged_version ?? "0.3.0"} wheel
+                  v{health?.pypi_live_version ?? "0.4.0"} on PyPI
                 </dd>
               </div>
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
@@ -258,7 +258,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
           <div>
             <p className="editorial-kicker">Architecture Anatomy</p>
             <h2 className="mt-1 text-2xl font-normal text-[#172a2e]">
-              Inside <span className="font-mono text-xl">NexusITTeam.build_from_idea()</span>
+              Inside <span className="font-mono text-xl [overflow-wrap:anywhere]">NexusITTeam.build_from_idea()</span>
             </h2>
           </div>
           <button
@@ -304,7 +304,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
             </div>
             <p className="mt-2.5 text-sm leading-relaxed text-[#3a494b]">{activeSpecialist.summary}</p>
             <p className="mt-3 font-mono text-xs text-[#5c6a67]">
-              Class: <span className="text-[#172a2e]">{activeSpecialist.module}</span>
+              Class: <span className="text-[#172a2e] [overflow-wrap:anywhere]">{activeSpecialist.module}</span>
             </p>
           </div>
           <div className="flex flex-col justify-between rounded border border-[#d6cec0] bg-[#fffdf8] p-4 text-xs">

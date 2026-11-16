@@ -190,7 +190,7 @@ def test_npm_ranges_match_the_packages_in_this_repo() -> None:
     root = Path(__file__).resolve().parent.parent / "packages"
     ui = json.loads((root / "ui" / "package.json").read_text(encoding="utf-8"))
     contracts = json.loads((root / "contracts" / "package.json").read_text(encoding="utf-8"))
-    # UI: generated apps pin the last npm release; the repo may be ahead (the 1.x kit ships as a tarball).
+    # UI: generated apps stay on the 0.2 line (their templates use components 1.x moved to /showcase).
     assert ui["name"] == tpl.UI_PACKAGE and tpl.UI_VERSION_RANGE == f"^{tpl.UI_PUBLISHED_VERSION}"
     published = tuple(int(x) for x in tpl.UI_PUBLISHED_VERSION.split("."))
     assert tuple(int(x) for x in ui["version"].split(".")) >= published

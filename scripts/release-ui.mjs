@@ -1,10 +1,11 @@
 // Builds, tests and packs @nexus-agent-framework/tokens and @nexus-agent-framework/ui into
-// releases/, then prints the install lines and the tag the owner pushes.
+// releases/, then prints the tag and npm publish commands for the owner and the install lines.
 //
-//   node scripts/release-ui.mjs
+//   node scripts/release-ui.mjs        (or: npm run release:ui)
 //
-// Apps install the tarballs straight from the tagged commit over HTTPS, so nothing is published
-// to npm and no git is needed inside Docker builds. The tag is ui-v<ui version>.
+// The committed tarballs are what the owner publishes to npm, so the registry serves the same
+// bytes as the repository. They can also be installed by URL from the tag (fallback). The tag is
+// ui-v<ui version>.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -45,11 +46,16 @@ const tag = `ui-v${pkg("ui").version}`;
 const base = `https://raw.githubusercontent.com/sabburi1994/nexus/${tag}/releases`;
 const tokensUrl = `${base}/nexus-agent-framework-tokens-${pkg("tokens").version}.tgz`;
 const uiUrl = `${base}/nexus-agent-framework-ui-${pkg("ui").version}.tgz`;
+const tokensFile = `releases/nexus-agent-framework-tokens-${pkg("tokens").version}.tgz`;
+const uiFile = `releases/nexus-agent-framework-ui-${pkg("ui").version}.tgz`;
 console.log(`
-Packed into releases/. Commit them, merge, then the owner tags the merge commit:
+Packed into releases/. Commit them and merge; then the owner tags the merge commit and publishes
+(tokens first; a version already on npm is refused, which is harmless):
 
-  git tag ${tag} <merge commit> && git push origin ${tag}
+  git tag -a ${tag} <merge commit> -m "${tag}" && git push origin ${tag}
+  npm publish ${tokensFile} --access public
+  npm publish ${uiFile} --access public
 
-React apps:   npm install ${tokensUrl} ${uiUrl}
-Tokens only:  npm install ${tokensUrl}
+Install:          npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui
+By URL (pinned):  npm install ${tokensUrl} ${uiUrl}
 `);

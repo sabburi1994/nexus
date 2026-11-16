@@ -8,11 +8,12 @@ Themes: `base` (neutral), `finhub`, `tandempath`, `predictiveeconomics`, `comman
 
 ## Install
 
-Distributed as a tarball at a git tag (see `releases/README.md` in the repository):
-
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz
+npm install @nexus-agent-framework/tokens
 ```
+
+The same tarball is also committed in the repository's `releases/` folder and can be installed by URL
+from a tag; see `releases/README.md`.
 
 ## Use
 

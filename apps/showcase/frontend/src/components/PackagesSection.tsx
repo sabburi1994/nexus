@@ -19,10 +19,17 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
     },
     {
       name: "@nexus-agent-framework/ui",
-      version: "0.2.0",
-      role: "Institutional paper-and-ink React design system & observability cards",
-      install: "npm install @nexus-agent-framework/ui",
+      version: "1.0.1",
+      role: "Shared React kit for the platform apps: buttons, forms, cards, tables, sheets, dialogs, navigation shell, toasts, charts",
+      install: "npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/ui",
+    },
+    {
+      name: "@nexus-agent-framework/tokens",
+      version: "1.0.0",
+      role: "Design tokens: CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested",
+      install: "npm install @nexus-agent-framework/tokens",
+      url: "https://www.npmjs.com/package/@nexus-agent-framework/tokens",
     },
     {
       name: "@nexus-agent-framework/middleware",
@@ -40,8 +47,9 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
     },
   ];
 
-  const livePypi = health?.pypi_live_version ?? "0.1.1";
-  const stagedVersion = health?.pypi_staged_version ?? health?.version ?? "0.3.0";
+  const livePypi = health?.pypi_live_version ?? "0.4.0";
+  const stagedVersion = health?.pypi_staged_version ?? health?.version ?? livePypi;
+  const mainAhead = stagedVersion !== livePypi;
 
   return (
     <div className="space-y-6">
@@ -72,19 +80,21 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-[#0f7657] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-white">
-                  Python Core Runtime · v{stagedVersion} (main)
+                  Python Core Runtime · v{livePypi} on PyPI
                 </span>
-                <span className="rounded border border-[#dfbf70] bg-[#f9edcb] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#69440a]">
-                  PyPI latest release: v{livePypi} · v{stagedVersion} wheel staged
-                </span>
+                {mainAhead ? (
+                  <span className="rounded border border-[#dfbf70] bg-[#f9edcb] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#69440a]">
+                    main is at v{stagedVersion} (not released yet)
+                  </span>
+                ) : null}
               </div>
               <h3 className="mt-2 font-mono text-lg font-semibold text-[#172a2e]">
-                nexus-agent-framework == {stagedVersion}
+                nexus-agent-framework == {livePypi}
               </h3>
               <p className="mt-1 text-xs text-[#3a494b]">
                 Python 3.11+ orchestrator, 7-role IT pack, Stage 1 closed-loop self-healing, Stage 2 AST brownfield
-                tooling, Stage 3 DORA ROI CLI, and 5-tool stdio MCP server. Install directly from GitHub{" "}
-                <code className="font-mono">main</code> for Stage 1–3 right now, or use PyPI v{livePypi}.
+                tooling, Stage 3 DORA ROI CLI, 5-tool stdio MCP server, and the backend kit for apps (rate limiter, SPA
+                mount, monthly AI spend ledger, OIDC verifier).
               </p>
             </div>
             <a
@@ -99,11 +109,11 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
           </div>
           <div className="mt-4">
             <CommandBlock
-              title="Python Install (Stage 1–3 from GitHub main or PyPI)"
+              title="Python Install (PyPI)"
               language="bash"
-              code={`pip install "git+https://github.com/sabburi1994/nexus.git"
-# PyPI registry baseline (v0.3.0 is published by the release workflow via trusted publishing):
-pip install nexus-agent-framework`}
+              code={`pip install nexus-agent-framework
+# with the Google OIDC verifier for Cloud Scheduler and service account callers:
+pip install "nexus-agent-framework[oidc]"`}
             />
           </div>
         </div>

@@ -8,11 +8,13 @@ The gallery at `nexus.abburi.info/#gallery` shows every component in every app t
 
 ## Install
 
-Distributed as tarballs at a git tag (see `releases/README.md` in the repository):
-
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-ui-1.0.1.tgz
+npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui
 ```
+
+The kit needs the tokens package (a peer dependency) and React 18 or newer. The same tarballs are also
+committed in the repository's `releases/` folder and can be installed by URL from a tag; see
+`releases/README.md`.
 
 ```tsx
 import "@nexus-agent-framework/tokens/themes/finhub.css"; // or tokens.css for all themes

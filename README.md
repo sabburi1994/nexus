@@ -21,18 +21,27 @@
 ## 🚀 Installation & Quickstart
 
 ### Python Framework (PyPI)
-Install the core orchestrator and agent runtime:
+Install the core orchestrator and agent runtime (0.4.0):
 ```bash
 pip install nexus-agent-framework
+# with the Google OIDC verifier for Cloud Scheduler and service account callers:
+pip install "nexus-agent-framework[oidc]"
 ```
 
 ### TypeScript / React Packages (npm)
-Install individual enterprise contracts, UI components, and security middleware:
+The shared UI kit (React 18) and its design tokens:
 ```bash
-npm install @nexus-agent-framework/contracts
-npm install @nexus-agent-framework/middleware
-npm install @nexus-agent-framework/scraper
-npm install @nexus-agent-framework/ui
+npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui
+```
+```tsx
+import "@nexus-agent-framework/tokens/themes/finhub.css"; // or tokens.css for every theme
+import "@nexus-agent-framework/ui/styles.css";
+import { AppShell, Button, Card, Table } from "@nexus-agent-framework/ui";
+```
+
+Contracts, security middleware and the scraper:
+```bash
+npm install @nexus-agent-framework/contracts @nexus-agent-framework/middleware @nexus-agent-framework/scraper
 ```
 
 ---
@@ -70,12 +79,12 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 | Package | Registry | Version | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.4.0` in this repo (PyPI currently serves `0.1.1`) | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
+| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.4.0` | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
 | **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
 | **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Security headers, best effort credential sanitizer, correlation tracing |
 | **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
-| **[`@nexus-agent-framework/ui`](packages/ui/README.md)** | tarball at tag `ui-v1.0.1` ([`releases/`](releases/README.md)); npm still serves `0.2.0` | `1.0.1`: shared React kit for the platform apps (Button, form fields, Card, Table, Sheet, Dialog, Tabs, AppShell, Toast, SkeletonRows, EmptyState, ErrorState, Badge, Stat, LineChart); the showcase components moved to `@nexus-agent-framework/ui/showcase` |
-| **[`@nexus-agent-framework/tokens`](packages/tokens/README.md)** | tarball at tag `ui-v1.0.1` ([`releases/`](releases/README.md)) | `1.0.0`: design tokens as CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested |
+| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `1.0.1`: shared React kit for the platform apps (Button, form fields, Card, Table, Sheet, Dialog, Tabs, AppShell, Toast, SkeletonRows, EmptyState, ErrorState, Badge, Stat, LineChart); the showcase components moved to `@nexus-agent-framework/ui/showcase` |
+| **[`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens)** | npm | `1.0.0`: design tokens as CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested |
 
 ---
 
@@ -286,7 +295,7 @@ pre-commit run --all-files
 ```
 
 ### Releases
-`.github/workflows/release.yml` publishes to PyPI and npm with OIDC trusted publishing (no long lived tokens). GitHub Actions is currently disabled for this repository, so nothing publishes automatically.
+Releases are published by the owner from a pushed tag: the Python package from `v<version>`, and `@nexus-agent-framework/tokens` and `ui` from the exact tarballs committed in [`releases/`](releases/README.md) at `ui-v<version>` (built by `npm run release:ui`). `.github/workflows/release.yml` is ready to do the same with OIDC trusted publishing (no long lived tokens), but GitHub Actions is disabled for this repository, so nothing publishes automatically.
 
 ### Showcase deployment
 The `nexus.abburi.info` showcase runs on Cloud Run with its own runtime service account (no project roles), build service account and Artifact Registry repository. The project is a Terraform variable: a dedicated project is preferred, and hosting it in an existing project is supported because every grant is scoped to the showcase's own resources. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](infra/terraform/modules/README.md).
