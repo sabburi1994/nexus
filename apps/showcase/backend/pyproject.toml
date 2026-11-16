@@ -1,6 +1,6 @@
 [project]
 name = "nexus-showcase"
-version = "0.4.0"
+version = "0.5.0"
 description = "Reference Showcase & Documentation Portal demonstrating Nexus Agent Framework (https://nexus.abburi.info)"
 requires-python = ">=3.11"
 dependencies = [

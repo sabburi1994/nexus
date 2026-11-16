@@ -7,13 +7,14 @@ local copies one at a time. For the React side see `packages/ui/README.md`
 
 ## 1. Install
 
-From PyPI, pinned to a version (0.4.0 has everything in this guide):
+From PyPI, pinned to a version (0.5.0 has everything in this guide; coming from 0.4.0, read
+[Upgrading from 0.4.0](#upgrading-from-040) first):
 
 ```text
 # requirements.txt / pyproject dependency
-nexus-agent-framework==0.4.0
+nexus-agent-framework==0.5.0
 # with the OIDC verifier (Cloud Scheduler or service account callers):
-nexus-agent-framework[oidc]==0.4.0
+nexus-agent-framework[oidc]==0.5.0
 ```
 
 To use a change that is merged on `main` but not released yet, pin the commit instead:
@@ -43,6 +44,7 @@ app = create_nexus_app(
     security_headers=SecurityHeadersConfig(
         content_security_policy=APP_CSP,  # your existing policy, unchanged
         immutable_prefixes=("/assets/",),  # hashed Vite assets cached for a year
+        no_store_prefixes=("/api/",),  # API JSON (personal data) is never stored by browsers or proxies
     ),
 )
 ```
@@ -54,7 +56,7 @@ What the factory adds:
 
 | Feature | Behaviour |
 | :--- | :--- |
-| Request id | `X-Request-ID` taken from the caller or generated, echoed on every response with `X-Process-Time` |
+| Request id | `X-Request-ID` taken from the caller (a plain token up to 128 characters) or generated, echoed on every response with `X-Process-Time`; plain ASGI, so body size limits (413) and streaming pass through unchanged |
 | Health | `GET` and `HEAD` on `health_path` (and `ready_path`), JSON with app and framework version |
 | CORS | closed unless `cors_origins` is set; credentials only with explicit origins |
 | Security headers | opt in; CSP per path, HSTS, nosniff, frame DENY, same-origin referrer, permissions policy, cache rules |
@@ -80,7 +82,17 @@ exception is logged server side on `nexus.api` with the same request id.
 | 500 | `internal_server_error` | any unhandled exception | |
 | 429 | `rate_limited` | a rate limit was hit | `retry_after` (also `Retry-After` header) |
 | 429 | `ai_budget_exhausted` | `MonthlyBudget` cap reached | `month` |
+| 429 | `ai_disabled` | `MonthlyBudget` cap is 0 (AI switched off) | |
 | 503 | `ai_budget_unavailable` | the spend ledger cannot be read (fail closed) | |
+
+The body is flat: `message` sits at the top level next to `error`, not inside it.
+
+```json
+{"error": "ai_budget_exhausted", "message": "The monthly AI budget is used up. AI features resume next month.", "month": "2026-11", "request_id": "nex-3f2a9c81d0e4"}
+```
+
+A frontend that reads `body.error.message` (a nested shape some apps used before) gets `undefined`;
+read `body.message`, and switch on `body.error` for the code.
 
 `HTTPException`s you raise keep FastAPI's shape (`{"detail": ...}`) and status. The OIDC dependency
 answers 401, 403 or 503 with `{"detail": "Not allowed"}` and 404 when not configured.
@@ -141,11 +153,12 @@ Replaces app local spend caps (klassesall `services/llm/budget.py`, FinHub `spen
 PredictiveEconomics' budgeted analyst).
 
 ```python
-from nexus.ai.spend import MonthlyBudget, SqlSpendLedger, spend_table
+from nexus.ai.spend import MonthlyBudget, SqlSpendLedger, parse_budget_cap, spend_table
 
 ledger = SqlSpendLedger(engine)  # the app's Engine or AsyncEngine
 # Migrations: add spend_table(Base.metadata) to your metadata, or call `await ledger.create_table()`.
-budget = MonthlyBudget(ledger, cap_usd=settings.monthly_ai_budget_usd)  # 0 or less: unlimited
+# parse_budget_cap reads a setting: "", "none" or "unlimited" give None; "0" gives 0; negative raises.
+budget = MonthlyBudget(ledger, cap_usd=parse_budget_cap(settings.monthly_ai_budget_usd))
 
 
 async def ask_model(prompt: str) -> str:
@@ -155,19 +168,34 @@ async def ask_model(prompt: str) -> str:
     return response.text
 
 
+def ask_model_in_a_worker_thread(prompt: str) -> str:  # sync code: same budget, sync methods
+    budget.ensure_within_budget_sync()
+    response = gemini.generate(prompt)
+    budget.record_sync(response.cost_usd, response.model, task="brief")
+    return response.text
+
+
 @app.get("/api/ai/budget")
 async def ai_budget() -> dict:
     return await budget.summary()
 ```
 
+* `cap_usd`: **`None` means no cap** (spend is only recorded); **`0` switches AI off**, so every
+  billed call is refused with `ai_disabled` (429) without touching the ledger; a positive number is
+  the monthly cap; **a negative number is a configuration error** (`ValueError` when the budget is
+  built, so the app fails at startup instead of running without a cap).
 * Months are UTC calendar months. The over-budget decision is cached for 20 seconds; `record`
   clears the cache.
+* Sync code (model calls in worker threads, `run_in_threadpool`) uses `ensure_within_budget_sync`,
+  `record_sync` and `summary_sync`. They need a ledger with a sync side: `InMemorySpendLedger`, or
+  `SqlSpendLedger` over a sync `Engine` (over an `AsyncEngine` they raise `NotImplementedError`).
 * **Fails closed by default:** if the ledger cannot be read, billed calls are refused with
   `ai_budget_unavailable` (503). klassesall's current gate fails open; pass `fail_closed=False` only
   if that is the owner's decision.
 * `record` is best effort (logs and carries on); `strict=True` raises instead.
 * An app with an existing ledger table can keep it: subclass `SpendLedger` (two async methods,
-  `record` and `month_total`) over that table and pass it to `MonthlyBudget`.
+  `record` and `month_total`, plus `record_sync` and `month_total_sync` if sync code uses it) over
+  that table and pass it to `MonthlyBudget`.
 
 ## 7. Cloud Scheduler and service account callers (`nexus.api.oidc`)
 
@@ -197,9 +225,27 @@ Google's keys unavailable; the reason is logged as a warning, never returned. Sy
 
 ## 8. Checklist per app
 
-1. Pin `nexus-agent-framework==0.4.0` (or a commit); replace `FastAPI(...)` with `create_nexus_app(...)` keeping health path, CSP and
-   docs setting; run the app's tests.
-2. Check the error bodies the frontend reads: 500 bodies no longer carry exception text.
+1. Pin `nexus-agent-framework==0.5.0` (or a commit); replace `FastAPI(...)` with
+   `create_nexus_app(...)` keeping health path, CSP and docs setting; run the app's tests.
+2. Check the error bodies the frontend reads: `message` is top level, and 500 bodies no longer
+   carry exception text.
 3. Replace the local limiter, SPA mount, spend cap and OIDC verifier one at a time, each with the
    app's existing tests plus one test of the 429 / 503 bodies.
 4. Delete the local copies once their tests pass on the shared version.
+
+## Upgrading from 0.4.0
+
+* **A cap of `0` now switches AI off.** In 0.4.0, `MonthlyBudget(cap_usd=0)` (and any cap of 0 or
+  less) meant unlimited. From 0.5.0, `0` refuses every billed call (`ai_disabled`, 429), `None`
+  means no cap, and a negative cap raises `ValueError` at startup. If you passed `0` to mean "no
+  cap", pass `None` instead (or read the setting with `parse_budget_cap`, which maps an empty value,
+  `none` or `unlimited` to `None`).
+* **Error `message` is top level.** Nothing changed in the body (`{"error": code, "message": ...,
+  "request_id": ...}`), but a frontend that reads `error.message` must read `message`. The new
+  `ai_disabled` code joins the list in section 3.
+* **Sync budget.** `ensure_within_budget_sync`, `record_sync` and `summary_sync` work from worker
+  threads; use a sync `Engine` for `SqlSpendLedger` there.
+* The request id middleware is plain ASGI now, so an app's own 413 body size limit is no longer
+  turned into a 400 or 500. Caller supplied request ids that are not a plain token are replaced.
+* `SecurityHeadersConfig(no_store_prefixes=("/api/",))` sends `Cache-Control: no-store` on API
+  responses (any status) unless the route set its own `Cache-Control`.

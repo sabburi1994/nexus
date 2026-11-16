@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.testclient import TestClient
 
 from nexus.api import SecurityHeadersConfig, create_nexus_app
-from nexus.api.security_headers import DEFAULT_CSP, IMMUTABLE_CACHE, SWAGGER_UI_CSP
+from nexus.api.security_headers import DEFAULT_CSP, IMMUTABLE_CACHE, NO_STORE, SWAGGER_UI_CSP
 
 
 def _app(config: SecurityHeadersConfig | bool) -> TestClient:
@@ -95,6 +95,38 @@ def test_disabling_individual_headers() -> None:
     assert "content-security-policy" not in resp.headers
     assert "strict-transport-security" not in resp.headers
     assert resp.headers["x-frame-options"] == "DENY"
+
+
+def test_no_store_prefixes_cover_api_responses_of_any_status() -> None:
+    app = create_nexus_app(
+        title="NoStore",
+        security_headers=SecurityHeadersConfig(no_store_prefixes=("/api/",), immutable_prefixes=("/api/static/",)),
+    )
+
+    @app.get("/api/me")
+    async def me() -> dict[str, str]:
+        return {"name": "learner"}
+
+    @app.get("/api/static/x.js", response_class=PlainTextResponse)
+    async def static() -> str:
+        return "1"
+
+    @app.get("/api/cached")
+    async def cached() -> PlainTextResponse:
+        return PlainTextResponse("x", headers={"Cache-Control": "private, max-age=60"})
+
+    @app.get("/page", response_class=HTMLResponse)
+    async def page() -> str:
+        return "<html></html>"
+
+    client = TestClient(app)
+    assert client.get("/api/me").headers["cache-control"] == NO_STORE
+    missing = client.get("/api/nothing-here")
+    assert missing.status_code == 404 and missing.headers["cache-control"] == NO_STORE
+    assert client.get("/api/static/x.js").headers["cache-control"] == NO_STORE  # no-store wins
+    assert client.get("/api/cached").headers["cache-control"] == "private, max-age=60"  # the app's own is kept
+    assert client.get("/page").headers["cache-control"] == "no-cache"
+    assert "cache-control" not in client.get("/health").headers
 
 
 def test_health_and_ready_accept_head() -> None:

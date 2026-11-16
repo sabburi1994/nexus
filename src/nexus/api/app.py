@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from nexus import __version__
-from nexus.ai.spend import MonthlyBudgetExceeded, SpendLedgerUnavailable
+from nexus.ai.spend import AiSpendDisabled, MonthlyBudgetExceeded, SpendLedgerUnavailable
 from nexus.api.middleware import NexusTelemetryMiddleware
 from nexus.api.ratelimit import RateLimitExceeded
 from nexus.api.security_headers import NexusSecurityHeadersMiddleware, SecurityHeadersConfig
@@ -182,6 +182,8 @@ def create_nexus_app(
 
     @app.exception_handler(MonthlyBudgetExceeded)
     async def ai_budget_handler(request: Request, exc: MonthlyBudgetExceeded) -> JSONResponse:
+        if isinstance(exc, AiSpendDisabled):
+            return _error(request, 429, "ai_disabled", "AI features are switched off for this app.")
         if isinstance(exc, SpendLedgerUnavailable):
             return _error(
                 request,
