@@ -4,6 +4,8 @@
 ``X-Frame-Options``, ``Referrer-Policy`` and ``Permissions-Policy`` to every HTTP response, and
 optionally sets cache headers for static files:
 
+* responses under ``no_store_prefixes`` (for example ``/api/``, whose JSON may hold personal data)
+  get ``Cache-Control: no-store``, whatever their status;
 * responses under ``immutable_prefixes`` (for example content hashed ``/assets/``) with status 200
   get ``Cache-Control: public, max-age=31536000, immutable``;
 * HTML responses get ``Cache-Control: no-cache`` so a new deploy is picked up immediately.
@@ -35,6 +37,7 @@ SWAGGER_UI_CSP = (
 
 IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 NO_CACHE = "no-cache"
+NO_STORE = "no-store"
 
 
 @dataclass(frozen=True)
@@ -49,6 +52,8 @@ class SecurityHeadersConfig:
     frame_options: str | None = "DENY"
     referrer_policy: str | None = "same-origin"
     permissions_policy: str | None = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    # Path prefixes whose responses must never be stored by browsers or proxies (checked first).
+    no_store_prefixes: tuple[str, ...] = ()
     immutable_prefixes: tuple[str, ...] = ()
     html_no_cache: bool = True
 
@@ -94,7 +99,9 @@ class NexusSecurityHeadersMiddleware:
 
                 if "cache-control" not in headers:
                     status = int(message.get("status", 200))
-                    if status == 200 and any(path.startswith(p) for p in cfg.immutable_prefixes):
+                    if any(path.startswith(p) for p in cfg.no_store_prefixes):
+                        headers["Cache-Control"] = NO_STORE
+                    elif status == 200 and any(path.startswith(p) for p in cfg.immutable_prefixes):
                         headers["Cache-Control"] = IMMUTABLE_CACHE
                     elif cfg.html_no_cache and headers.get("content-type", "").startswith("text/html"):
                         headers["Cache-Control"] = NO_CACHE

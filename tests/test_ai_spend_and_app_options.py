@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from nexus.agents.context import BudgetExceededError
 from nexus.ai.spend import (
+    AiSpendDisabled,
     InMemorySpendLedger,
     MonthlyBudget,
     MonthlyBudgetExceeded,
@@ -21,6 +22,7 @@ from nexus.ai.spend import (
     SpendLedgerUnavailable,
     SqlSpendLedger,
     month_of,
+    parse_budget_cap,
 )
 from nexus.api import create_nexus_app
 
@@ -102,15 +104,96 @@ async def test_budget_caches_the_decision_between_records() -> None:
     assert Counting.reads == 1
 
 
-async def test_zero_cap_is_unlimited_and_zero_spend_is_not_recorded() -> None:
+async def test_none_cap_is_unlimited_and_zero_spend_is_not_recorded() -> None:
     ledger = InMemorySpendLedger()
-    budget = MonthlyBudget(ledger, cap_usd=0, clock=lambda: NOV)
+    budget = MonthlyBudget(ledger, cap_usd=None, clock=lambda: NOV)
+    assert budget.unlimited and not budget.disabled
     await budget.record(0.0, "gemini")
     await budget.record(-1.0, "gemini")
     assert ledger.entries == []
     await budget.record(50.0, "gemini")
     await budget.ensure_within_budget()
     assert (await budget.summary())["cap_usd"] is None
+
+
+async def test_zero_cap_switches_ai_off_without_reading_the_ledger() -> None:
+    """0 means no AI at all (TandemPath's kill switch), never unlimited."""
+    budget = MonthlyBudget(BrokenLedger(), cap_usd=0, clock=lambda: NOV)
+    assert budget.disabled and not budget.unlimited
+    with pytest.raises(AiSpendDisabled) as refused:
+        await budget.ensure_within_budget()
+    assert isinstance(refused.value, MonthlyBudgetExceeded) and refused.value.month == "2026-11"
+    with pytest.raises(AiSpendDisabled):
+        budget.ensure_within_budget_sync()
+
+
+@pytest.mark.parametrize("bad", [-0.01, -5, "-1", float("nan"), "ten"])
+def test_negative_or_invalid_cap_is_a_configuration_error(bad: object) -> None:
+    with pytest.raises(ValueError):
+        MonthlyBudget(InMemorySpendLedger(), cap_usd=bad)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("raw", "cap"),
+    [(None, None), ("", None), (" none ", None), ("Unlimited", None), ("0", 0.0), ("12.5", 12.5), (10, 10.0)],
+)
+def test_parse_budget_cap_reads_configuration(raw: object, cap: float | None) -> None:
+    assert parse_budget_cap(raw) == cap  # type: ignore[arg-type]
+
+
+def test_sync_api_matches_the_async_one(tmp_path: Path) -> None:
+    clock = [NOV]
+    engine = create_engine(f"sqlite:///{tmp_path / 'sync_spend.db'}")
+    try:
+        ledger = SqlSpendLedger(engine)
+        ledger.table.create(engine, checkfirst=True)
+        budget = MonthlyBudget(ledger, cap_usd=1.0, clock=lambda: clock[0])
+        budget.ensure_within_budget_sync()
+        budget.record_sync(0.6, "gemini", "brief", "user-1")
+        budget.ensure_within_budget_sync()
+        budget.record_sync(0.4, "gemini", "brief")
+        with pytest.raises(MonthlyBudgetExceeded):
+            budget.ensure_within_budget_sync()
+        assert budget.summary_sync() == {
+            "month": "2026-11",
+            "spent_usd": 1.0,
+            "cap_usd": 1.0,
+            "remaining_usd": 0.0,
+            "over_budget": True,
+        }
+        clock[0] = DEC
+        budget.ensure_within_budget_sync()
+    finally:
+        engine.dispose()
+
+
+async def test_sync_api_needs_a_sync_ledger(tmp_path: Path) -> None:
+    pytest.importorskip("aiosqlite")
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'async_only.db'}")
+    try:
+        budget = MonthlyBudget(SqlSpendLedger(engine), cap_usd=1.0, clock=lambda: NOV)
+        with pytest.raises(NotImplementedError, match="sync Engine"):
+            budget.ensure_within_budget_sync()
+        with pytest.raises(NotImplementedError):
+            budget.record_sync(0.1, "gemini")
+    finally:
+        await engine.dispose()
+
+
+def test_sync_api_fails_closed_and_records_best_effort() -> None:
+    class BrokenSync(InMemorySpendLedger):
+        def month_total_sync(self, month: str) -> float:
+            raise RuntimeError("database down")
+
+        def record_sync(self, entry: SpendEntry) -> None:
+            raise RuntimeError("database down")
+
+    with pytest.raises(SpendLedgerUnavailable):
+        MonthlyBudget(BrokenSync(), cap_usd=1.0, clock=lambda: NOV).ensure_within_budget_sync()
+    MonthlyBudget(BrokenSync(), cap_usd=1.0, clock=lambda: NOV, fail_closed=False).ensure_within_budget_sync()
+    MonthlyBudget(BrokenSync(), cap_usd=1.0, clock=lambda: NOV).record_sync(0.1, "gemini")
+    with pytest.raises(RuntimeError):
+        MonthlyBudget(BrokenSync(), cap_usd=1.0, clock=lambda: NOV, strict=True).record_sync(0.1, "gemini")
 
 
 class BrokenLedger(SpendLedger):
@@ -140,6 +223,7 @@ def test_budget_errors_render_the_nexus_error_contract() -> None:
     app = create_nexus_app(title="Budget")
     exhausted = MonthlyBudget(InMemorySpendLedger(), cap_usd=0.5, clock=lambda: NOV)
     unavailable = MonthlyBudget(BrokenLedger(), cap_usd=0.5, clock=lambda: NOV)
+    switched_off = MonthlyBudget(InMemorySpendLedger(), cap_usd=0, clock=lambda: NOV)
 
     @app.post("/api/ask")
     async def ask() -> dict[str, bool]:
@@ -150,6 +234,11 @@ def test_budget_errors_render_the_nexus_error_contract() -> None:
     @app.post("/api/ask-broken")
     async def ask_broken() -> dict[str, bool]:
         await unavailable.ensure_within_budget()
+        return {"ok": True}
+
+    @app.post("/api/ask-off")
+    async def ask_off() -> dict[str, bool]:
+        await switched_off.ensure_within_budget()
         return {"ok": True}
 
     client = TestClient(app)
@@ -163,6 +252,10 @@ def test_budget_errors_render_the_nexus_error_contract() -> None:
     }
     broken = client.post("/api/ask-broken")
     assert broken.status_code == 503 and broken.json()["error"] == "ai_budget_unavailable"
+    off = client.post("/api/ask-off")
+    assert off.status_code == 429
+    assert off.json()["error"] == "ai_disabled"
+    assert off.json()["message"] == "AI features are switched off for this app."
     assert "database" not in broken.text
 
 

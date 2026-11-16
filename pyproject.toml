@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexus-agent-framework"
-version = "0.4.0"
+version = "0.5.0"
 description = "Autonomous Agentic Software Engineering Framework & Virtual IT Squad powered by Google Gemini and MCP — https://nexus.abburi.info"
 readme = "README.md"
 requires-python = ">=3.11"
