@@ -2,18 +2,22 @@
 
 A short guide for moving an existing FastAPI backend onto `create_nexus_app` and the shared backend
 kit (`nexus.api`, `nexus.ai.spend`). Every piece is optional: adopt the factory first, then replace
-local copies one at a time. For the React side see `packages/ui/README.md`.
+local copies one at a time. For the React side see `packages/ui/README.md`
+(`npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui`).
 
-## 1. Install (pinned to a commit)
+## 1. Install
 
-PyPI still serves 0.1.1, so pin the git commit you were given:
+From PyPI, pinned to a version (0.4.0 has everything in this guide):
 
 ```text
 # requirements.txt / pyproject dependency
-nexus-agent-framework @ git+https://github.com/sabburi1994/nexus.git@<commit>
+nexus-agent-framework==0.4.0
 # with the OIDC verifier (Cloud Scheduler or service account callers):
-nexus-agent-framework[oidc] @ git+https://github.com/sabburi1994/nexus.git@<commit>
+nexus-agent-framework[oidc]==0.4.0
 ```
+
+To use a change that is merged on `main` but not released yet, pin the commit instead:
+`nexus-agent-framework[oidc] @ git+https://github.com/sabburi1994/nexus.git@<commit>`.
 
 The factory alone needs only FastAPI, Starlette, httpx, Pydantic and SQLAlchemy (already in every
 app). `[oidc]` adds PyJWT with crypto. Nothing else is pulled in.
@@ -193,7 +197,7 @@ Google's keys unavailable; the reason is logged as a warning, never returned. Sy
 
 ## 8. Checklist per app
 
-1. Pin the commit; replace `FastAPI(...)` with `create_nexus_app(...)` keeping health path, CSP and
+1. Pin `nexus-agent-framework==0.4.0` (or a commit); replace `FastAPI(...)` with `create_nexus_app(...)` keeping health path, CSP and
    docs setting; run the app's tests.
 2. Check the error bodies the frontend reads: 500 bodies no longer carry exception text.
 3. Replace the local limiter, SPA mount, spend cap and OIDC verifier one at a time, each with the

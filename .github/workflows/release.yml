@@ -97,12 +97,13 @@ jobs:
       - name: Install and build packages
         run: |
           npm ci
-          npm run build -w @nexus-agent-framework/contracts -w @nexus-agent-framework/middleware -w @nexus-agent-framework/scraper
+          npm run build -w @nexus-agent-framework/contracts -w @nexus-agent-framework/middleware -w @nexus-agent-framework/scraper -w @nexus-agent-framework/tokens -w @nexus-agent-framework/ui
 
       - name: Publish packages whose version is not on npm yet
         run: |
-          # tokens and ui 1.x are distributed as tarballs at ui-v* tags (releases/), not on npm for now.
-          for pkg in contracts middleware scraper; do
+          # tokens before ui: ui has tokens as a peer dependency. Today the owner publishes tokens
+          # and ui by hand from the committed releases/ tarballs (Actions is disabled).
+          for pkg in contracts middleware scraper tokens ui; do
             name="$(node -p "require('./packages/$pkg/package.json').name")"
             version="$(node -p "require('./packages/$pkg/package.json').version")"
             if npm view "$name@$version" version >/dev/null 2>&1; then

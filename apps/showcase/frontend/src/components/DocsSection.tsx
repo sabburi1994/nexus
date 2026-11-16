@@ -98,19 +98,22 @@ export const DocsSection: React.FC<Props> = ({ activeTopic, onSelectTopic }) => 
             </div>
 
             <CommandBlock
-              title="Install Core Framework & Verify Environment (v0.3.0 Stage 1–3 on main)"
+              title="Install Core Framework & Verify Environment (v0.4.0 on PyPI)"
               language="bash"
-              code={`pip install "git+https://github.com/sabburi1994/nexus.git"
-# Or from PyPI once v0.3.0 is released (latest PyPI baseline: 0.1.1):
-pip install nexus-agent-framework
+              code={`pip install nexus-agent-framework
 nexus --version
 nexus doctor`}
             />
 
             <CommandBlock
-              title="Install Shared Monorepo TypeScript Packages (Published Live on npm)"
+              title="Install the UI Kit and Design Tokens (npm)"
               language="bash"
-              code={`npm install @nexus-agent-framework/contracts @nexus-agent-framework/ui @nexus-agent-framework/middleware`}
+              code={`npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui
+# then, once, in your entry file:
+#   import "@nexus-agent-framework/tokens/themes/finhub.css";
+#   import "@nexus-agent-framework/ui/styles.css";
+# contracts, middleware and scraper:
+npm install @nexus-agent-framework/contracts @nexus-agent-framework/middleware @nexus-agent-framework/scraper`}
             />
 
             <div className="rounded border border-[#d6cec0] bg-[#f8f4ec] p-4 text-xs leading-relaxed text-[#3a494b]">

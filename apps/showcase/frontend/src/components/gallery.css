@@ -342,3 +342,9 @@
   color: var(--nx-color-text-muted);
   font-weight: var(--nx-font-weight-regular);
 }
+.gx-install {
+  margin-top: 0.5rem;
+}
+.gx-install code {
+  overflow-wrap: anywhere;
+}
