@@ -29,7 +29,7 @@ def test_health_and_framework_status() -> None:
     info = fh.json()
     assert info["website"] == "https://nexus.abburi.info"
     assert info["tests_passed"] == _MANIFEST["suites"]["core_pytest"]["passed"]
-    assert info["pypi_live_version"] == "0.4.0"
+    assert info["pypi_live_version"] == "0.5.0"
     assert info["pypi_staged_version"] == "0.5.0"
     assert "github.com/sabburi1994/nexus/actions" in info["ci_status_url"]
 

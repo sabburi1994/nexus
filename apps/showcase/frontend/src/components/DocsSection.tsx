@@ -98,7 +98,7 @@ export const DocsSection: React.FC<Props> = ({ activeTopic, onSelectTopic }) => 
             </div>
 
             <CommandBlock
-              title="Install Core Framework & Verify Environment (v0.4.0 on PyPI)"
+              title="Install Core Framework & Verify Environment (v0.5.0 on PyPI)"
               language="bash"
               code={`pip install nexus-agent-framework
 nexus --version

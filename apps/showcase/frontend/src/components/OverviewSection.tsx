@@ -116,7 +116,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
         <div className="editorial-card flex flex-col justify-between p-7 lg:col-span-8">
           <div>
             <p className="editorial-kicker">
-              Orchestrator-Native Agentic Framework · v{health?.version ?? "0.4.0"}
+              Orchestrator-Native Agentic Framework · v{health?.version ?? "0.5.0"}
             </p>
             <h1 className="mt-3 text-4xl font-normal leading-[1.08] tracking-tight text-[#172a2e] sm:text-5xl">
               Autonomous software squads, with{" "}
@@ -191,7 +191,7 @@ export const OverviewSection: React.FC<Props> = ({ health, onNavigate, injection
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">
                 <dt className="text-[#5c6a67]">PyPI Release</dt>
                 <dd className="tabular-mono font-medium text-[#172a2e]">
-                  v{health?.pypi_live_version ?? "0.4.0"} on PyPI
+                  v{health?.pypi_live_version ?? "0.5.0"} on PyPI
                 </dd>
               </div>
               <div className="flex items-center justify-between border-b border-[#e5ddd0] pb-2">

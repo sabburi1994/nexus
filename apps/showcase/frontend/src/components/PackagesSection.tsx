@@ -47,7 +47,7 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
     },
   ];
 
-  const livePypi = health?.pypi_live_version ?? "0.4.0";
+  const livePypi = health?.pypi_live_version ?? "0.5.0";
   const stagedVersion = health?.pypi_staged_version ?? health?.version ?? livePypi;
   const mainAhead = stagedVersion !== livePypi;
 
