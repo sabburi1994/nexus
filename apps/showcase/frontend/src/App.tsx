@@ -111,7 +111,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col bg-[#f5f1e8] text-[#172a2e]">
       <NexusHeader
         appName="Nexus"
-        tagline={`Agentic Engineering Framework · v${health?.version ?? "0.5.0"}`}
+        tagline={`Agentic Engineering Framework · v${health?.version ?? "0.5.1"}`}
         activeModel={cachedSimulation?.execution_mode === "byok-live" ? "gemini-3.8-flash (BYOK)" : health?.default_model ?? "gemini-3.8-flash"}
         budgetSpentUsd={sessionCostUsd}
         budgetCapUsd={1.0}

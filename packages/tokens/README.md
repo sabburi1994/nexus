@@ -73,3 +73,19 @@ test its own overrides the same way.
 
 No gradients, glows, blur or remote fonts: font stacks are system fonts (Inter first if the app self
 hosts it). Shadows are faint. Colour is never the only signal in the components built on these tokens.
+
+## Versions and release notes
+
+Latest stable: **1.0.1**. 1.0.1 updates this page only; the tokens are the same as 1.0.0.
+Every release is listed in the [changelog](https://github.com/sabburi1994/nexus/blob/main/CHANGELOG.md) and on the [GitHub releases](https://github.com/sabburi1994/nexus/releases) page.
+
+The Nexus packages:
+
+| Package | Latest stable |
+| :--- | :--- |
+| [`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens) | 1.0.1 |
+| [`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui) | 1.0.2 |
+| [`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts) | 1.0.4 |
+| [`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware) | 1.0.3 |
+| [`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper) | 1.0.3 |
+| [`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/) (Python, PyPI) | 0.5.1 |

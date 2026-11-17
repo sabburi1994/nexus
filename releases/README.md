@@ -19,11 +19,11 @@ npm install @nexus-agent-framework/tokens                            # tokens on
 
 ## Install by URL (fallback)
 
-To pin a tag without the registry, install the committed files over HTTPS (ui 1.0.1 with tokens 1.0.0,
-tag `ui-v1.0.1`):
+To pin a tag without the registry, install the committed files over HTTPS (ui 1.0.2 with tokens 1.0.1,
+tag `ui-v1.0.2`):
 
 ```bash
-npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-tokens-1.0.0.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.1/releases/nexus-agent-framework-ui-1.0.1.tgz
+npm install https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.2/releases/nexus-agent-framework-tokens-1.0.1.tgz https://raw.githubusercontent.com/sabburi1994/nexus/ui-v1.0.2/releases/nexus-agent-framework-ui-1.0.2.tgz
 ```
 
 npm records each URL with its integrity hash in `package-lock.json`. Older tags keep serving their own

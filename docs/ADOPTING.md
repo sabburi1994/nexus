@@ -7,14 +7,14 @@ local copies one at a time. For the React side see `packages/ui/README.md`
 
 ## 1. Install
 
-From PyPI, pinned to a version (0.5.0 has everything in this guide; coming from 0.4.0, read
+From PyPI, pinned to a version (0.5.1 is the latest stable and has everything in this guide; coming from 0.4.0, read
 [Upgrading from 0.4.0](#upgrading-from-040) first):
 
 ```text
 # requirements.txt / pyproject dependency
-nexus-agent-framework==0.5.0
+nexus-agent-framework==0.5.1
 # with the OIDC verifier (Cloud Scheduler or service account callers):
-nexus-agent-framework[oidc]==0.5.0
+nexus-agent-framework[oidc]==0.5.1
 ```
 
 To use a change that is merged on `main` but not released yet, pin the commit instead:
@@ -225,7 +225,7 @@ Google's keys unavailable; the reason is logged as a warning, never returned. Sy
 
 ## 8. Checklist per app
 
-1. Pin `nexus-agent-framework==0.5.0` (or a commit); replace `FastAPI(...)` with
+1. Pin `nexus-agent-framework==0.5.1` (or a commit); replace `FastAPI(...)` with
    `create_nexus_app(...)` keeping health path, CSP and docs setting; run the app's tests.
 2. Check the error bodies the frontend reads: `message` is top level, and 500 bodies no longer
    carry exception text.

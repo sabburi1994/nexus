@@ -4,7 +4,8 @@
   <a href="https://nexus.abburi.info"><img src="https://img.shields.io/badge/website-nexus.abburi.info-bd513d" alt="Website" /></a>
   <a href="https://nexus.abburi.info/#simulator"><img src="https://img.shields.io/badge/live%20simulator-interactive-172a2e" alt="Live Simulator" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/pypi/v/nexus-agent-framework?color=0284c7&label=PyPI%20package" alt="PyPI version" /></a>
-  <a href="https://www.npmjs.com/org/nexus-agent-framework"><img src="https://img.shields.io/badge/npm-%40nexus--agent--framework-cb3837?logo=npm" alt="npm org" /></a>
+  <a href="https://www.npmjs.com/package/@nexus-agent-framework/ui"><img src="https://img.shields.io/npm/v/@nexus-agent-framework/ui?color=cb3837&label=npm%20ui&logo=npm" alt="npm ui version" /></a>
+  <a href="https://github.com/sabburi1994/nexus/releases/latest"><img src="https://img.shields.io/github/v/release/sabburi1994/nexus?label=latest%20release&color=172a2e" alt="Latest release" /></a>
   <a href="https://pypi.org/project/nexus-agent-framework/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python" alt="Python Versions" /></a>
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/license-Apache%202.0-10b981.svg" alt="License" /></a>
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/tests-run%20locally-lightgrey" alt="Tests: run locally" /></a>
@@ -18,10 +19,37 @@
 
 ---
 
+## 🏷️ Latest Stable Release
+
+| Package | Registry | Latest stable |
+| :--- | :--- | :--- |
+| [`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/) | PyPI | **0.5.1** (2026-11-17) |
+| [`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens) | npm | **1.0.1** |
+| [`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui) | npm | **1.0.2** |
+| [`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts) | npm | **1.0.4** |
+| [`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware) | npm | **1.0.3** |
+| [`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper) | npm | **1.0.3** |
+
+**What's new in the 0.5 line** ([release notes](https://github.com/sabburi1994/nexus/releases) ·
+[changelog](https://github.com/sabburi1994/nexus/blob/main/CHANGELOG.md)):
+
+* **Safe AI budget caps:** `MonthlyBudget(cap_usd=0)` switches AI off (HTTP 429 `ai_disabled`), `None`
+  means no cap, and a negative cap fails at startup. *Breaking for 0.4.0 users who passed 0 to mean
+  unlimited:* see [Upgrading from 0.4.0](https://github.com/sabburi1994/nexus/blob/main/docs/ADOPTING.md#upgrading-from-040).
+* **Sync budget API** for model calls in worker threads: `ensure_within_budget_sync`, `record_sync`,
+  `summary_sync`.
+* **Plain ASGI request id middleware**, so an app's own 413 body size limit and streaming bodies pass
+  through untouched.
+* **`no_store_prefixes`** in `SecurityHeadersConfig` for `Cache-Control: no-store` on API paths.
+* Since 0.4.0: the **backend adoption kit** (rate limiter, safe SPA mount, monthly AI spend ledger,
+  Google OIDC verifier) with a step by step [adoption guide](https://github.com/sabburi1994/nexus/blob/main/docs/ADOPTING.md).
+
+---
+
 ## 🚀 Installation & Quickstart
 
 ### Python Framework (PyPI)
-Install the core orchestrator and agent runtime (0.5.0):
+Install the core orchestrator and agent runtime (0.5.1):
 ```bash
 pip install nexus-agent-framework
 # with the Google OIDC verifier for Cloud Scheduler and service account callers:
@@ -68,7 +96,7 @@ flowchart TD
 3. **Data Architect (`DataArchitectAgent`)**: Normalizes relational schemas, foreign keys, indexes, and emits PostgreSQL SQL DDL (`docs/DATA_ARCHITECTURE.md`).
 4. **UI/UX Designer (`UiDesignerAgent`)**: Produces responsive design tokens and Tailwind component structures utilizing `@nexus-agent-framework/ui`.
 5. **Full-Stack Engineer (`FullStackEngineerAgent`)**: Implements clean FastAPI REST endpoints, Pydantic validation schemas, SQLAlchemy ORM entities, and React UI components.
-6. **DevOps Engineer (`DevopsEngineerAgent`)**: Decides the app specific inputs (`docker-compose.yml`, whether the backend calls Vertex AI, which runtime secrets it reads). The files that encode platform policy are rendered from fixed templates, not written by the model: Terraform that calls the [`nexus_app` and `nexus_cloud_run` modules](infra/terraform/modules/README.md) (scale to zero, max 2 instances, CPU billed per request, image tag required, Secret Manager access per secret, Vertex AI granted only when needed), a `backend/Dockerfile` that runs as a non root user on port 8080, and a local `scripts/deploy.sh` that builds, tags the image with the git SHA and applies Terraform. No CI workflow is generated.
+6. **DevOps Engineer (`DevopsEngineerAgent`)**: Decides the app specific inputs (`docker-compose.yml`, whether the backend calls Vertex AI, which runtime secrets it reads). The files that encode platform policy are rendered from fixed templates, not written by the model: Terraform that calls the [`nexus_app` and `nexus_cloud_run` modules](https://github.com/sabburi1994/nexus/blob/main/infra/terraform/modules/README.md) (scale to zero, max 2 instances, CPU billed per request, image tag required, Secret Manager access per secret, Vertex AI granted only when needed), a `backend/Dockerfile` that runs as a non root user on port 8080, and a local `scripts/deploy.sh` that builds, tags the image with the git SHA and applies Terraform. No CI workflow is generated.
 7. **QA & Security Engineer (`QaEngineerAgent`)**: Reviews the code for security issues and writes a `pytest` suite for the generated backend. When the workspace is written to disk, Nexus runs that suite for real (see [Stage 1](#-stage-1-closed-loop-self-healing)); the QA gate passes only if the tests pass and the review passes.
 
 ---
@@ -79,12 +107,12 @@ Nexus is maintained as a unified monorepo providing full-stack libraries across 
 
 | Package | Registry | Version | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.5.0` | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`) |
-| **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.3` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
-| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.2` | Security headers, best effort credential sanitizer, correlation tracing |
-| **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.2` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
-| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `1.0.1`: shared React kit for the platform apps (Button, form fields, Card, Table, Sheet, Dialog, Tabs, AppShell, Toast, SkeletonRows, EmptyState, ErrorState, Badge, Stat, LineChart); the showcase components moved to `@nexus-agent-framework/ui/showcase` |
-| **[`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens)** | npm | `1.0.0`: design tokens as CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested |
+| **[`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/)** | PyPI | `0.5.1` | Core orchestrator, 7 specialist agents, Stage 1–3 self-healing/brownfield/ROI, CLI (`dream`, `mcp`, `ui`, `audit`, `refactor`, `metrics`); backend adoption kit (`create_nexus_app`, rate limiter, SPA mount, AI spend budget, OIDC verifier) |
+| **[`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts)** | npm | `1.0.4` | Telemetry schemas, Stage 1–3 healing/AST/ROI contracts, agent audit chains |
+| **[`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware)** | npm | `1.0.3` | Security headers, best effort credential sanitizer, correlation tracing |
+| **[`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper)** | npm | `1.0.3` | Polite web scraping protocols, RSS feed ingestion, rate limits & backoff policies |
+| **[`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui)** | npm | `1.0.2` | Shared React kit for the platform apps (Button, form fields, Card, Table, Sheet, Dialog, Tabs, AppShell, Toast, SkeletonRows, EmptyState, ErrorState, Badge, Stat, LineChart); the showcase components moved to `@nexus-agent-framework/ui/showcase` |
+| **[`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens)** | npm | `1.0.1` | Design tokens as CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested |
 
 ---
 
@@ -264,7 +292,7 @@ nexus metrics ./my-project --hourly-rate 95
 - **Secret Scrubbing (best effort)**: `sanitize_text` redacts known credential formats before text reaches a model or a log: OpenAI style `sk-...`, Anthropic `sk-ant-...`, AWS access key ids (`AKIA...`, `ASIA...`), Google API keys (`AIza...`), Google OAuth client secrets (`GOCSPX-...`), Slack tokens (`xoxb-`, `xoxp-`, ...), GitHub tokens, Google OAuth bearer tokens, PEM private key blocks, and email addresses. Unknown formats, passwords and encoded secrets are not detected.
 - **Closed CORS by default**: `create_nexus_app()` and the `nexus ui` dashboard send no CORS headers unless you pass explicit `cors_origins`; credentials are only allowed with explicit origins, never with `"*"`.
 - **Security headers (opt in)**: `create_nexus_app(security_headers=True)` adds a Content Security Policy, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and a restrictive `Permissions-Policy`. Pass a `SecurityHeadersConfig` to adjust the policy per path or to cache hashed static assets as immutable while serving HTML with `no-cache`. The showcase uses it.
-- **Backend adoption kit**: `nexus.api` also ships a sliding window rate limiter (`rate_limit`, `RateLimitMiddleware`), a safe SPA mount (`mount_spa`), a Google OIDC verifier for Cloud Scheduler and service account callers (`GoogleOidcVerifier`, extra `[oidc]`), and `nexus.ai.spend` a persistent monthly AI spend ledger with a fail closed budget gate. Moving an existing app over: [docs/ADOPTING.md](docs/ADOPTING.md).
+- **Backend adoption kit**: `nexus.api` also ships a sliding window rate limiter (`rate_limit`, `RateLimitMiddleware`), a safe SPA mount (`mount_spa`), a Google OIDC verifier for Cloud Scheduler and service account callers (`GoogleOidcVerifier`, extra `[oidc]`), and `nexus.ai.spend` a persistent monthly AI spend ledger with a fail closed budget gate. Moving an existing app over: [docs/ADOPTING.md](https://github.com/sabburi1994/nexus/blob/main/docs/ADOPTING.md).
 - **No implicit cloud project**: `GeminiClient` uses `GCP_PROJECT_ID`, `GOOGLE_CLOUD_PROJECT` or your gcloud default, and raises `NexusConfigurationError` when Vertex AI is needed and none is set. API keys go in the `x-goog-api-key` header, never in URLs.
 - **Deterministic Mock Engine**: Run the entire IT pack and test suite locally for \$0.00 using `MockProvider`.
 
@@ -298,7 +326,7 @@ pre-commit run --all-files
 Releases are published by the owner from a pushed tag: the Python package from `v<version>`, and `@nexus-agent-framework/tokens` and `ui` from the exact tarballs committed in [`releases/`](releases/README.md) at `ui-v<version>` (built by `npm run release:ui`). `.github/workflows/release.yml` is ready to do the same with OIDC trusted publishing (no long lived tokens), but GitHub Actions is disabled for this repository, so nothing publishes automatically.
 
 ### Showcase deployment
-The `nexus.abburi.info` showcase runs on Cloud Run with its own runtime service account (no project roles), build service account and Artifact Registry repository. The project is a Terraform variable: a dedicated project is preferred, and hosting it in an existing project is supported because every grant is scoped to the showcase's own resources. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](infra/terraform/modules/README.md).
+The `nexus.abburi.info` showcase runs on Cloud Run with its own runtime service account (no project roles), build service account and Artifact Registry repository. The project is a Terraform variable: a dedicated project is preferred, and hosting it in an existing project is supported because every grant is scoped to the showcase's own resources. Runtime and build service accounts, the registry, the Cloud Run service and the domain mapping are all Terraform managed. See [`apps/showcase/ROLLOUT.md`](https://github.com/sabburi1994/nexus/blob/main/apps/showcase/ROLLOUT.md). Reusable platform modules live in [`infra/terraform/modules`](https://github.com/sabburi1994/nexus/blob/main/infra/terraform/modules/README.md).
 
 ---
 
@@ -312,5 +340,5 @@ Nexus is free for everyone to use, run, and explore. To preserve strict architec
 ---
 
 ## 📄 License
-Nexus is licensed under the [Apache 2.0 License](LICENSE).  
+Nexus is licensed under the [Apache 2.0 License](https://github.com/sabburi1994/nexus/blob/main/LICENSE).  
 Copyright © 2026 Sai Nikhil Abburi. All rights reserved.

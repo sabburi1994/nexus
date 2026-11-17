@@ -1,6 +1,6 @@
 {
   "name": "@nexus-agent-framework/scraper",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Polite web scraping protocols, RSS ingestion contracts, and rate-limiting policies for AI agents — https://nexus.abburi.info",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

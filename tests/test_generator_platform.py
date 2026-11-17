@@ -181,7 +181,7 @@ def test_generated_frontend_uses_published_npm_packages(healthy_project: tuple[D
     pkg = json.loads((app / "frontend" / "package.json").read_text(encoding="utf-8"))
     deps = pkg["dependencies"]
     assert deps["@nexus-agent-framework/ui"] == "^0.2.0"
-    assert deps["@nexus-agent-framework/contracts"] == "^1.0.3"
+    assert deps["@nexus-agent-framework/contracts"] == "^1.0.4"
     assert not any(name.startswith("@nexus/") for name in deps)
     assert "workspace:" not in json.dumps(pkg)
 

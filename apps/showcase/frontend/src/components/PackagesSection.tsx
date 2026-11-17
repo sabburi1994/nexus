@@ -12,42 +12,42 @@ export const PackagesSection: React.FC<Props> = ({ health }) => {
   const npmPackages = [
     {
       name: "@nexus-agent-framework/contracts",
-      version: "1.0.3",
+      version: "1.0.4",
       role: "Shared Stage 0–3 TypeScript schemas & telemetry contracts",
       install: "npm install @nexus-agent-framework/contracts",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/contracts",
     },
     {
       name: "@nexus-agent-framework/ui",
-      version: "1.0.1",
+      version: "1.0.2",
       role: "Shared React kit for the platform apps: buttons, forms, cards, tables, sheets, dialogs, navigation shell, toasts, charts",
       install: "npm install @nexus-agent-framework/tokens @nexus-agent-framework/ui",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/ui",
     },
     {
       name: "@nexus-agent-framework/tokens",
-      version: "1.0.0",
+      version: "1.0.1",
       role: "Design tokens: CSS variables with light and dark themes per app, Tailwind 3 and 4 presets, AA tested",
       install: "npm install @nexus-agent-framework/tokens",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/tokens",
     },
     {
       name: "@nexus-agent-framework/middleware",
-      version: "1.0.2",
+      version: "1.0.3",
       role: "OWASP HTTP security headers, secret scrubbing, and correlation IDs",
       install: "npm install @nexus-agent-framework/middleware",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/middleware",
     },
     {
       name: "@nexus-agent-framework/scraper",
-      version: "1.0.2",
+      version: "1.0.3",
       role: "Polite web scraping policies, RSS ingestion contracts, and rate limiters",
       install: "npm install @nexus-agent-framework/scraper",
       url: "https://www.npmjs.com/package/@nexus-agent-framework/scraper",
     },
   ];
 
-  const livePypi = health?.pypi_live_version ?? "0.5.0";
+  const livePypi = health?.pypi_live_version ?? "0.5.1";
   const stagedVersion = health?.pypi_staged_version ?? health?.version ?? livePypi;
   const mainAhead = stagedVersion !== livePypi;
 

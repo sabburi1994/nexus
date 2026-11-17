@@ -470,7 +470,7 @@ export default function GallerySection() {
         <p className="gx-eyebrow">Design system</p>
         <h2 className="gx-title">Platform UI kit</h2>
         <p className="gx-lede">
-          <code>@nexus-agent-framework/tokens</code> 1.0 and <code>@nexus-agent-framework/ui</code> 1.0.1: one set of tokens
+          <code>@nexus-agent-framework/tokens</code> 1.0.1 and <code>@nexus-agent-framework/ui</code> 1.0.2: one set of tokens
           and React components for FinHub, TandemPath, PredictiveEconomics, CommandCenter and klassesall. Pick an app theme and
           a mode; every component below re-themes from CSS variables alone.
         </p>
