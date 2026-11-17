@@ -87,7 +87,7 @@ def _load_verification_manifest() -> dict[str, Any]:
     if _MANIFEST_PATH.exists():
         return dict(json.loads(_MANIFEST_PATH.read_text(encoding="utf-8")))
     return {
-        "pypi_live_version": "0.5.0",
+        "pypi_live_version": "0.5.1",
         "pypi_staged_version": __version__,
         "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
         "suites": {},
@@ -380,7 +380,7 @@ async def framework_health() -> dict[str, Any]:
         "status": "healthy",
         "framework": "nexus-agent-framework",
         "version": __version__,
-        "pypi_live_version": str(manifest.get("pypi_live_version", "0.5.0")),
+        "pypi_live_version": str(manifest.get("pypi_live_version", "0.5.1")),
         "pypi_staged_version": str(manifest.get("pypi_staged_version", __version__)),
         "ci_status_url": str(manifest.get("ci_status_url", "https://github.com/sabburi1994/nexus/actions")),
         "website": "https://nexus.abburi.info",
@@ -400,11 +400,11 @@ async def framework_health() -> dict[str, Any]:
         ],
         "packages": {
             "pypi": f"nexus-agent-framework=={__version__}",
-            "contracts": "@nexus-agent-framework/contracts@1.0.3",
-            "middleware": "@nexus-agent-framework/middleware@1.0.2",
-            "scraper": "@nexus-agent-framework/scraper@1.0.2",
-            "ui": "@nexus-agent-framework/ui@1.0.1",
-            "tokens": "@nexus-agent-framework/tokens@1.0.0",
+            "contracts": "@nexus-agent-framework/contracts@1.0.4",
+            "middleware": "@nexus-agent-framework/middleware@1.0.3",
+            "scraper": "@nexus-agent-framework/scraper@1.0.3",
+            "ui": "@nexus-agent-framework/ui@1.0.2",
+            "tokens": "@nexus-agent-framework/tokens@1.0.1",
         },
         "pricing_model": {
             "gemini_3_8_flash_input_per_m": f"${GEMINI_3_8_FLASH_INPUT_PER_M:.3f} USD",

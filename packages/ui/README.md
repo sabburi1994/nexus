@@ -65,7 +65,24 @@ No gradients, glows, glassmorphism or backdrop blur, sparkle icons or emoji. Vis
 control. Reduced motion turns animations and transitions off. Tests: Vitest and Testing Library for
 behaviour and keyboard, axe-core (offline) for accessibility, and policy checks for the rules above.
 
-## Changelog
+## Versions and release notes
 
+Latest stable: **1.0.2**. 1.0.2 updates this page only; the components are the same as 1.0.1.
+Every release is listed in the [changelog](https://github.com/sabburi1994/nexus/blob/main/CHANGELOG.md) and on the [GitHub releases](https://github.com/sabburi1994/nexus/releases) page.
+
+The Nexus packages:
+
+| Package | Latest stable |
+| :--- | :--- |
+| [`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens) | 1.0.1 |
+| [`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui) | 1.0.2 |
+| [`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts) | 1.0.4 |
+| [`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware) | 1.0.3 |
+| [`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper) | 1.0.3 |
+| [`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/) (Python, PyPI) | 0.5.1 |
+
+### ui changes
+
+* **1.0.2**: this page lists the latest stable versions and links to the changelog; no component changes.
 * **1.0.1**: `LineChart` no longer widens the page on phones. Its screen reader data table is now clipped inside a visually hidden `div` (a `<table>` cannot shrink to 1 px, so at a 390 px viewport the page scrolled to about 428 px), and `.nx-chart` is `position: relative`. Apps that worked around it with `.nx-chart { position: relative; overflow: hidden }` can drop the workaround.
 * **1.0.0**: first release of the kit.

@@ -1,6 +1,6 @@
 {
   "name": "@nexus-agent-framework/contracts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Universal data contracts, Stage 1-3 healing/brownfield/ROI telemetry schemas, and architectural protocols for Nexus AI agent frameworks (https://nexus.abburi.info)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

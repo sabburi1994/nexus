@@ -1,6 +1,6 @@
 {
   "name": "@nexus-agent-framework/tokens",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared design tokens for the Nexus platform apps: CSS custom properties with light and dark themes per app, Tailwind 3 and 4 presets, typed values and WCAG contrast helpers.",
   "type": "module",
   "main": "./dist/index.js",

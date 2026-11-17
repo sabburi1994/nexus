@@ -50,6 +50,22 @@ app.use((err, req, res, next) => {
 });
 ```
 
+## Versions and release notes
+
+Latest stable: **1.0.3**. 1.0.3 updates this page only; the code is the same as 1.0.2.
+Every release is listed in the [changelog](https://github.com/sabburi1994/nexus/blob/main/CHANGELOG.md) and on the [GitHub releases](https://github.com/sabburi1994/nexus/releases) page.
+
+The Nexus packages:
+
+| Package | Latest stable |
+| :--- | :--- |
+| [`@nexus-agent-framework/tokens`](https://www.npmjs.com/package/@nexus-agent-framework/tokens) | 1.0.1 |
+| [`@nexus-agent-framework/ui`](https://www.npmjs.com/package/@nexus-agent-framework/ui) | 1.0.2 |
+| [`@nexus-agent-framework/contracts`](https://www.npmjs.com/package/@nexus-agent-framework/contracts) | 1.0.4 |
+| [`@nexus-agent-framework/middleware`](https://www.npmjs.com/package/@nexus-agent-framework/middleware) | 1.0.3 |
+| [`@nexus-agent-framework/scraper`](https://www.npmjs.com/package/@nexus-agent-framework/scraper) | 1.0.3 |
+| [`nexus-agent-framework`](https://pypi.org/project/nexus-agent-framework/) (Python, PyPI) | 0.5.1 |
+
 ## License
 
 Licensed under the Apache 2.0 License. Live platform & docs at [nexus.abburi.info](https://nexus.abburi.info). Part of the [Nexus Agent Framework](https://github.com/sabburi1994/nexus).

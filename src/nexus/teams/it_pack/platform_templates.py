@@ -27,7 +27,7 @@ CONTRACTS_PACKAGE = "@nexus-agent-framework/contracts"
 # They move to the 1.x kit when the generator's frontend templates do; until then this stays on 0.2.
 UI_PUBLISHED_VERSION = "0.2.0"
 UI_VERSION_RANGE = f"^{UI_PUBLISHED_VERSION}"
-CONTRACTS_VERSION_RANGE = "^1.0.3"
+CONTRACTS_VERSION_RANGE = "^1.0.4"
 
 MODULES_REPOSITORY = "git::https://github.com/sabburi1994/nexus.git//infra/terraform/modules"
 CONTAINER_PORT = 8080

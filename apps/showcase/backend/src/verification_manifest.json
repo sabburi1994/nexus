@@ -1,6 +1,6 @@
 {
-  "pypi_live_version": "0.5.0",
-  "pypi_staged_version": "0.5.0",
+  "pypi_live_version": "0.5.1",
+  "pypi_staged_version": "0.5.1",
   "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
   "suites": {
     "core_pytest": {
