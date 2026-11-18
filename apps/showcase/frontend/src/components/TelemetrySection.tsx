@@ -187,7 +187,7 @@ export const TelemetrySection: React.FC<Props> = ({ onTelemetry }) => {
                 <p className="font-semibold text-[#172a2e]">How these figures are derived:</p>
                 <p className="mt-1">
                   Engineering hours use baseline scaffolding + AST analysis hours per service (not synthetic sales fluff)
-                  contrasted against Vertex AI Gemini 3.8 Flash pricing ($0.075/1M input tokens, $0.30/1M output tokens).
+                  contrasted against Vertex AI Gemini 3.8 Flash list pricing ($0.75/1M input tokens, $3.75/1M output tokens until the end of 2026; $1.50 and $7.50 from 2027).
                 </p>
               </div>
             </div>

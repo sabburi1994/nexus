@@ -15,7 +15,12 @@ Providers (no paid model calls unless you pass one explicitly):
 
 * ``deterministic``: the showcase's idea aware deterministic squad (realistic code, includes one
   intentional QA failure so self healing runs);
-* ``mock``: ``MockProvider`` (placeholder output), the floor.
+* ``mock``: ``MockProvider`` (placeholder output), the floor;
+* ``vertex``: a real Gemini model on Vertex AI (**paid**). Needs ``--project`` (or
+  ``GCP_PROJECT_ID``) and ``gcloud auth login``. Spend is counted from every HTTP response's
+  ``usageMetadata`` (input, output and thinking tokens, failed parses included) at the prices given
+  by ``--price-in`` and ``--price-out``; the run stops before a call once ``--max-spend-usd`` (whole
+  run) or ``--per-idea-spend-usd`` (one idea) is reached.
 
 This executes generated code on this machine (pytest and uvicorn in subprocesses with a reduced
 environment). Only run it on providers you trust.
@@ -24,6 +29,7 @@ Usage::
 
     python benchmarks/bench_generation.py                       # deterministic + mock
     python benchmarks/bench_generation.py --providers deterministic --json out.json
+    python benchmarks/bench_generation.py --providers vertex --project my-project --max-spend-usd 8
 """
 
 from __future__ import annotations
@@ -142,6 +148,65 @@ class InstrumentedProvider(BaseModelProvider):
         return self.inner.converse(messages, tools, system_instruction, model)
 
 
+class SpendCapReached(RuntimeError):
+    """The benchmark's own spend cap stopped a paid model call."""
+
+
+@dataclass
+class SpendGuard:
+    """Counts paid model spend from raw Vertex AI responses and refuses calls past the caps.
+
+    It hooks ``GeminiClient._post``, so every billed response is counted, including structured
+    calls whose JSON then fails to parse (the provider's own usage report misses those).
+    """
+
+    max_total_usd: float
+    max_idea_usd: float
+    price_in_per_m: float
+    price_out_per_m: float
+    calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    thinking_tokens: int = 0
+    idea_start_usd: float = 0.0
+
+    @property
+    def spent_usd(self) -> float:
+        out = self.output_tokens + self.thinking_tokens
+        return (self.input_tokens * self.price_in_per_m + out * self.price_out_per_m) / 1_000_000.0
+
+    def start_idea(self) -> None:
+        self.idea_start_usd = self.spent_usd
+
+    def idea_spent_usd(self) -> float:
+        return self.spent_usd - self.idea_start_usd
+
+    def check(self) -> None:
+        if self.spent_usd >= self.max_total_usd:
+            raise SpendCapReached(f"run spend cap reached: {self.spent_usd:.4f} of {self.max_total_usd:.2f} USD")
+        if self.idea_spent_usd() >= self.max_idea_usd:
+            raise SpendCapReached(f"idea spend cap reached: {self.idea_spent_usd():.4f} of {self.max_idea_usd:.2f} USD")
+
+    def attach(self, client: Any) -> None:
+        original = client._post
+
+        def guarded_post(url: str, headers: dict[str, str], body: dict[str, Any], max_retries: int = 2) -> Any:
+            self.check()
+            # The client refreshes an expired token and retries a 401 itself (since 0.5.2).
+            resp = original(url, headers=headers, body=body, max_retries=max_retries)
+            self.calls += 1
+            try:
+                usage = resp.json().get("usageMetadata", {})
+            except ValueError:
+                usage = {}
+            self.input_tokens += int(usage.get("promptTokenCount", 0))
+            self.output_tokens += int(usage.get("candidatesTokenCount", 0))
+            self.thinking_tokens += int(usage.get("thoughtsTokenCount", 0))
+            return resp
+
+        client._post = guarded_post
+
+
 @dataclass
 class IdeaResult:
     provider: str
@@ -162,6 +227,7 @@ class IdeaResult:
     test_run_seconds: float = 0.0
     test_runs: int = 0
     stages: dict[str, dict[str, float]] = field(default_factory=dict)
+    spend_usd: float = 0.0
     error: str = ""
 
 
@@ -208,20 +274,45 @@ def check_starts(backend_dir: Path, timeout_s: float = 20.0) -> tuple[bool, floa
             proc.kill()
 
 
-def _provider_factory(name: str) -> Callable[[str], BaseModelProvider]:
+def _provider_factory(
+    name: str, project: str | None = None, model: str | None = None, guard: SpendGuard | None = None
+) -> Callable[[str], BaseModelProvider]:
     if name == "deterministic":
         from showcase_provider import ShowcaseSquadProvider
 
         return lambda idea: ShowcaseSquadProvider(idea=idea, target_cloud="gcp", simulate_healing=True)
     if name == "mock":
         return lambda idea: MockProvider()
-    raise SystemExit(f"unknown provider {name!r} (choose deterministic or mock)")
+    if name == "vertex":
+        if guard is None:
+            raise SystemExit("the vertex provider needs a spend guard")
+        if not project:
+            raise SystemExit("the vertex provider needs --project (or GCP_PROJECT_ID)")
+        from nexus.providers.vertex import VertexAIProvider
+
+        def make(idea: str) -> BaseModelProvider:
+            provider = VertexAIProvider(project_id=project, default_model=model or "gemini-3.8-flash")
+            guard.attach(provider._client)
+            return provider
+
+        return make
+    raise SystemExit(f"unknown provider {name!r} (choose deterministic, mock or vertex)")
 
 
-def run_one(provider_name: str, idea: str, workdir: Path, max_healing_cycles: int) -> IdeaResult:
+def run_one(
+    provider_name: str,
+    idea: str,
+    workdir: Path,
+    max_healing_cycles: int,
+    factory: Callable[[str], BaseModelProvider] | None = None,
+    guard: SpendGuard | None = None,
+    squad_budget_usd: float | None = None,
+) -> IdeaResult:
     result = IdeaResult(provider=provider_name, idea=idea)
-    inner = _provider_factory(provider_name)(idea)
+    inner = (factory or _provider_factory(provider_name))(idea)
     provider = InstrumentedProvider(inner)
+    if guard is not None:
+        guard.start_idea()
 
     test_seconds = 0.0
     test_runs = 0
@@ -238,15 +329,21 @@ def run_one(provider_name: str, idea: str, workdir: Path, max_healing_cycles: in
 
     qa_runner.run_generated_tests = timed_runner  # type: ignore[assignment]
     t0 = time.perf_counter()
+    team = NexusITTeam(provider=provider) if squad_budget_usd is None else NexusITTeam(provider, squad_budget_usd)
     try:
-        project = NexusITTeam(provider=provider).build_from_idea(
-            idea, output_dir=workdir, max_healing_cycles=max_healing_cycles
-        )
+        project = team.build_from_idea(idea, output_dir=workdir, max_healing_cycles=max_healing_cycles)
+    except SpendCapReached:
+        raise
     except Exception as exc:  # noqa: BLE001 - a benchmark records failures instead of stopping
+        cause = exc.__cause__ or exc.__context__
+        if isinstance(cause, SpendCapReached):
+            raise cause from exc
         result.error = f"{type(exc).__name__}: {exc}"[:300]
         return result
     finally:
         qa_runner.run_generated_tests = original  # type: ignore[assignment]
+        if guard is not None:
+            result.spend_usd = round(guard.idea_spent_usd(), 6)
         result.total_seconds = time.perf_counter() - t0
         result.test_run_seconds = test_seconds
         result.test_runs = test_runs
@@ -296,12 +393,15 @@ def summarize(results: list[IdeaResult]) -> dict[str, Any]:
             "qa_gate": sum(r.qa_gate for r in rs),
             "end_to_end": sum(r.end_to_end for r in rs),
             "errors": [r.error for r in rs if r.error],
+            "spend_usd": round(sum(r.spend_usd for r in rs), 4),
             "median_total_s": statistics.median(r.total_seconds for r in rs),
             "median_generation_s": statistics.median(r.generation_seconds for r in rs),
             "median_test_run_s": statistics.median(r.test_run_seconds for r in rs),
             "median_test_runs": statistics.median(r.test_runs for r in rs),
             "median_start_s": statistics.median([r.start_seconds for r in rs if r.start_seconds] or [0.0]),
             "median_healing_cycles": statistics.median(r.healing_cycles for r in rs),
+            # A pass means little when the suite has one test: report the suite size next to it.
+            "median_tests_per_app": statistics.median(r.tests_passed + r.tests_failed for r in rs),
             "per_run_stage_avg": {
                 stage: {k: round(v / n, 4) for k, v in vals.items()} for stage, vals in stage_totals.items()
             },
@@ -318,6 +418,9 @@ def print_report(summary: dict[str, Any]) -> None:
         print(f"  tests pass    {_pct(s['tests_pass'], n)}")
         print(f"  QA gate       {_pct(s['qa_gate'], n)}")
         print(f"  END TO END    {_pct(s['end_to_end'], n)}")
+        print(f"  tests per app {s['median_tests_per_app']} (median)")
+        if s["spend_usd"]:
+            print(f"  model spend   {s['spend_usd']:.4f} USD (benchmark prices)")
         print(
             f"  median: total {s['median_total_s']:.2f}s, generation {s['median_generation_s']:.3f}s, "
             f"test runs {s['median_test_runs']} taking {s['median_test_run_s']:.2f}s, "
@@ -342,28 +445,51 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--providers", nargs="+", default=["deterministic", "mock"])
     ap.add_argument("--ideas", type=int, default=len(IDEAS), help="use the first N ideas of the fixed set")
+    ap.add_argument("--from-idea", type=int, default=0, help="skip the first N ideas (resume a stopped run)")
     ap.add_argument("--max-healing-cycles", type=int, default=3)
     ap.add_argument("--json", type=Path, help="write raw results and summary to this file")
     ap.add_argument("--keep", action="store_true", help="keep the generated workspaces")
+    ap.add_argument("--project", default=os.getenv("GCP_PROJECT_ID"), help="Google Cloud project (vertex)")
+    ap.add_argument("--model", default=None, help="model id for vertex (default gemini-3.8-flash)")
+    ap.add_argument("--max-spend-usd", type=float, default=5.0, help="vertex: stop the whole run here")
+    ap.add_argument("--per-idea-spend-usd", type=float, default=1.5, help="vertex: stop one idea here")
+    ap.add_argument("--price-in", type=float, default=1.0, help="vertex: USD per million input tokens")
+    ap.add_argument("--price-out", type=float, default=5.0, help="vertex: USD per million output tokens")
     args = ap.parse_args(argv)
 
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    guard = SpendGuard(args.max_spend_usd, args.per_idea_spend_usd, args.price_in, args.price_out)
     results: list[IdeaResult] = []
     tmp_root = Path(tempfile.mkdtemp(prefix="nexus_bench_"))
+    stopped = False
     try:
         for provider_name in args.providers:
-            for i, idea in enumerate(IDEAS[: args.ideas]):
+            paid = provider_name == "vertex"
+            factory = _provider_factory(provider_name, args.project, args.model, guard if paid else None)
+            for i, idea in list(enumerate(IDEAS[: args.ideas]))[args.from_idea :]:
                 workdir = tmp_root / provider_name / f"idea{i}"
                 workdir.mkdir(parents=True)
-                r = run_one(provider_name, idea, workdir, args.max_healing_cycles)
+                try:
+                    r = run_one(provider_name, idea, workdir, args.max_healing_cycles, factory, guard if paid else None)
+                except SpendCapReached as exc:
+                    r = IdeaResult(provider=provider_name, idea=idea, error=f"SpendCapReached: {exc}")
+                    r.spend_usd = round(guard.idea_spent_usd(), 6)
+                    stopped = "run spend cap" in str(exc)
                 flag = "PASS" if r.end_to_end else "FAIL"
                 print(
                     f"[{provider_name}] {flag} build={r.builds} start={r.starts} tests={r.tests_pass} "
-                    f"heal={r.healing_cycles} {r.total_seconds:.1f}s  {idea[:50]}"
+                    f"heal={r.healing_cycles} {r.total_seconds:.1f}s"
+                    + (f" ${r.spend_usd:.3f} (run ${guard.spent_usd:.3f})" if paid else "")
+                    + f"  {idea[:50]}"
                     + (f"  ERROR {r.error}" if r.error else "")
-                    + (f"  compile: {r.compile_errors[:2]}" if r.compile_errors else "")
+                    + (f"  compile: {r.compile_errors[:2]}" if r.compile_errors else ""),
+                    flush=True,
                 )
                 results.append(r)
+                if stopped:
+                    break
+            if stopped:
+                break
     finally:
         if not args.keep:
             import shutil
@@ -374,9 +500,25 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     summary = summarize(results)
     print_report(summary)
+    usage = {
+        "calls": guard.calls,
+        "input_tokens": guard.input_tokens,
+        "output_tokens": guard.output_tokens,
+        "thinking_tokens": guard.thinking_tokens,
+        "spend_usd": round(guard.spent_usd, 4),
+        "price_in_per_m": guard.price_in_per_m,
+        "price_out_per_m": guard.price_out_per_m,
+    }
+    if guard.calls:
+        print(
+            f"\npaid model usage: {guard.calls} calls, {guard.input_tokens} in, {guard.output_tokens} out, "
+            f"{guard.thinking_tokens} thinking tokens = {guard.spent_usd:.4f} USD at "
+            f"{guard.price_in_per_m}/{guard.price_out_per_m} USD per million"
+        )
     if args.json:
         args.json.write_text(
-            json.dumps({"summary": summary, "results": [asdict(r) for r in results]}, indent=2), encoding="utf-8"
+            json.dumps({"summary": summary, "usage": usage, "results": [asdict(r) for r in results]}, indent=2),
+            encoding="utf-8",
         )
     return 0
 

@@ -18,9 +18,21 @@ from nexus.ai.pricing import DEFAULT_MODEL, calculate_cost_usd
 
 logger = logging.getLogger("nexus.ai")
 
-# Cache token locally for 40 minutes to prevent overhead
+# Cached access token: (token, time after which it must not be used). A token is only reused until
+# shortly before it expires: the metadata server reports its lifetime; gcloud does not, and may
+# hand out a token it minted up to an hour ago, so a gcloud token is reused for 5 minutes only
+# (gcloud refreshes its own token when needed). A 401 also drops the cache (see GeminiClient).
 _CACHED_TOKEN: tuple[str, float] | None = None
-_TOKEN_TTL_SECONDS = 40 * 60
+_TOKEN_TTL_SECONDS = 40 * 60  # environment supplied tokens (their lifetime is unknown)
+_GCLOUD_TOKEN_TTL_SECONDS = 5 * 60
+_EXPIRY_MARGIN_SECONDS = 5 * 60
+
+
+def invalidate_gcp_access_token() -> None:
+    """Forget the cached access token, so the next call fetches a fresh one."""
+    global _CACHED_TOKEN
+    _CACHED_TOKEN = None
+
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -74,13 +86,13 @@ def get_gcp_access_token() -> str | None:
     """Acquire an OAuth access token via IAM instance metadata or gcloud CLI."""
     global _CACHED_TOKEN
     now = time.time()
-    if _CACHED_TOKEN and (now - _CACHED_TOKEN[1]) < _TOKEN_TTL_SECONDS:
+    if _CACHED_TOKEN and now < _CACHED_TOKEN[1]:
         return _CACHED_TOKEN[0]
 
     # 1. Environment token override
     env_token = os.getenv("GCP_ACCESS_TOKEN") or os.getenv("GOOGLE_OAUTH_ACCESS_TOKEN")
     if env_token:
-        _CACHED_TOKEN = (env_token.strip(), now)
+        _CACHED_TOKEN = (env_token.strip(), now + _TOKEN_TTL_SECONDS)
         return env_token.strip()
 
     # 2. Check GCP Compute Engine / Cloud Run instance metadata server
@@ -91,9 +103,11 @@ def get_gcp_access_token() -> str | None:
             timeout=1.5,
         )
         if resp.status_code == 200:
-            token = resp.json().get("access_token")
+            payload = resp.json()
+            token = payload.get("access_token")
             if token:
-                _CACHED_TOKEN = (token, now)
+                lifetime = float(payload.get("expires_in", 0) or 0)
+                _CACHED_TOKEN = (str(token), now + max(lifetime - _EXPIRY_MARGIN_SECONDS, 0.0))
                 return str(token)
     except Exception:
         pass
@@ -111,7 +125,7 @@ def get_gcp_access_token() -> str | None:
             )
             token = res.stdout.strip()
             if token and res.returncode == 0 and not token.startswith("ERROR"):
-                _CACHED_TOKEN = (token, now)
+                _CACHED_TOKEN = (token, now + _GCLOUD_TOKEN_TTL_SECONDS)
                 return token
         except Exception as exc:
             logger.debug("Local gcloud token lookup failed: %s", exc)
@@ -170,17 +184,32 @@ class GeminiClient:
         url: str,
         headers: dict[str, str],
         body: dict[str, Any],
-        max_retries: int = 2,
+        max_retries: int = 3,
     ) -> httpx.Response:
         import time
 
-        for attempt in range(max_retries):
+        refreshed = False
+        attempt = 0
+        while attempt < max_retries:
             try:
-                return self._http.post(url, headers=headers, json=body)
-            except (httpx.ReadTimeout, httpx.ConnectTimeout):
-                if attempt == max_retries - 1:
+                resp = self._http.post(url, headers=headers, json=body)
+            except httpx.TransportError:
+                # Timeouts, dropped connections ("server disconnected") and brief DNS or network
+                # outages: retry with a growing pause (2 s, 4 s) before giving up.
+                attempt += 1
+                if attempt == max_retries:
                     raise
-                time.sleep(2.0)
+                time.sleep(2.0 * attempt)
+                continue
+            if resp.status_code == 401 and not refreshed and headers.get("Authorization", "").startswith("Bearer "):
+                # The cached token expired (or was revoked): fetch a fresh one and retry once.
+                refreshed = True
+                invalidate_gcp_access_token()
+                token = get_gcp_access_token()
+                if token:
+                    headers = {**headers, "Authorization": f"Bearer {token}"}
+                    continue
+            return resp
         raise RuntimeError("HTTP request failed after max retries")
 
     @staticmethod
@@ -259,7 +288,8 @@ class GeminiClient:
         data = resp.json()
         usage = data.get("usageMetadata", {})
         inp = int(usage.get("promptTokenCount", 0))
-        out = int(usage.get("candidatesTokenCount", 0))
+        # Thinking tokens are billed as output.
+        out = int(usage.get("candidatesTokenCount", 0)) + int(usage.get("thoughtsTokenCount", 0))
         cost = calculate_cost_usd(inp, out, chosen_model)
 
         candidates = data.get("candidates", [])
@@ -390,7 +420,7 @@ class GeminiClient:
             data = resp.json()
             usage = data.get("usageMetadata", {})
             total_inp += int(usage.get("promptTokenCount", 0))
-            total_out += int(usage.get("candidatesTokenCount", 0))
+            total_out += int(usage.get("candidatesTokenCount", 0)) + int(usage.get("thoughtsTokenCount", 0))
 
             candidate = (data.get("candidates") or [{}])[0]
             content = candidate.get("content", {})

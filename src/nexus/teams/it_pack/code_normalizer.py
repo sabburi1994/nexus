@@ -34,6 +34,26 @@ _BARE_LOCAL_PKG_IMPORT = re.compile(
     rf"^(?P<indent>[ \t]*)from[ \t]+(?:backend|app|api|src|server|service)(?:\.(?:src|app))?[ \t]+import[ \t]+(?P<mod>{'|'.join(_LOCAL_MODULES)})\b",
     re.M,
 )
+# The structured output field names (``backend_models_py``) leak into imports as module names.
+_FIELD_NAME_MODULES = {"backend_models_py": "backend_models", "backend_main_py": "main", "backend_main": "main"}
+_FIELD_NAME_IMPORT = re.compile(
+    rf"^(?P<indent>[ \t]*)(?P<kw>from|import)[ \t]+(?P<mod>{'|'.join(_FIELD_NAME_MODULES)})\b",
+    re.M,
+)
+
+# Where the public Nexus names a generated app uses really live. A model often guesses the module
+# (``from nexus.models import NexusEntity``); imports of these names from any other ``nexus``
+# module that does not provide them are moved here.
+NEXUS_SYMBOL_MODULES: dict[str, str] = {
+    "NexusEntity": "nexus.db",
+    "Base": "nexus.db",
+    "get_db": "nexus.db",
+    "DatabaseSessionManager": "nexus.db",
+    "create_nexus_app": "nexus.api",
+    "SecurityHeadersConfig": "nexus.api",
+    "GeminiClient": "nexus.ai",
+    "MonthlyBudget": "nexus.ai.spend",
+}
 
 # Names models use without importing, and the import that provides them.
 KNOWN_IMPORTS: dict[str, str] = {
@@ -161,8 +181,56 @@ def _strip_prose(code: str) -> str | None:
 
 def _fix_local_imports(code: str) -> str:
     """``from backend.src.main import app`` / ``from .models import X`` -> flat layout imports."""
+    code = _FIELD_NAME_IMPORT.sub(
+        lambda m: f"{m.group('indent')}{m.group('kw')} {_FIELD_NAME_MODULES[m.group('mod')]}", code
+    )
     code = _LOCAL_IMPORT.sub(lambda m: f"{m.group('indent')}from {m.group('mod')} import ", code)
     return _BARE_LOCAL_PKG_IMPORT.sub(lambda m: f"{m.group('indent')}import {m.group('mod')}", code)
+
+
+def _nexus_module_provides(module: str, name: str) -> bool:
+    """True when ``from module import name`` works in the installed Nexus."""
+    import importlib
+
+    try:
+        mod = importlib.import_module(module)
+    except ImportError:
+        return False
+    return hasattr(mod, name)
+
+
+def _fix_nexus_imports(code: str) -> str:
+    """Move known Nexus names imported from the wrong module (``nexus.models``) to their real one."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code
+    lines = code.split("\n")
+    edits: list[tuple[int, int, list[str]]] = []
+    for node in tree.body:
+        if not isinstance(node, ast.ImportFrom) or node.level or not node.module:
+            continue
+        if node.module != "nexus" and not node.module.startswith("nexus."):
+            continue
+        moved: dict[str, list[str]] = {}
+        kept: list[str] = []
+        for alias in node.names:
+            text = alias.name if alias.asname is None else f"{alias.name} as {alias.asname}"
+            target = NEXUS_SYMBOL_MODULES.get(alias.name)
+            if target and target != node.module and not _nexus_module_provides(node.module, alias.name):
+                moved.setdefault(target, []).append(text)
+            else:
+                kept.append(text)
+        if not moved:
+            continue
+        indent = lines[node.lineno - 1][: node.col_offset]
+        new = [f"{indent}from {node.module} import {', '.join(kept)}"] if kept else []
+        new += [f"{indent}from {mod} import {', '.join(names)}" for mod, names in moved.items()]
+        edits.append((node.lineno - 1, node.end_lineno or node.lineno, new))
+    for start, end, new in reversed(edits):
+        lines[start:end] = new
+    patched = "\n".join(lines)
+    return patched if _parses(patched) else code
 
 
 def _bound_names(tree: ast.AST) -> set[str]:
@@ -244,6 +312,7 @@ def normalize_python(code: str) -> str:
     imports_fixed = _fix_local_imports(text)
     if _parses(imports_fixed) or not _parses(text):
         text = imports_fixed
+    text = _fix_nexus_imports(text)
     return _add_missing_imports(text)
 
 
