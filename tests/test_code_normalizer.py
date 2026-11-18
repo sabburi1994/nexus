@@ -150,3 +150,58 @@ def test_source_normalizer_strips_edge_fences_only() -> None:
 
 def test_team_sanitizer_uses_the_normalizer() -> None:
     assert NexusITTeam._sanitize_python(f"{FENCE}python\n{MAIN}{FENCE}") == MAIN
+
+
+# Found by the first real model benchmark (benchmarks/README.md, 2026-11-17) --------------------
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ("from backend_models_py import Item, ItemCreate", "from backend_models import Item, ItemCreate"),
+        ("import backend_models_py", "import backend_models"),
+        ("from backend_main_py import app", "from main import app"),
+        ("from backend_main import app", "from main import app"),
+    ],
+)
+def test_field_names_used_as_modules_are_rewritten(line: str, expected: str) -> None:
+    assert normalize_python(f"{line}\n") == f"{expected}\n"
+
+
+def test_wrong_nexus_module_is_corrected() -> None:
+    out = normalize_python("from nexus.models import NexusEntity\n\n\nclass Item(NexusEntity):\n    pass\n")
+    assert out.startswith("from nexus.db import NexusEntity\n")
+    assert "nexus.models" not in out
+
+
+def test_wrong_nexus_imports_are_split_by_real_module() -> None:
+    code = "from nexus.core import create_nexus_app, Base as NexusBase, GeminiClient\n"
+    out = normalize_python(code)
+    assert "from nexus.api import create_nexus_app\n" in out
+    assert "from nexus.db import Base as NexusBase\n" in out
+    assert "from nexus.ai import GeminiClient\n" in out
+    assert "nexus.core" not in out
+
+
+def test_correct_nexus_imports_and_unknown_names_are_kept() -> None:
+    for code in (
+        "from nexus.db import Base, NexusEntity\n",
+        "from nexus.api import create_nexus_app\n",
+        "from nexus.db.base import NexusEntity\n",
+        "from nexus.models import SomethingElse\n",
+    ):
+        assert normalize_python(code) == code
+
+
+def test_qa_sees_every_route_even_after_long_setup_code() -> None:
+    from nexus.teams.it_pack.qa import MAX_MAIN_CHARS, extract_routes
+
+    setup = "x = 1\n" * 700  # about 4 200 characters of database setup and seeding
+    code = (
+        "from fastapi import APIRouter\n" + setup + "@app.get('/health')\ndef health(): ...\n"
+        "@app.post('/api/items')\nasync def create(): ...\n@router.delete('/api/items/{item_id}')\n"
+        "def remove(item_id: str): ...\n@app.middleware('http')\nasync def mw(r, n): ...\n"
+    )
+    assert extract_routes(code) == [("GET", "/health"), ("POST", "/api/items"), ("DELETE", "/api/items/{item_id}")]
+    assert len(code) < MAX_MAIN_CHARS
+    assert extract_routes("def broken(:\n") == []

@@ -16,15 +16,27 @@ from nexus.db.base import NexusEntity
 
 
 def test_gemini_3_8_pricing() -> None:
-    """Verify Gemini 3.8 pricing per million tokens ($0.075 / $0.30)."""
-    # 1M input ($0.075) + 1M output ($0.30) = $0.375
-    cost = calculate_cost_usd(1_000_000, 1_000_000, model="gemini-3.8-flash")
-    assert round(cost, 4) == 0.375
+    """Vertex AI global list price: 0.75 / 3.75 USD per million until 2026-12-31, 1.50 / 7.50 from 2027."""
+    import datetime
+
+    intro = datetime.date(2026, 11, 17)
+    standard = datetime.date(2027, 1, 1)
+    # 1M input + 1M output
+    assert round(calculate_cost_usd(1_000_000, 1_000_000, model="gemini-3.8-flash", on=intro), 4) == 4.5
+    assert round(calculate_cost_usd(1_000_000, 1_000_000, model="gemini-3.8-flash", on=standard), 4) == 9.0
+    assert round(calculate_cost_usd(1_000_000, 0, model="gemini-3.8-flash", on=datetime.date(2026, 12, 31)), 4) == 0.75
 
     # 10,000 input, 2,000 output
-    cost_small = calculate_cost_usd(10_000, 2_000, model="gemini-3.8-flash")
-    expected = (10_000 / 1e6 * 0.075) + (2_000 / 1e6 * 0.30)
-    assert abs(cost_small - expected) < 1e-7
+    cost_small = calculate_cost_usd(10_000, 2_000, model="gemini-3.8-flash", on=intro)
+    expected = (10_000 / 1e6 * 0.75) + (2_000 / 1e6 * 3.75)
+    assert abs(cost_small - expected) < 1e-9
+
+
+def test_unknown_models_are_priced_high_so_caps_never_undercount() -> None:
+    from nexus.ai.pricing import FALLBACK_PRICE, price_per_million
+
+    assert price_per_million("some-future-model") == FALLBACK_PRICE
+    assert price_per_million("models/gemini-3.8-flash@001") != FALLBACK_PRICE
 
 
 def test_nexus_api_factory() -> None:

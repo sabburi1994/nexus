@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+
 from pydantic import BaseModel, Field
 
 from nexus.providers.base import BaseModelProvider
@@ -16,6 +18,36 @@ class QaSpecification(BaseModel):
     test_suite_code: str = Field(description="Complete pytest test suite code for the application")
     security_verdict: str = Field(description="Security inspection notes and guardrail validations")
     passed_preflight: bool = Field(description="True if specs and code satisfy quality gates")
+
+
+_HTTP_METHODS = {"get", "post", "put", "patch", "delete"}
+# How much generated code QA sees. 3500 characters of main.py used to be enough, but once apps set
+# up a real database and seed data the routes started past that point and QA tested only /health.
+MAX_MAIN_CHARS = 16000
+MAX_MODELS_CHARS = 8000
+MAX_ROUTES_TO_TEST = 10
+
+
+def extract_routes(code: str) -> list[tuple[str, str]]:
+    """(METHOD, path) of every ``@app.get("/x")`` / ``@router.post(...)`` style route in ``code``."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+    routes: list[tuple[str, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for deco in node.decorator_list:
+            if not (isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute)):
+                continue
+            method = deco.func.attr.lower()
+            if method not in _HTTP_METHODS or not deco.args:
+                continue
+            path = deco.args[0]
+            if isinstance(path, ast.Constant) and isinstance(path.value, str):
+                routes.append((method.upper(), path.value))
+    return routes
 
 
 class QaEngineerAgent:
@@ -35,7 +67,11 @@ class QaEngineerAgent:
     ) -> QaSpecification:
         """Validate architecture and produce executable pytest test suite against the implemented backend code."""
         cloud_target = solution.cloud_provider if solution else "gcp"
-        backend_snippet = fullstack.backend_main_py[:3500] if fullstack else "# No backend code supplied"
+        main_code = fullstack.backend_main_py if fullstack else ""
+        backend_snippet = main_code[:MAX_MAIN_CHARS] if fullstack else "# No backend code supplied"
+        models_snippet = fullstack.backend_models_py[:MAX_MODELS_CHARS] if fullstack else ""
+        routes = [r for r in extract_routes(main_code) if r[1] != "/health"]
+        route_list = "\n".join(f"- {method} {path}" for method, path in routes) or "- (none found besides /health)"
         prompt = f"""You are a Lead QA & Security Engineer.
 Review the application spec and actual implemented backend code:
 App: {proposal.title} ({proposal.app_name})
@@ -47,8 +83,18 @@ Implemented Backend Code (`src/main.py`):
 {backend_snippet}
 ```
 
+Schemas and entities (`src/backend_models.py`):
+```python
+{models_snippet}
+```
+
+Routes defined in main.py (besides /health):
+{route_list}
+
 Generate:
-1. `test_suite_code`: Executable pytest tests using FastAPI TestClient (`from main import app`) to test `/health` and the ACTUAL endpoints implemented in `src/main.py`. Do NOT import imaginary modules (like `services`). Only test routes that are actually defined in `main.py`. Note that `/health` returns `{{"status": "ok", "healthy": True}}`.
+1. `test_suite_code`: Executable pytest tests using FastAPI TestClient (`from main import app`) to test `/health` and the ACTUAL endpoints implemented in `src/main.py`. Do NOT import imaginary modules (like `services`). Only test routes that are actually defined in `main.py`. Note that `/health` returns `{{"status": "ok", "healthy": True}}` plus fields such as the app title and versions: assert only `status` and `healthy`, never the exact title, version or other values the app did not set explicitly.
+   Besides `/health`, write at least one test for each route listed above (if there are more than {MAX_ROUTES_TO_TEST}, the {MAX_ROUTES_TO_TEST} most important ones): call it with a valid request built from the schemas (create the rows it needs first, through the API), and assert the status code and one or two key fields of the response. A route that calls an external model (Gemini) may be skipped; never call the network.
+   Always create the client as a context manager in a module scoped fixture (`with TestClient(app) as client: yield client`), so startup and shutdown handlers (seeding, migrations) run exactly as they do under uvicorn; a plain `TestClient(app)` skips them and hides startup crashes. Ids of `NexusEntity` rows are UUID strings in JSON, never integers.
 2. `security_verdict`: Confirmation that prompt injection shields and permission scopes are validated.
 3. `passed_preflight`: Set True if ready for release.
 """
