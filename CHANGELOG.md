@@ -21,7 +21,7 @@ Install: `pip install nexus-agent-framework` and
 
 ## Python: `nexus-agent-framework`
 
-### 0.5.2 (unreleased)
+### 0.5.2 (2026-11-26)
 
 Fixes found by the first real model benchmark (`benchmarks/README.md`, "Real model runs").
 
