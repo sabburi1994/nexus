@@ -15,6 +15,7 @@ rendered here from fixed templates instead of being written by the model:
 
 from __future__ import annotations
 
+import html
 import re
 
 from nexus import __version__
@@ -198,7 +199,8 @@ def render_frontend_package_json(app_name: str) -> str:
   "type": "module",
   "scripts": {{
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   }},
   "dependencies": {{
@@ -208,14 +210,130 @@ def render_frontend_package_json(app_name: str) -> str:
     "react-dom": "^18.3.1"
   }},
   "devDependencies": {{
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.4.5",
-    "vite": "^5.3.1"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
   }}
 }}
 """
+
+
+def render_frontend_index_html(title: str) -> str:
+    """``frontend/index.html``: Vite entry page."""
+    safe_title = html.escape(title.strip() or "Nexus App", quote=True)
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{safe_title}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+"""
+
+
+def render_frontend_main_tsx() -> str:
+    """``frontend/src/main.tsx``: mounts the generated ``App`` (default export, or the first exported component)."""
+    return """import React from "react";
+import ReactDOM from "react-dom/client";
+import * as AppModule from "./App";
+import "./index.css";
+
+const exported = AppModule as unknown as Record<string, unknown>;
+const App = (exported.default ??
+  Object.values(exported).find((value) => typeof value === "function")) as React.ComponentType | undefined;
+
+const root = document.getElementById("root");
+if (root) {
+  ReactDOM.createRoot(root).render(
+    <React.StrictMode>{App ? <App /> : <p>No React component exported from src/App.tsx</p>}</React.StrictMode>,
+  );
+}
+"""
+
+
+def render_frontend_index_css() -> str:
+    """``frontend/src/index.css``: Tailwind layers."""
+    return "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n"
+
+
+def render_frontend_tsconfig() -> str:
+    """``frontend/tsconfig.json`` for ``tsc --noEmit`` with the bundler resolution Vite uses."""
+    return """{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src"]
+}
+"""
+
+
+def render_frontend_vite_config() -> str:
+    """``frontend/vite.config.ts``: React plugin and a dev proxy to the backend on 8080."""
+    return f"""import {{ defineConfig }} from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({{
+  plugins: [react()],
+  server: {{
+    proxy: {{
+      "/api": "http://127.0.0.1:{CONTAINER_PORT}",
+      "/health": "http://127.0.0.1:{CONTAINER_PORT}",
+    }},
+  }},
+}});
+"""
+
+
+def render_frontend_tailwind_config() -> str:
+    """``frontend/tailwind.config.js``: scans the app and the published UI package's compiled classes."""
+    return f"""/** @type {{import('tailwindcss').Config}} */
+export default {{
+  content: ["./index.html", "./src/**/*.{{ts,tsx}}", "./node_modules/{UI_PACKAGE}/dist/**/*.js"],
+  theme: {{ extend: {{}} }},
+  plugins: [],
+}};
+"""
+
+
+def render_frontend_postcss_config() -> str:
+    """``frontend/postcss.config.js``."""
+    return "export default {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n"
+
+
+def render_frontend_files(app_name: str, title: str) -> dict[str, str]:
+    """Every frontend file except the model written ``src/App.tsx`` and ``src/api.ts``, keyed by path."""
+    return {
+        "package.json": render_frontend_package_json(app_name),
+        "index.html": render_frontend_index_html(title),
+        "tsconfig.json": render_frontend_tsconfig(),
+        "vite.config.ts": render_frontend_vite_config(),
+        "tailwind.config.js": render_frontend_tailwind_config(),
+        "postcss.config.js": render_frontend_postcss_config(),
+        "src/main.tsx": render_frontend_main_tsx(),
+        "src/index.css": render_frontend_index_css(),
+    }
 
 
 def render_terraform_main(

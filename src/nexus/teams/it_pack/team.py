@@ -405,9 +405,10 @@ class NexusITTeam:
         # 2. Frontend
         (frontend_dir / "App.tsx").write_text(normalize_source(fullstack.frontend_app_tsx), encoding="utf-8")
         (frontend_dir / "api.ts").write_text(normalize_source(fullstack.frontend_api_client_ts), encoding="utf-8")
-        (app_dir / "frontend" / "package.json").write_text(
-            tpl.render_frontend_package_json(proposal.app_name), encoding="utf-8"
-        )
+        for rel_path, content in tpl.render_frontend_files(proposal.app_name, proposal.title).items():
+            dest = app_dir / "frontend" / rel_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content, encoding="utf-8")
 
         # 3. Backend
         (backend_dir / "main.py").write_text(self._sanitize_python(fullstack.backend_main_py), encoding="utf-8")

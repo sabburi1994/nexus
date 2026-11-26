@@ -38,6 +38,7 @@ import argparse
 import json
 import os
 import py_compile
+import shutil
 import socket
 import statistics
 import subprocess
@@ -229,6 +230,13 @@ class IdeaResult:
     stages: dict[str, dict[str, float]] = field(default_factory=dict)
     spend_usd: float = 0.0
     error: str = ""
+    frontend_checked: bool = False
+    frontend_builds: bool = False
+    frontend_typechecks: bool = False
+    frontend_note: str = ""
+    infra_checked: bool = False
+    infra_ok: bool = False
+    infra_note: str = ""
 
 
 def _free_port() -> int:
@@ -245,6 +253,107 @@ def check_builds(backend_dir: Path) -> list[str]:
         except py_compile.PyCompileError as exc:
             errors.append(f"{py.relative_to(backend_dir)}: {exc.msg.splitlines()[-1] if exc.msg else exc}")
     return errors
+
+
+def _find_working_bash() -> str | None:
+    candidates: list[str] = []
+    which_bash = shutil.which("bash")
+    if which_bash:
+        candidates.append(which_bash)
+    for fallback in (r"C:\Program Files\Git\bin\bash.exe", r"C:\Program Files\Git\usr\bin\bash.exe"):
+        if Path(fallback).is_file() and fallback not in candidates:
+            candidates.append(fallback)
+    for candidate in candidates:
+        probe = subprocess.run([candidate, "-c", "true"], capture_output=True, check=False)
+        if probe.returncode == 0:
+            return candidate
+    return None
+
+
+def check_frontend(frontend_dir: Path, timeout_s: float = 600.0) -> tuple[bool, bool, str]:
+    """``npm install``, then ``npm run build`` (dist/index.html must exist) and ``npm run typecheck``."""
+    npm = shutil.which("npm")
+    if npm is None:
+        return False, False, "npm not found"
+    if not (frontend_dir / "package.json").is_file():
+        return False, False, "no package.json"
+
+    def npm_run(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [npm, *args],
+            cwd=frontend_dir,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_s,
+            check=False,
+        )
+
+    install = npm_run("install", "--no-audit", "--no-fund", "--prefer-offline", "--loglevel=error")
+    if install.returncode != 0:
+        return False, False, "npm install failed: " + (install.stderr or install.stdout)[-200:]
+    build = npm_run("run", "build")
+    builds = build.returncode == 0 and (frontend_dir / "dist" / "index.html").is_file()
+    note = "" if builds else "build: " + (build.stdout + build.stderr).strip()[-200:]
+    typecheck = npm_run("run", "typecheck")
+    if typecheck.returncode != 0:
+        note += " typecheck: " + (typecheck.stdout + typecheck.stderr).strip()[-200:]
+    return builds, typecheck.returncode == 0, note.strip()
+
+
+def check_infra(app_dir: Path) -> tuple[bool, str]:
+    """Validate generated Dockerfile, deploy.sh, and Terraform layout."""
+    issues: list[str] = []
+
+    dockerfile = app_dir / "backend" / "Dockerfile"
+    if not dockerfile.is_file():
+        issues.append("missing backend/Dockerfile")
+    else:
+        df_text = dockerfile.read_text(encoding="utf-8")
+        if "FROM " not in df_text:
+            issues.append("Dockerfile missing FROM")
+        if f"EXPOSE {tpl.CONTAINER_PORT}" not in df_text:
+            issues.append(f"Dockerfile missing EXPOSE {tpl.CONTAINER_PORT}")
+        if "CMD " not in df_text:
+            issues.append("Dockerfile missing CMD")
+        user_lines = [line.strip() for line in df_text.splitlines() if line.strip().startswith("USER ")]
+        if not user_lines or user_lines[-1] in ("USER root", "USER 0", "USER 0:0"):
+            issues.append("Dockerfile must run as non-root USER")
+
+    deploy_sh = app_dir / "scripts" / "deploy.sh"
+    if not deploy_sh.is_file():
+        issues.append("missing scripts/deploy.sh")
+    else:
+        raw = deploy_sh.read_bytes()
+        if not raw.startswith(b"#!/usr/bin/env bash\n") or b"\r\n" in raw:
+            issues.append("deploy.sh must use LF and #!/usr/bin/env bash")
+        bash_bin = _find_working_bash()
+        if bash_bin:
+            proc = subprocess.run([bash_bin, "-n", str(deploy_sh)], capture_output=True, text=True, check=False)
+            if proc.returncode != 0:
+                issues.append(f"deploy.sh bash -n failed: {proc.stderr.strip()[-120:]}")
+
+    tf_dir = app_dir / "infra" / "terraform"
+    tf_main = tf_dir / "main.tf"
+    tf_vars = tf_dir / "variables.tf"
+    if not tf_main.is_file() or not tf_vars.is_file():
+        issues.append("missing infra/terraform/main.tf or variables.tf")
+    else:
+        main_hcl = tf_main.read_text(encoding="utf-8")
+        if main_hcl.count("{") != main_hcl.count("}"):
+            issues.append("main.tf has unbalanced braces")
+        if "nexus_app?ref=" not in main_hcl or "nexus_cloud_run?ref=" not in main_hcl:
+            issues.append("main.tf missing pinned nexus_app/nexus_cloud_run modules")
+        if "max_instances" not in main_hcl:
+            issues.append("main.tf missing max_instances guard")
+        tf_bin = shutil.which("terraform")
+        if tf_bin:
+            fmt = subprocess.run([tf_bin, "fmt", "-check", str(tf_dir)], capture_output=True, text=True, check=False)
+            if fmt.returncode != 0:
+                issues.append("terraform fmt -check reported unformatted HCL")
+
+    return not issues, "; ".join(issues)
 
 
 def check_starts(backend_dir: Path, timeout_s: float = 20.0) -> tuple[bool, float | None]:
@@ -307,6 +416,8 @@ def run_one(
     factory: Callable[[str], BaseModelProvider] | None = None,
     guard: SpendGuard | None = None,
     squad_budget_usd: float | None = None,
+    frontend: bool = False,
+    infra: bool = False,
 ) -> IdeaResult:
     result = IdeaResult(provider=provider_name, idea=idea)
     inner = (factory or _provider_factory(provider_name))(idea)
@@ -366,6 +477,12 @@ def run_one(
     if result.builds:
         result.starts, result.start_seconds = check_starts(backend)
     result.end_to_end = result.builds and result.starts and result.tests_pass
+    if frontend:
+        result.frontend_checked = True
+        result.frontend_builds, result.frontend_typechecks, result.frontend_note = check_frontend(app_dir / "frontend")
+    if infra:
+        result.infra_checked = True
+        result.infra_ok, result.infra_note = check_infra(app_dir)
     return result
 
 
@@ -392,6 +509,11 @@ def summarize(results: list[IdeaResult]) -> dict[str, Any]:
             "tests_pass": sum(r.tests_pass for r in rs),
             "qa_gate": sum(r.qa_gate for r in rs),
             "end_to_end": sum(r.end_to_end for r in rs),
+            "frontend_checked": sum(r.frontend_checked for r in rs),
+            "frontend_builds": sum(r.frontend_builds for r in rs),
+            "frontend_typechecks": sum(r.frontend_typechecks for r in rs),
+            "infra_checked": sum(r.infra_checked for r in rs),
+            "infra_ok": sum(r.infra_ok for r in rs),
             "errors": [r.error for r in rs if r.error],
             "spend_usd": round(sum(r.spend_usd for r in rs), 4),
             "median_total_s": statistics.median(r.total_seconds for r in rs),
@@ -418,6 +540,11 @@ def print_report(summary: dict[str, Any]) -> None:
         print(f"  tests pass    {_pct(s['tests_pass'], n)}")
         print(f"  QA gate       {_pct(s['qa_gate'], n)}")
         print(f"  END TO END    {_pct(s['end_to_end'], n)}")
+        if s["frontend_checked"]:
+            print(f"  frontend build      {_pct(s['frontend_builds'], s['frontend_checked'])}")
+            print(f"  frontend typecheck  {_pct(s['frontend_typechecks'], s['frontend_checked'])}")
+        if s["infra_checked"]:
+            print(f"  infra checks        {_pct(s['infra_ok'], s['infra_checked'])}")
         print(f"  tests per app {s['median_tests_per_app']} (median)")
         if s["spend_usd"]:
             print(f"  model spend   {s['spend_usd']:.4f} USD (benchmark prices)")
@@ -449,6 +576,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--max-healing-cycles", type=int, default=3)
     ap.add_argument("--json", type=Path, help="write raw results and summary to this file")
     ap.add_argument("--keep", action="store_true", help="keep the generated workspaces")
+    ap.add_argument("--frontend", action="store_true", help="also npm install, build and typecheck frontend/")
+    ap.add_argument("--infra", action="store_true", help="also validate Dockerfile, deploy.sh and Terraform")
     ap.add_argument("--project", default=os.getenv("GCP_PROJECT_ID"), help="Google Cloud project (vertex)")
     ap.add_argument("--model", default=None, help="model id for vertex (default gemini-3.8-flash)")
     ap.add_argument("--max-spend-usd", type=float, default=5.0, help="vertex: stop the whole run here")
@@ -470,7 +599,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 workdir = tmp_root / provider_name / f"idea{i}"
                 workdir.mkdir(parents=True)
                 try:
-                    r = run_one(provider_name, idea, workdir, args.max_healing_cycles, factory, guard if paid else None)
+                    r = run_one(
+                        provider_name,
+                        idea,
+                        workdir,
+                        args.max_healing_cycles,
+                        factory,
+                        guard if paid else None,
+                        frontend=args.frontend,
+                        infra=args.infra,
+                    )
                 except SpendCapReached as exc:
                     r = IdeaResult(provider=provider_name, idea=idea, error=f"SpendCapReached: {exc}")
                     r.spend_usd = round(guard.idea_spent_usd(), 6)
@@ -479,9 +617,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(
                     f"[{provider_name}] {flag} build={r.builds} start={r.starts} tests={r.tests_pass} "
                     f"heal={r.healing_cycles} {r.total_seconds:.1f}s"
+                    + (f" fe={r.frontend_builds}/{r.frontend_typechecks}" if r.frontend_checked else "")
+                    + (f" infra={r.infra_ok}" if r.infra_checked else "")
                     + (f" ${r.spend_usd:.3f} (run ${guard.spent_usd:.3f})" if paid else "")
                     + f"  {idea[:50]}"
                     + (f"  ERROR {r.error}" if r.error else "")
+                    + (f"  fe: {r.frontend_note}" if r.frontend_note else "")
+                    + (f"  infra: {r.infra_note}" if r.infra_note else "")
                     + (f"  compile: {r.compile_errors[:2]}" if r.compile_errors else ""),
                     flush=True,
                 )
@@ -492,8 +634,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 break
     finally:
         if not args.keep:
-            import shutil
-
             shutil.rmtree(tmp_root, ignore_errors=True)
         else:
             print(f"workspaces kept in {tmp_root}")
