@@ -298,16 +298,24 @@ def dream_cmd(
     run_tests: bool = True,
     max_budget_usd: float | None = None,
     test_timeout_s: float | None = None,
+    provider_name: str = "vertex",
+    model: str | None = None,
+    base_url: str | None = None,
 ) -> None:
     """Run the Nexus Core IT Pack to convert an idea into a complete software project."""
+    from nexus.providers.factory import create_provider
     from nexus.qa.runner import DEFAULT_TEST_TIMEOUT_S
     from nexus.teams.it_pack.team import DEFAULT_SQUAD_BUDGET_USD, NexusITTeam
 
+    provider = create_provider(provider_name, model=model, base_url=base_url)
+
     print("--- Nexus Core IT Squad Activated ---")
     print(f'Goal: "{idea}"')
+    print(f"Provider: {provider.name}" + (f" ({model})" if model else ""))
     print("Assignees: Business Analyst, Engineering Manager, UI/UX Designer, Backend Engineer, QA Engineer\n")
 
     team = NexusITTeam(
+        provider=provider,
         max_budget_usd=DEFAULT_SQUAD_BUDGET_USD if max_budget_usd is None else max_budget_usd,
         run_generated_tests=run_tests,
         test_timeout_s=DEFAULT_TEST_TIMEOUT_S if test_timeout_s is None else test_timeout_s,
@@ -489,6 +497,15 @@ def main() -> None:
     dream_parser.add_argument(
         "--test-timeout", type=float, default=None, help="Seconds allowed for one generated test run (default 120)"
     )
+    dream_parser.add_argument(
+        "--provider",
+        default="vertex",
+        help="Model provider: vertex, gemini, openai, anthropic, ollama, or mock (default: vertex)",
+    )
+    dream_parser.add_argument("--model", default=None, help="Override the provider's default model ID")
+    dream_parser.add_argument(
+        "--base-url", default=None, help="Custom API base URL (for Ollama, vLLM, OpenRouter, or proxies)"
+    )
 
     # dashboard / ui
     dash_parser = subparsers.add_parser(
@@ -555,6 +572,9 @@ def main() -> None:
             run_tests=not args.no_run_tests,
             max_budget_usd=args.max_budget_usd,
             test_timeout_s=args.test_timeout,
+            provider_name=args.provider,
+            model=args.model,
+            base_url=args.base_url,
         )
     elif args.command in ("dashboard", "ui"):
         run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)
