@@ -161,8 +161,10 @@ Generate complete, runnable applications from natural language:
 nexus dream "I want an app that tracks second-hand luxury watches in Europe with price alerts"
 ```
 
-Options: `--output-dir`, `--max-budget-usd` (spend cap for the whole run, default `1.00`), `--test-timeout`
-(seconds per generated test run, default `120`) and `--no-run-tests` (skip executing the generated suite).
+Options: `--output-dir`, `--provider` (`vertex`, `gemini`, `openai`, `anthropic`, `ollama`, or `mock`; default `vertex`),
+`--model`, `--base-url` (for Ollama, vLLM, OpenRouter, or custom gateways), `--max-budget-usd` (spend cap for the whole run,
+default `1.00`), `--test-timeout` (seconds per generated test run, default `120`) and `--no-run-tests` (skip executing the
+generated suite).
 Example output:
 
 ```text
