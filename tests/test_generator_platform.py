@@ -282,11 +282,31 @@ def test_deploy_script_written_to_scripts_not_github_workflows(healthy_project: 
     assert "name: Deploy" not in text
 
 
-@pytest.mark.skipif(shutil.which("bash") is None, reason="bash not installed")
+def _find_working_bash() -> str | None:
+    """Return a working bash binary, ignoring an unconfigured Windows WSL shim."""
+    candidates: list[str] = []
+    which_bash = shutil.which("bash")
+    if which_bash:
+        candidates.append(which_bash)
+    for fallback in (r"C:\Program Files\Git\bin\bash.exe", r"C:\Program Files\Git\usr\bin\bash.exe"):
+        if Path(fallback).is_file() and fallback not in candidates:
+            candidates.append(fallback)
+    for candidate in candidates:
+        probe = subprocess.run([candidate, "-c", "true"], capture_output=True, check=False)
+        if probe.returncode == 0:
+            return candidate
+    return None
+
+
+_WORKING_BASH = _find_working_bash()
+
+
+@pytest.mark.skipif(_WORKING_BASH is None, reason="working bash not installed")
 def test_deploy_script_is_valid_bash(tmp_path: Path) -> None:
+    assert _WORKING_BASH is not None
     script = tmp_path / "deploy.sh"
     script.write_text(tpl.render_deploy_script("WatchHub"), encoding="utf-8", newline="\n")
-    proc = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True, check=False)
+    proc = subprocess.run([_WORKING_BASH, "-n", str(script)], capture_output=True, text=True, check=False)
     assert proc.returncode == 0, proc.stderr
 
 

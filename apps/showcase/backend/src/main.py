@@ -6,7 +6,6 @@ import datetime
 import difflib
 import io
 import json
-import os
 import re
 import tempfile
 import time
@@ -19,7 +18,6 @@ from typing import Any
 from abuse_controls import BoundedReportStore, install_log_redaction, rate_limit, visitor_id
 from fastapi import Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
-from fastapi.staticfiles import StaticFiles
 from models import (
     BrownfieldApplyRequest,
     BrownfieldInspectRequest,
@@ -34,7 +32,7 @@ from showcase_provider import ByokGeminiProviderError, ByokGeminiShowcaseProvide
 from nexus import __version__
 from nexus.ai import GeminiClient
 from nexus.ai.pricing import GEMINI_3_8_FLASH_INPUT_PER_M, GEMINI_3_8_FLASH_OUTPUT_PER_M, calculate_cost_usd
-from nexus.api import SecurityHeadersConfig, create_nexus_app
+from nexus.api import SecurityHeadersConfig, create_nexus_app, mount_spa
 from nexus.api.security_headers import DEFAULT_CSP
 from nexus.brownfield import AstDependencyMapper, BrownfieldRefactorer, CodebaseAuditor
 from nexus.metrics.roi import DoraMetrics, EnterpriseRoiReport, RoiCalculator
@@ -60,9 +58,10 @@ SHOWCASE_CSP = DEFAULT_CSP.replace(
 SHOWCASE_SECURITY_HEADERS = SecurityHeadersConfig(
     content_security_policy=SHOWCASE_CSP,
     immutable_prefixes=("/assets/",),
+    no_store_prefixes=("/api/",),
 )
 
-app, db = create_nexus_app(
+app = create_nexus_app(
     title="Nexus Showcase API",
     description="Orchestrator-Native AI Agentic Framework Reference Application & Documentation Portal (https://nexus.abburi.info)",
     version=__version__,
@@ -794,6 +793,5 @@ async def guardrail_inspect(req: GuardrailInspectRequest) -> dict[str, Any]:
     }
 
 
-_static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.isdir(_static_dir):
-    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
+_static_dir = Path(__file__).resolve().parent / "static"
+mount_spa(app, _static_dir)

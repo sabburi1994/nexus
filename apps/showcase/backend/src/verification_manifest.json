@@ -4,15 +4,15 @@
   "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
   "suites": {
     "core_pytest": {
-      "passed": 216,
-      "total": 216,
+      "passed": 218,
+      "total": 218,
       "command": "python -m pytest -o pythonpath=src tests/"
     },
     "showcase_pytest": {
-      "passed": 27,
-      "total": 27,
+      "passed": 28,
+      "total": 28,
       "command": "python -m pytest tests/"
     }
   },
-  "verified_on": "2026-11-16 (local run; no hosted CI)"
+  "verified_on": "2026-11-26 (local run; no hosted CI)"
 }
