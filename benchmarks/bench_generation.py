@@ -168,7 +168,6 @@ class SpendGuard:
     input_tokens: int = 0
     output_tokens: int = 0
     thinking_tokens: int = 0
-    token_refreshes: int = 0
     idea_start_usd: float = 0.0
 
     @property
@@ -193,19 +192,8 @@ class SpendGuard:
 
         def guarded_post(url: str, headers: dict[str, str], body: dict[str, Any], max_retries: int = 2) -> Any:
             self.check()
+            # The client refreshes an expired token and retries a 401 itself (since 0.5.2).
             resp = original(url, headers=headers, body=body, max_retries=max_retries)
-            if resp.status_code == 401 and "Authorization" in headers:
-                # Workaround for a framework bug: nexus.ai.client caches an access token for 40 minutes
-                # from when it fetched it, not until it expires, so long runs get 401s. Fetch a fresh
-                # token and retry once (a 401 is not billed).
-                from nexus.ai import client as ai_client
-
-                ai_client._CACHED_TOKEN = None
-                token = ai_client.get_gcp_access_token()
-                if token:
-                    self.token_refreshes += 1
-                    headers = {**headers, "Authorization": f"Bearer {token}"}
-                    resp = original(url, headers=headers, body=body, max_retries=max_retries)
             self.calls += 1
             try:
                 usage = resp.json().get("usageMetadata", {})
@@ -412,6 +400,8 @@ def summarize(results: list[IdeaResult]) -> dict[str, Any]:
             "median_test_runs": statistics.median(r.test_runs for r in rs),
             "median_start_s": statistics.median([r.start_seconds for r in rs if r.start_seconds] or [0.0]),
             "median_healing_cycles": statistics.median(r.healing_cycles for r in rs),
+            # A pass means little when the suite has one test: report the suite size next to it.
+            "median_tests_per_app": statistics.median(r.tests_passed + r.tests_failed for r in rs),
             "per_run_stage_avg": {
                 stage: {k: round(v / n, 4) for k, v in vals.items()} for stage, vals in stage_totals.items()
             },
@@ -428,6 +418,7 @@ def print_report(summary: dict[str, Any]) -> None:
         print(f"  tests pass    {_pct(s['tests_pass'], n)}")
         print(f"  QA gate       {_pct(s['qa_gate'], n)}")
         print(f"  END TO END    {_pct(s['end_to_end'], n)}")
+        print(f"  tests per app {s['median_tests_per_app']} (median)")
         if s["spend_usd"]:
             print(f"  model spend   {s['spend_usd']:.4f} USD (benchmark prices)")
         print(
@@ -514,7 +505,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         "input_tokens": guard.input_tokens,
         "output_tokens": guard.output_tokens,
         "thinking_tokens": guard.thinking_tokens,
-        "token_refreshes": guard.token_refreshes,
         "spend_usd": round(guard.spent_usd, 4),
         "price_in_per_m": guard.price_in_per_m,
         "price_out_per_m": guard.price_out_per_m,

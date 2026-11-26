@@ -40,6 +40,7 @@ comparable.
 | 2026-11-15 | 0.3.4 (code normalizer) | defects | 12/12 defect types absorbed, 36/36 cases pass |
 | 2026-11-15 | 0.3.4 (code normalizer) | generation, deterministic | 8/8 end to end; median 4.6 s (unchanged) |
 | 2026-11-17 | 0.5.1 | generation, **real model** (gemini-3.8-flash, Vertex AI) | **6/8 end to end**; 8/8 build, 6/8 start, 6/8 tests pass; 2/8 without healing; median 386 s and about 0.29 USD per idea |
+| 2026-11-18 | 0.5.2 | generation, **real model** (gemini-3.8-flash, Vertex AI) | **8/8 end to end**; 6/8 without healing; median 8 endpoint tests per app; median 253 s and about 0.20 USD per idea |
 
 ## Real model runs
 
@@ -76,19 +77,64 @@ Both failures trace back to the framework, not to model randomness:
 * **Bike sharing**: the model used the tuple form `app, db = create_nexus_app(...)`, whose `db` is an
   in memory placeholder, and then treated it as a SQLAlchemy session.
 
-Found by the run and not yet fixed (follow ups):
+Found by the run (all fixed in 0.5.2, see the next section):
 
 1. The full stack prompt's field name `backend_models_py` leaks into imports.
 2. The normalizer does not rewrite wrong import paths for Nexus symbols (`nexus.models` to `nexus.db`).
 3. The tuple form of `create_nexus_app` hands generated code a fake database.
 4. `nexus.ai.client` caches an access token for a flat 40 minutes from when it fetched it, not until
    it expires, and never retries a 401: the first run lost its last three ideas to 401s after 39
-   minutes. The benchmark now refreshes the token and retries once (a workaround in the benchmark,
-   not a fix in the client); the rerun of those ideas needed no refresh.
-5. `nexus.ai.pricing` prices gemini-3.8-flash at 0.075 and 0.30 USD per million tokens, roughly ten
-   times below the 0.75 and 3.75 the platform apps use, so the squad's 1.00 USD budget undercounts.
+   minutes. That rerun used a token refresh in the benchmark as a workaround; 0.5.2 fixes the
+   client and the workaround is gone.
+5. `nexus.ai.pricing` prices gemini-3.8-flash at 0.075 and 0.30 USD per million tokens, ten times
+   below the Vertex AI list price of 0.75 and 3.75 (0.075 is the cached input price), so the squad's
+   1.00 USD budget undercounts.
    The eight ideas' tokens cost 0.13 USD at the framework's prices, 1.61 USD at the platform apps'
    prices and 2.15 USD at the benchmark's.
 
 Total spend for this measurement: about 2.58 USD at the benchmark's prices (a one idea smoke run,
 the eight ideas, and three ideas rerun after the 401s), billed to the showcase's host project.
+
+### 2026-11-18, 0.5.2 (fixes from the run above), gemini-3.8-flash on Vertex AI
+
+Same settings and idea list. 0.5.2 fixes the five defects above and four more that the reruns
+uncovered (see `CHANGELOG.md`). Final run:
+
+| # | Idea | Builds | Starts | Tests (all passing) | Healing cycles | Time | Spend |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Treasury ledger triage | yes | yes | 5 | 0 | 218 s | 0.18 |
+| 2 | Luxury watch price alerts | yes | yes | 8 | 0 | 215 s | 0.19 |
+| 3 | Food bank volunteer scheduler | yes | yes | 11 | 0 | 221 s | 0.19 |
+| 4 | Clinic appointment reminders | yes | yes | 5 | 1 | 354 s | 0.26 |
+| 5 | Bike sharing availability dashboard | yes | yes | 8 | 0 | 427 s | 0.19 |
+| 6 | Recipe cost calculator | yes | yes | 6 | 0 | 284 s | 0.23 |
+| 7 | IT asset inventory, warranty alerts | yes | yes | 8 | 1 | 485 s | 0.36 |
+| 8 | Language exchange partner matching | yes | yes | 8 | 0 | 215 s | 0.20 |
+
+**8/8 end to end, 6/8 without healing.** The suites now run the app's startup (seeding a fresh
+SQLite database) and call 5 to 18 distinct endpoints per app, against 3 or 4 tests per app in the
+0.5.1 run. Tokens: about 128 000 input and 335 000 output, 1.35 USD at list price for the eight.
+
+How it got there (each row is a full run of the eight ideas; numbers are honest, including the
+regressions):
+
+| Run | Change | End to end | Without healing | Tests per app | What it showed |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| A | 0.5.1 as published | 6/8 | 2/8 | 3 to 4 | the five defects above |
+| B | prompt layout, import rewrites, token, pricing fixes | 2/8 | 6/8 | 2 to 3 | apps now use a real database; integer foreign keys to `NexusEntity`'s UUID ids crash the first start (tests skipped startup, so QA never saw it) |
+| C | `NexusEntity` on generic `Uuid`, UUID rule in the prompt, tests run startup | 6/8 | 5/8 | 1 to 3 | a test asserting the exact `/health` title; a database kept between healing cycles with the old schema |
+| D | fresh database per test run, `/health` rule | 8/8 (6 ran, 2 lost to a network outage, rerun) | 8/8 | 1 to 4 | **tests only called `/health`**: QA saw the first 3500 characters of main.py, which now end before the routes |
+| E | QA sees all of main.py and the models, gets the route list, must test each route; transport retries | **8/8** | **6/8** | **5 to 11** | final |
+
+Limits of this measurement:
+
+* One run per idea; a repeat can differ by an idea or two. Run each idea several times before
+  quoting a rate.
+* The tests are written by the same model that wrote the code. A pass means the app starts and its
+  endpoints do what the generated tests expect, not that the business logic is right.
+* Only the backend is checked. The generated React frontend, Dockerfile and Terraform are not
+  built or deployed by this benchmark.
+* Generated apps are small: two Python modules on SQLite, no authentication, no migrations.
+
+Total spend for the 0.5.1 and 0.5.2 measurements together: about 7.04 USD at list price (9.39 at
+the benchmark's deliberately high prices), billed to the showcase's host project.

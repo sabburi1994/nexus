@@ -21,6 +21,40 @@ Install: `pip install nexus-agent-framework` and
 
 ## Python: `nexus-agent-framework`
 
+### 0.5.2 (unreleased)
+
+Fixes found by the first real model benchmark (`benchmarks/README.md`, "Real model runs").
+
+* **Pricing:** `nexus.ai.pricing` used 0.075 and 0.30 USD per million tokens for gemini-3.8-flash
+  (the cached input price), about ten times below the list price, so the squad's spend cap
+  undercounted. Prices now follow the Vertex AI list (global endpoint): 0.75 and 3.75 until
+  2026-12-31, 1.50 and 7.50 from 2027-01-01, chosen by date (`price_per_million(model, on=...)`).
+  Unknown models are priced at the highest known Flash price, so a cap never undercounts them.
+  Thinking tokens now count as output in `generate` and `converse` too (they already did in
+  `structured`).
+* **Access tokens:** a token from the metadata server is reused until 5 minutes before it expires,
+  a gcloud token for 5 minutes (gcloud may hand out a token minted up to an hour earlier), and a
+  401 drops the cached token and retries once with a fresh one. Before, a token was reused for 40
+  minutes from when Nexus fetched it and long runs failed with 401. New `invalidate_gcp_access_token()`.
+* **Generated apps:** the full stack prompt states the file layout and the exact imports
+  (`from backend_models import ...`, `from nexus.db import Base, NexusEntity`), asks for
+  `app = create_nexus_app(...)` with a real SQLAlchemy session instead of the in memory placeholder
+  of the tuple form, and keeps model and network calls out of import time. The heal prompt now shows
+  both backend files (the models file was never shown, so errors in it could not be healed).
+* **Code normalizer:** imports of the prompt's field names (`backend_models_py`, `backend_main_py`)
+  become the real modules, and known Nexus names imported from a module that does not provide them
+  (`from nexus.models import NexusEntity`) move to their real module.
+* **`NexusEntity`** uses SQLAlchemy's generic `Uuid` (native UUID on PostgreSQL, CHAR(32) on SQLite)
+  instead of the PostgreSQL only type, and the prompt states that its ids and every foreign key to
+  it are UUIDs. Generated apps declared integer foreign keys and crashed on their first start.
+* **QA:** generated tests use `with TestClient(app) as client`, so startup handlers run and a
+  startup crash fails the QA gate; they assert only `status` and `healthy` of `/health`. Every
+  generated test run gets a fresh SQLite database through `DATABASE_URL` (a database left by an
+  earlier healing cycle kept the old schema and failed with "no such column").
+* **Network:** `GeminiClient` retries every transport error (dropped connections, brief DNS
+  failures, timeouts) up to 3 times with a growing pause, not only timeouts.
+* **Measured** with the real model benchmark: see `benchmarks/README.md`.
+
 ### 0.5.1 (2026-11-17)
 
 Documentation and package metadata only; no code changes from 0.5.0.

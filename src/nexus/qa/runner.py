@@ -12,6 +12,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -113,12 +114,19 @@ def run_generated_tests(backend_dir: Path, timeout_s: float = DEFAULT_TEST_TIMEO
     if not (backend_dir / "tests").is_dir():
         return TestRunResult(executed=False, passed=False, command=command, output_tail="no tests/ directory")
 
+    # Every run gets a fresh, empty database: the healing loop rewrites the models between runs, and
+    # SQLAlchemy's create_all never alters an existing table, so a database left by an earlier run
+    # fails with "no such column" (seen in the real model benchmark). Generated apps read
+    # DATABASE_URL (the full stack prompt requires it).
+    scratch = tempfile.TemporaryDirectory(prefix="nexus_qa_db_", ignore_cleanup_errors=True)
+    env = _child_env(backend_dir)
+    env["DATABASE_URL"] = "sqlite:///" + (Path(scratch.name) / "test.db").as_posix()
     started = time.perf_counter()
     try:
         proc = subprocess.run(
             cmd,
             cwd=backend_dir,
-            env=_child_env(backend_dir),
+            env=env,
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
@@ -143,6 +151,8 @@ def run_generated_tests(backend_dir: Path, timeout_s: float = DEFAULT_TEST_TIMEO
         return TestRunResult(
             executed=False, passed=False, command=command, output_tail=f"could not start pytest: {exc}"
         )
+    finally:
+        scratch.cleanup()
 
     output = (proc.stdout or "") + (proc.stderr or "")
     passed_n, failed_n, errored_n = _parse_counts(output)
