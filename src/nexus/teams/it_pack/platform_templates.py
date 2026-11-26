@@ -21,12 +21,12 @@ import re
 from nexus import __version__
 
 FRAMEWORK_PACKAGE = "nexus-agent-framework"
+TOKENS_PACKAGE = "@nexus-agent-framework/tokens"
 UI_PACKAGE = "@nexus-agent-framework/ui"
 CONTRACTS_PACKAGE = "@nexus-agent-framework/contracts"
-# Generated apps pin the 0.2 line of the UI package: their templates use the showcase components
-# (NexusHeader, StatCard, ...) from the package root, which 1.x moved to `@nexus-agent-framework/ui/showcase`.
-# They move to the 1.x kit when the generator's frontend templates do; until then this stays on 0.2.
-UI_PUBLISHED_VERSION = "0.2.0"
+TOKENS_PUBLISHED_VERSION = "1.0.1"
+TOKENS_VERSION_RANGE = f"^{TOKENS_PUBLISHED_VERSION}"
+UI_PUBLISHED_VERSION = "1.0.2"
 UI_VERSION_RANGE = f"^{UI_PUBLISHED_VERSION}"
 CONTRACTS_VERSION_RANGE = "^1.0.4"
 
@@ -204,6 +204,7 @@ def render_frontend_package_json(app_name: str) -> str:
     "preview": "vite preview"
   }},
   "dependencies": {{
+    "{TOKENS_PACKAGE}": "{TOKENS_VERSION_RANGE}",
     "{UI_PACKAGE}": "{UI_VERSION_RANGE}",
     "{CONTRACTS_PACKAGE}": "{CONTRACTS_VERSION_RANGE}",
     "react": "^18.3.1",
@@ -224,10 +225,10 @@ def render_frontend_package_json(app_name: str) -> str:
 
 
 def render_frontend_index_html(title: str) -> str:
-    """``frontend/index.html``: Vite entry page."""
+    """``frontend/index.html``: Vite entry page themed by ``@nexus-agent-framework/tokens``."""
     safe_title = html.escape(title.strip() or "Nexus App", quote=True)
     return f"""<!doctype html>
-<html lang="en">
+<html lang="en" data-nx-theme="base">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -242,8 +243,10 @@ def render_frontend_index_html(title: str) -> str:
 
 
 def render_frontend_main_tsx() -> str:
-    """``frontend/src/main.tsx``: mounts the generated ``App`` (default export, or the first exported component)."""
-    return """import React from "react";
+    """``frontend/src/main.tsx``: loads token/UI stylesheets and mounts the generated ``App``."""
+    return """import "@nexus-agent-framework/tokens/tokens.css";
+import "@nexus-agent-framework/ui/styles.css";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import * as AppModule from "./App";
 import "./index.css";

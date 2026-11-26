@@ -180,7 +180,8 @@ def test_generated_frontend_uses_published_npm_packages(healthy_project: tuple[D
     _, app = healthy_project
     pkg = json.loads((app / "frontend" / "package.json").read_text(encoding="utf-8"))
     deps = pkg["dependencies"]
-    assert deps["@nexus-agent-framework/ui"] == "^0.2.0"
+    assert deps["@nexus-agent-framework/tokens"] == "^1.0.1"
+    assert deps["@nexus-agent-framework/ui"] == "^1.0.2"
     assert deps["@nexus-agent-framework/contracts"] == "^1.0.4"
     assert not any(name.startswith("@nexus/") for name in deps)
     assert "workspace:" not in json.dumps(pkg)
@@ -188,12 +189,11 @@ def test_generated_frontend_uses_published_npm_packages(healthy_project: tuple[D
 
 def test_npm_ranges_match_the_packages_in_this_repo() -> None:
     root = Path(__file__).resolve().parent.parent / "packages"
+    tokens = json.loads((root / "tokens" / "package.json").read_text(encoding="utf-8"))
     ui = json.loads((root / "ui" / "package.json").read_text(encoding="utf-8"))
     contracts = json.loads((root / "contracts" / "package.json").read_text(encoding="utf-8"))
-    # UI: generated apps stay on the 0.2 line (their templates use components 1.x moved to /showcase).
-    assert ui["name"] == tpl.UI_PACKAGE and tpl.UI_VERSION_RANGE == f"^{tpl.UI_PUBLISHED_VERSION}"
-    published = tuple(int(x) for x in tpl.UI_PUBLISHED_VERSION.split("."))
-    assert tuple(int(x) for x in ui["version"].split(".")) >= published
+    assert tokens["name"] == tpl.TOKENS_PACKAGE and tpl.TOKENS_VERSION_RANGE == f"^{tokens['version']}"
+    assert ui["name"] == tpl.UI_PACKAGE and tpl.UI_VERSION_RANGE == f"^{ui['version']}"
     assert contracts["name"] == tpl.CONTRACTS_PACKAGE and tpl.CONTRACTS_VERSION_RANGE == f"^{contracts['version']}"
 
 
