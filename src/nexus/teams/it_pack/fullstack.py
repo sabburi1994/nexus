@@ -66,7 +66,7 @@ UI Style: {ui_spec.color_palette}
 Generate:
 1. `backend_main_py`: Production-grade FastAPI app using `from nexus.api import create_nexus_app` and `from nexus.ai import GeminiClient`.
 2. `backend_models_py`: Pydantic input/output schemas and SQLAlchemy entities. (Entities inherit directly from `NexusEntity`, e.g. `class User(NexusEntity):` without also listing `Base`).
-3. `frontend_app_tsx`: Modern React + Tailwind interface consuming the API endpoints.
+3. `frontend_app_tsx`: Modern React + Tailwind interface consuming the API endpoints. It must `export default` the root component and import API helpers from `./api`; the entry point (`src/main.tsx`), `index.html` and build config are provided.
 4. `frontend_api_client_ts`: Clean TypeScript fetch helper with type definitions.
 
 {BACKEND_LAYOUT_RULES}

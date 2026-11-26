@@ -11,11 +11,12 @@ import this version of `nexus`.
 
 | Script | Question it answers |
 | :--- | :--- |
-| `bench_generation.py` | For a fixed set of 8 ideas: does each generated app compile, start (`/health` 200 under uvicorn) and pass its own tests end to end? Time per stage, prompt and output size per stage, test run time, healing cycles. |
+| `bench_generation.py` | For a fixed set of 8 ideas: does each generated app compile, start (`/health` 200 under uvicorn) and pass its own tests end to end? Optional `--frontend` (`npm install`, `vite build`, `tsc --noEmit`) and `--infra` (Dockerfile, `deploy.sh`, Terraform checks). Time per stage, prompt and output size per stage, test run time, healing cycles. |
 | `bench_output_defects.py` | Does the pipeline absorb realistic model output defects (markdown fences, prose, double escaping, BOM, CRLF, wrong import roots, missing imports)? One defect injected into otherwise passing output, self healing off. |
 
 ```bash
 python benchmarks/bench_generation.py                 # deterministic and mock, 8 ideas
+python benchmarks/bench_generation.py --providers deterministic --ideas 1 --frontend --infra
 python benchmarks/bench_output_defects.py --ideas 3   # 12 defect types plus a clean control
 # Paid: a real Gemini model on Vertex AI, with hard spend caps (needs gcloud auth login)
 python benchmarks/bench_generation.py --providers vertex --project <gcp project> --max-spend-usd 5
