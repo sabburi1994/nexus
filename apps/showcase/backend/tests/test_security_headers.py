@@ -69,11 +69,26 @@ def test_hashed_assets_are_immutable() -> None:
     _assert_security_headers(resp.headers)
 
 
-def test_api_responses_carry_headers_without_cache_rules() -> None:
+def test_api_responses_carry_headers_and_no_store() -> None:
     resp = client.get("/api/v1/framework-health")
     assert resp.status_code == 200
     _assert_security_headers(resp.headers)
-    assert "cache-control" not in resp.headers
+    assert resp.headers["cache-control"] == "no-store"
+
+
+def test_mount_spa_api_and_missing_asset_404s() -> None:
+    api_404 = client.get("/api/v1/does-not-exist")
+    assert api_404.status_code == 404
+    assert api_404.headers["content-type"].startswith("application/json")
+    assert api_404.headers["cache-control"] == "no-store"
+
+    asset_404 = client.get("/assets/missing-bundle-12345.js")
+    assert asset_404.status_code == 404
+
+    spa_route = client.get("/simulator")
+    assert spa_route.status_code == 200
+    assert "text/html" in spa_route.headers["content-type"]
+    assert spa_route.headers["cache-control"] == "no-cache"
 
 
 def test_head_health() -> None:

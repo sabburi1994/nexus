@@ -54,6 +54,15 @@ Fixes found by the first real model benchmark (`benchmarks/README.md`, "Real mod
 * **Network:** `GeminiClient` retries every transport error (dropped connections, brief DNS
   failures, timeouts) up to 3 times with a growing pause, not only timeouts.
 * **Measured** with the real model benchmark: see `benchmarks/README.md`.
+* **MCP server (`nexus mcp`):** defaults `serverInfo.version` to the framework version, answers
+  `ping`, stays silent on JSON-RPC notifications (such as `notifications/initialized`) instead of
+  returning `-32601`, and validates `params` / `arguments` objects (`-32600` / `-32602`).
+* **Local dashboard (`nexus ui`):** now built with `create_nexus_app` and strict CSP (offline
+  same-origin `/dashboard.css` and `/dashboard.js`, no `cdn.tailwindcss.com` dependency, no inline
+  scripts, `Cache-Control: no-store` on `/api/`), and renders events with `textContent` instead of
+  `innerHTML`.
+* **Showcase backend:** uses `app = create_nexus_app(...)`, `mount_spa(...)`, and
+  `no_store_prefixes=("/api/",)` in line with `docs/ADOPTING.md`.
 
 ### 0.5.1 (2026-11-17)
 
