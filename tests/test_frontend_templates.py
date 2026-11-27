@@ -31,13 +31,17 @@ def test_render_frontend_files_covers_a_buildable_vite_project() -> None:
     deps = {**pkg["dependencies"], **pkg["devDependencies"]}
     for needed in ("react", "react-dom", "vite", "@vitejs/plugin-react", "typescript", "tailwindcss", "postcss"):
         assert needed in deps
+    assert deps[tpl.TOKENS_PACKAGE] == tpl.TOKENS_VERSION_RANGE
     assert deps[tpl.UI_PACKAGE] == tpl.UI_VERSION_RANGE
 
     tsconfig = json.loads(files["tsconfig.json"])
     assert tsconfig["compilerOptions"]["jsx"] == "react-jsx"
     assert tsconfig["include"] == ["src"]
 
+    assert 'data-nx-theme="base"' in files["index.html"]
     assert '<script type="module" src="/src/main.tsx"></script>' in files["index.html"]
+    assert 'import "@nexus-agent-framework/tokens/tokens.css";' in files["src/main.tsx"]
+    assert 'import "@nexus-agent-framework/ui/styles.css";' in files["src/main.tsx"]
     assert 'from "./App"' in files["src/main.tsx"]
     assert "./index.css" in files["src/main.tsx"]
     assert f"./node_modules/{tpl.UI_PACKAGE}/dist/**/*.js" in files["tailwind.config.js"]

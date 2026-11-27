@@ -35,9 +35,10 @@ Concept: {proposal.ui_concept}
 Features: {", ".join(proposal.core_features)}
 
 Requirements:
-- Use React with Tailwind CSS and modern dark slate aesthetic.
-- Include realistic sample data so it can be previewed immediately.
-- Return full valid React component code.
+- Use React with `@nexus-agent-framework/ui` 1.x components (`AppShell`, `Card`, `Stat`, `Badge`, `Button`, `Input`, `Select`, `Table`, `Tabs`, `EmptyState`, `ErrorState`, `LineChart`) and Tailwind utility classes where layout helpers are needed.
+- `@nexus-agent-framework/tokens/tokens.css` and `@nexus-agent-framework/ui/styles.css` are already imported in `src/main.tsx`; do not use legacy showcase root imports (`NexusHeader`, `StatCard`).
+- Include realistic sample data so it can be previewed immediately and `export default` the root component.
+- Return full valid React + TypeScript component code.
 """
         system = "You are an elite frontend UI designer specializing in sleek React and Tailwind interfaces."
         return self.provider.structured(prompt, UiSpecification, system_instruction=system)
