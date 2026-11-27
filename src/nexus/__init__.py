@@ -1,3 +1,3 @@
 """Nexus Framework: Unified application core for Google Cloud and Gemini 3.8."""
 
-__version__ = "0.5.2"
+__version__ = "0.6.0"

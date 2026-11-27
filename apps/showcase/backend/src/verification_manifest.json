@@ -1,11 +1,11 @@
 {
   "pypi_live_version": "0.5.1",
-  "pypi_staged_version": "0.5.2",
+  "pypi_staged_version": "0.6.0",
   "ci_status_url": "https://github.com/sabburi1994/nexus/actions",
   "suites": {
     "core_pytest": {
-      "passed": 218,
-      "total": 218,
+      "passed": 231,
+      "total": 231,
       "command": "python -m pytest -o pythonpath=src tests/"
     },
     "showcase_pytest": {
@@ -14,5 +14,5 @@
       "command": "python -m pytest tests/"
     }
   },
-  "verified_on": "2026-11-26 (local run; no hosted CI)"
+  "verified_on": "2026-11-27 (local run; no hosted CI)"
 }
