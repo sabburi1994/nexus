@@ -13,6 +13,8 @@ from nexus import __version__
 from nexus.ai.client import GeminiClient, find_gcp_project, get_gcp_access_token
 from nexus.teams.it_pack.platform_templates import (
     python_package_name,
+    render_alembic_files,
+    render_auth_module,
     render_backend_pyproject,
     render_backend_requirements,
     render_dockerfile,
@@ -129,14 +131,26 @@ def run_doctor_cmd() -> int:
 _APP_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,39}$")
 
 
-def _scaffold_main_py(app_name: str) -> str:
-    return f'''"""{app_name} service entry point."""
+def _scaffold_main_py(app_name: str, *, package: str = "", with_auth: bool = False) -> str:
+    auth_import = f"\nfrom {package}.auth import CurrentUser" if with_auth else ""
+    auth_route = (
+        """
+
+@app.get("/api/auth/me")
+def current_user(user: CurrentUser) -> dict[str, str]:
+    return {"sub": user.sub, "scope": user.scope}
+"""
+        if with_auth
+        else ""
+    )
+    return (
+        f'''"""{app_name} service entry point."""
 
 from functools import lru_cache
 
 from fastapi import Depends
 from nexus.ai import GeminiClient
-from nexus.api import create_nexus_app
+from nexus.api import create_nexus_app{auth_import}
 
 app, db = create_nexus_app(
     title="{app_name}",
@@ -154,6 +168,36 @@ def get_ai_client() -> GeminiClient:
 def ask_ai(prompt: str, ai_client: GeminiClient = Depends(get_ai_client)) -> dict[str, str]:
     resp = ai_client.generate(prompt)
     return {{"response": resp.text, "model": resp.model}}
+'''
+        + auth_route
+    )
+
+
+def _scaffold_auth_test_py(package: str) -> str:
+    return f'''"""Bearer auth starter tests."""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from {package}.auth import create_access_token
+from {package}.main import app
+
+TEST_SECRET = "test-secret-key-at-least-32-characters-long"
+
+
+def test_auth_me_requires_valid_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTH_SECRET", TEST_SECRET)
+    with TestClient(app) as client:
+        assert client.get("/api/auth/me").status_code == 401
+        assert client.get("/api/auth/me", headers={{"Authorization": "Bearer bad.token.sig"}}).status_code == 401
+
+        expired = create_access_token("alice", secret=TEST_SECRET, ttl_seconds=-10)
+        assert client.get("/api/auth/me", headers={{"Authorization": f"Bearer {{expired}}"}}).status_code == 401
+
+        token = create_access_token("alice", secret=TEST_SECRET, scope="admin")
+        ok = client.get("/api/auth/me", headers={{"Authorization": f"Bearer {{token}}"}})
+    assert ok.status_code == 200
+    assert ok.json() == {{"sub": "alice", "scope": "admin"}}
 '''
 
 
@@ -194,7 +238,13 @@ def test_ask_uses_the_ai_client() -> None:
 '''
 
 
-def scaffold_new_app(app_name: str, output_dir: Path) -> Path:
+def scaffold_new_app(
+    app_name: str,
+    output_dir: Path,
+    *,
+    with_migrations: bool = False,
+    with_auth: bool = False,
+) -> Path:
     """Scaffold a new microservice/app powered by the Nexus Framework.
 
     ``app_name`` becomes the directory name; it must start with a letter and contain only
@@ -218,16 +268,26 @@ def scaffold_new_app(app_name: str, output_dir: Path) -> Path:
     (target / "tests").mkdir()
 
     files = {
-        "pyproject.toml": render_backend_pyproject(app_name, app_name, wheel_package=package),
-        "requirements.txt": render_backend_requirements(),
+        "pyproject.toml": render_backend_pyproject(
+            app_name, app_name, wheel_package=package, include_migrations=with_migrations
+        ),
+        "requirements.txt": render_backend_requirements(include_migrations=with_migrations),
         "Dockerfile": render_dockerfile(f"{package}.main:app"),
         ".dockerignore": render_dockerignore(),
         f"src/{package}/__init__.py": "",
-        f"src/{package}/main.py": _scaffold_main_py(app_name),
+        f"src/{package}/main.py": _scaffold_main_py(app_name, package=package, with_auth=with_auth),
         "tests/test_main.py": _scaffold_test_py(app_name, package),
     }
+    if with_migrations:
+        files.update(render_alembic_files(f"{package}.models"))
+    if with_auth:
+        files[f"src/{package}/auth.py"] = render_auth_module()
+        files["tests/test_auth.py"] = _scaffold_auth_test_py(package)
+
     for rel, content in files.items():
-        (target / rel).write_text(content, encoding="utf-8")
+        dest = target / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(content, encoding="utf-8")
 
     print(f"Application created successfully at {target}!")
     print(f"  cd {target}")
@@ -301,6 +361,7 @@ def dream_cmd(
     provider_name: str = "vertex",
     model: str | None = None,
     base_url: str | None = None,
+    with_auth: bool = False,
 ) -> None:
     """Run the Nexus Core IT Pack to convert an idea into a complete software project."""
     from nexus.providers.factory import create_provider
@@ -319,6 +380,7 @@ def dream_cmd(
         max_budget_usd=DEFAULT_SQUAD_BUDGET_USD if max_budget_usd is None else max_budget_usd,
         run_generated_tests=run_tests,
         test_timeout_s=DEFAULT_TEST_TIMEOUT_S if test_timeout_s is None else test_timeout_s,
+        include_auth=with_auth,
     )
     project = team.build_from_idea(idea, output_dir=output_dir)
 
@@ -466,6 +528,8 @@ def main() -> None:
     new_parser = subparsers.add_parser("new", help="Scaffold a new Nexus application.")
     new_parser.add_argument("name", help="Name of application to scaffold")
     new_parser.add_argument("--output-dir", default=".", help="Directory where app will be created")
+    new_parser.add_argument("--with-migrations", action="store_true", help="Include Alembic migration scaffold")
+    new_parser.add_argument("--with-auth", action="store_true", help="Include HS256 bearer auth starter and tests")
 
     # mcp
     subparsers.add_parser(
@@ -505,6 +569,9 @@ def main() -> None:
     dream_parser.add_argument("--model", default=None, help="Override the provider's default model ID")
     dream_parser.add_argument(
         "--base-url", default=None, help="Custom API base URL (for Ollama, vLLM, OpenRouter, or proxies)"
+    )
+    dream_parser.add_argument(
+        "--with-auth", action="store_true", help="Include HS256 bearer auth starter (backend/src/auth.py)"
     )
 
     # dashboard / ui
@@ -557,7 +624,12 @@ def main() -> None:
         sys.exit(check_ai_cmd(model=args.model, project=args.project))
     elif args.command == "new":
         try:
-            scaffold_new_app(args.name, Path(args.output_dir))
+            scaffold_new_app(
+                args.name,
+                Path(args.output_dir),
+                with_migrations=args.with_migrations,
+                with_auth=args.with_auth,
+            )
         except (ValueError, FileExistsError) as exc:
             print(f"Error: {exc}", file=sys.stderr)
             sys.exit(2)
@@ -575,6 +647,7 @@ def main() -> None:
             provider_name=args.provider,
             model=args.model,
             base_url=args.base_url,
+            with_auth=args.with_auth,
         )
     elif args.command in ("dashboard", "ui"):
         run_dashboard_cmd(host=args.host, port=args.port, open_browser=not args.no_browser)

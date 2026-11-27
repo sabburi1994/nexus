@@ -42,12 +42,15 @@ def framework_version_floor() -> str:
     return __version__
 
 
-def backend_runtime_dependencies() -> list[str]:
+def backend_runtime_dependencies(*, include_migrations: bool = False) -> list[str]:
     """Runtime dependencies of a generated backend (single source for pyproject and requirements)."""
-    return [
+    deps = [
         f"{FRAMEWORK_PACKAGE}>={framework_version_floor()}",
         "uvicorn>=0.30.0",
     ]
+    if include_migrations:
+        deps.append("alembic>=1.13.0")
+    return deps
 
 
 def backend_dev_dependencies() -> list[str]:
@@ -96,13 +99,19 @@ def secret_id_for(app_name: str, env_name: str) -> str:
     return f"{service_slug(app_name)}-{env_name.lower().replace('_', '-')}"
 
 
-def render_backend_pyproject(app_name: str, title: str, wheel_package: str | None = None) -> str:
+def render_backend_pyproject(
+    app_name: str,
+    title: str,
+    wheel_package: str | None = None,
+    *,
+    include_migrations: bool = False,
+) -> str:
     """``backend/pyproject.toml`` for a generated app.
 
     ``wheel_package`` (a package under ``src/``) adds a hatchling build backend, so the project
     can also be installed with ``pip install -e .``.
     """
-    deps = "\n".join(f'    "{d}",' for d in backend_runtime_dependencies())
+    deps = "\n".join(f'    "{d}",' for d in backend_runtime_dependencies(include_migrations=include_migrations))
     dev = "\n".join(f'    "{d}",' for d in backend_dev_dependencies())
     safe_title = title.replace("\\", "").replace('"', "'")
     return f"""[project]
@@ -137,9 +146,280 @@ packages = ["src/{package}"]
 """
 
 
-def render_backend_requirements() -> str:
+def render_backend_requirements(*, include_migrations: bool = False) -> str:
     """``backend/requirements.txt``: what the container installs."""
-    return "\n".join(backend_runtime_dependencies()) + "\n"
+    return "\n".join(backend_runtime_dependencies(include_migrations=include_migrations)) + "\n"
+
+
+def render_alembic_ini() -> str:
+    """``alembic.ini`` reading ``DATABASE_URL`` in ``migrations/env.py`` (never hardcoding credentials)."""
+    return """[alembic]
+script_location = migrations
+prepend_sys_path = .
+version_path_separator = os
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+"""
+
+
+def render_alembic_env_py(models_import: str = "backend_models") -> str:
+    """``migrations/env.py`` wired to ``nexus.db.Base.metadata`` and ``DATABASE_URL``."""
+    return f'''"""Alembic migration environment reading DATABASE_URL and Nexus Base metadata."""
+
+from __future__ import annotations
+
+import importlib
+import os
+import sys
+from logging.config import fileConfig
+from pathlib import Path
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+from nexus.db import Base
+
+_SRC = Path(__file__).resolve().parents[1] / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+try:
+    importlib.import_module("{models_import}")
+except ImportError:
+    pass
+
+config = context.config
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = Base.metadata
+
+
+def _database_url() -> str:
+    return os.getenv("DATABASE_URL", "sqlite:///./app.db")
+
+
+def run_migrations_offline() -> None:
+    context.configure(
+        url=_database_url(),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={{"paramstyle": "named"}},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    section = dict(config.get_section(config.config_ini_section, {{}}))
+    section["sqlalchemy.url"] = _database_url()
+    connectable = engine_from_config(section, prefix="sqlalchemy.", poolclass=pool.NullPool)
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+'''
+
+
+def render_alembic_script_mako() -> str:
+    """``migrations/script.py.mako`` template for ``alembic revision --autogenerate``."""
+    return '''"""${message}
+
+Revision ID: ${up_revision}
+Revises: ${down_revision | comma,n}
+Create Date: ${create_date}
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = ${repr(up_revision)}
+down_revision: str | Sequence[str] | None = ${repr(down_revision)}
+branch_labels: str | Sequence[str] | None = ${repr(branch_labels)}
+depends_on: str | Sequence[str] | None = ${repr(depends_on)}
+
+
+def upgrade() -> None:
+    ${upgrades if upgrades else "pass"}
+
+
+def downgrade() -> None:
+    ${downgrades if downgrades else "pass"}
+'''
+
+
+def render_alembic_files(models_import: str = "backend_models") -> dict[str, str]:
+    """Alembic migration scaffold files keyed by relative path under the backend root."""
+    return {
+        "alembic.ini": render_alembic_ini(),
+        "migrations/env.py": render_alembic_env_py(models_import),
+        "migrations/script.py.mako": render_alembic_script_mako(),
+        "migrations/versions/.gitkeep": "",
+    }
+
+
+def render_auth_module() -> str:
+    """Zero-dependency HS256 JWT bearer auth starter (uses Python stdlib hmac/hashlib only)."""
+    return '''"""HS256 bearer token auth starter (stdlib-only, no extra JWT dependencies)."""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import json
+import os
+import time
+from typing import Annotated
+
+from fastapi import Depends, Header, HTTPException, status
+from pydantic import BaseModel
+
+_MIN_SECRET_LEN = 32
+
+
+class AuthClaims(BaseModel):
+    """Verified bearer token claims."""
+
+    sub: str
+    scope: str = "user"
+    iat: int
+    exp: int
+
+
+def _b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def _b64url_decode(segment: str) -> bytes:
+    padding = "=" * (-len(segment) % 4)
+    return base64.urlsafe_b64decode(segment + padding)
+
+
+def _resolve_secret(secret: str | None) -> bytes:
+    raw = secret if secret is not None else os.getenv("AUTH_SECRET", "")
+    if len(raw) < _MIN_SECRET_LEN:
+        raise RuntimeError(f"AUTH_SECRET must be at least {_MIN_SECRET_LEN} characters long.")
+    return raw.encode("utf-8")
+
+
+def create_access_token(
+    subject: str,
+    *,
+    secret: str | None = None,
+    ttl_seconds: int = 3600,
+    scope: str = "user",
+) -> str:
+    """Mint a signed HS256 bearer token."""
+    key = _resolve_secret(secret)
+    now = int(time.time())
+    header = _b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode("utf-8"))
+    payload = _b64url_encode(
+        json.dumps({"sub": subject, "scope": scope, "iat": now, "exp": now + ttl_seconds}, separators=(",", ":")).encode(
+            "utf-8"
+        )
+    )
+    signing_input = f"{header}.{payload}".encode("ascii")
+    sig = _b64url_encode(hmac.new(key, signing_input, hashlib.sha256).digest())
+    return f"{header}.{payload}.{sig}"
+
+
+def verify_access_token(token: str, *, secret: str | None = None) -> AuthClaims:
+    """Verify signature, algorithm, and expiry of an HS256 bearer token."""
+    key = _resolve_secret(secret)
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    header_b64, payload_b64, sig_b64 = parts
+    try:
+        header = json.loads(_b64url_decode(header_b64))
+        if header.get("alg") != "HS256":
+            raise ValueError("unsupported alg")
+        expected = hmac.new(key, f"{header_b64}.{payload_b64}".encode("ascii"), hashlib.sha256).digest()
+        provided = _b64url_decode(sig_b64)
+        if not hmac.compare_digest(expected, provided):
+            raise ValueError("bad signature")
+        claims = AuthClaims.model_validate(json.loads(_b64url_decode(payload_b64)))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    if claims.exp <= int(time.time()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return claims
+
+
+def require_auth(authorization: Annotated[str | None, Header()] = None) -> AuthClaims:
+    """FastAPI dependency enforcing an HS256 Authorization: Bearer token."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[7:].strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return verify_access_token(token)
+
+
+CurrentUser = Annotated[AuthClaims, Depends(require_auth)]
+'''
 
 
 def render_dockerfile(app_module: str = "main:app") -> str:

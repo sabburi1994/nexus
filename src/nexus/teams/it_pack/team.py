@@ -80,11 +80,13 @@ class NexusITTeam:
         max_budget_usd: float = DEFAULT_SQUAD_BUDGET_USD,
         run_generated_tests: bool = True,
         test_timeout_s: float = DEFAULT_TEST_TIMEOUT_S,
+        include_auth: bool = False,
     ) -> None:
         self.provider = provider or VertexAIProvider()
         self.max_budget_usd = max_budget_usd
         self.run_generated_tests = run_generated_tests
         self.test_timeout_s = test_timeout_s
+        self.include_auth = include_auth
         self.context = AgentContext(max_budget_usd=max_budget_usd)
         # Agents talk to the budgeted wrapper so every call counts against the cap.
         self._budgeted = BudgetedProvider(self.provider, self.context)
@@ -416,18 +418,24 @@ class NexusITTeam:
         (backend_dir / "models.py").write_text(sanitized_models, encoding="utf-8")
         (backend_dir / "backend_models.py").write_text(sanitized_models, encoding="utf-8")
         (backend_dir / "__init__.py").write_text("", encoding="utf-8")
+        if self.include_auth:
+            (backend_dir / "auth.py").write_text(tpl.render_auth_module(), encoding="utf-8")
 
         # 4. Tests
         (test_dir / "test_api.py").write_text(self._sanitize_python(qa.test_suite_code), encoding="utf-8")
         (test_dir / "__init__.py").write_text("", encoding="utf-8")
 
-        # 5. Container, Infrastructure as Code (Terraform) and deploy script
+        # 5. Container, Migrations, Infrastructure as Code (Terraform) and deploy script
         backend_root = app_dir / "backend"
         (backend_root / "Dockerfile").write_text(
             normalize_source(devops.dockerfile) or tpl.render_dockerfile(), encoding="utf-8"
         )
         (backend_root / ".dockerignore").write_text(tpl.render_dockerignore(), encoding="utf-8")
         (backend_root / "requirements.txt").write_text(tpl.render_backend_requirements(), encoding="utf-8")
+        for rel_path, content in tpl.render_alembic_files("backend_models").items():
+            dest = backend_root / rel_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content, encoding="utf-8")
         (infra_dir / "main.tf").write_text(normalize_source(devops.terraform_main_tf), encoding="utf-8")
         (infra_dir / "variables.tf").write_text(normalize_source(devops.terraform_variables_tf), encoding="utf-8")
         (app_dir / "docker-compose.yml").write_text(normalize_source(devops.docker_compose_yml), encoding="utf-8")
