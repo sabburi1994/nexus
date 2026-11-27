@@ -21,6 +21,31 @@ Install: `pip install nexus-agent-framework` and
 
 ## Python: `nexus-agent-framework`
 
+### 0.6.0 (2026-11-27)
+
+Pluggable HTTP model providers, buildable `@nexus-agent-framework/ui` 1.x generated frontends,
+Alembic migrations + bearer auth starter scaffolds, and a unified monorepo verification runner.
+
+* **Pluggable model providers (`nexus.providers`):** zero-extra-dependency `httpx` adapters for
+  OpenAI-compatible endpoints (`OpenAICompatibleProvider` — OpenAI, Ollama, vLLM, OpenRouter,
+  LM Studio), Anthropic's Messages API (`AnthropicProvider`), and a `create_provider()` factory
+  (`vertex`, `gemini`, `openai`, `anthropic`, `claude`, `ollama`, `mock`). `nexus dream` gains
+  `--provider`, `--model`, and `--base-url`.
+* **Buildable React frontends on UI 1.x + Tokens 1.x:** generated apps now include a complete
+  Vite + React + TypeScript + Tailwind scaffold (`package.json`, `index.html` with
+  `data-nx-theme="base"`, `tsconfig.json`, `vite.config.ts`, `tailwind.config.js`,
+  `postcss.config.js`, `src/main.tsx` importing `@nexus-agent-framework/tokens/tokens.css` and
+  `@nexus-agent-framework/ui/styles.css`, and `src/index.css`) pinned to
+  `@nexus-agent-framework/tokens@^1.0.1` and `@nexus-agent-framework/ui@^1.0.2`.
+* **Frontend & infra benchmark checks (`benchmarks/bench_generation.py`):** optional `--frontend`
+  (`npm install`, `vite build`, `tsc --noEmit`) and `--infra` (Dockerfile, `deploy.sh` `bash -n`,
+  Terraform modules/braces/`terraform fmt -check`).
+* **Alembic migrations & HS256 bearer auth starter:** `render_alembic_files()` (emitted in every
+  `nexus dream` backend and via `nexus new <app> --with-migrations`) and zero-dependency
+  `render_auth_module()` (`nexus new <app> --with-auth`, `nexus dream --with-auth`).
+* **Unified local check runner:** `npm run check:all` (`scripts/check-all.mjs`) runs ruff, mypy,
+  core & showcase pytest, all 5 npm package builds, and tokens/ui typecheck + Vitest in one pass.
+
 ### 0.5.2 (2026-11-26)
 
 Fixes found by the first real model benchmark (`benchmarks/README.md`, "Real model runs").
